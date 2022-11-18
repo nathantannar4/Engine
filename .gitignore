@@ -7,3 +7,9 @@ DerivedData/
 .swiftpm/config/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+build.sh
+Sources/EngineCore/EngineCore.xcframework
+Sources/EngineCore/EngineCore.xcframework.zip
+Sources/EnginePrivate
+Sources/EngineCore/EngineCore
+Sources/EngineCore/EngineCore.xcodeproj

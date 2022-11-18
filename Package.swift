@@ -1,28 +1,38 @@
 // swift-tools-version: 5.7
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
     name: "Engine",
+    platforms: [
+        .iOS(.v13),
+        .macOS(.v10_15),
+        .macCatalyst(.v13),
+        .tvOS(.v13),
+        .watchOS(.v6)
+    ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
+        .library(
+            name: "EngineCore",
+            targets: ["EngineCore"]
+        ),
         .library(
             name: "Engine",
-            targets: ["Engine"]),
+            targets: ["Engine"]
+        )
     ],
-    dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        // .package(url: /* package url */, from: "1.0.0"),
-    ],
+    dependencies: [],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
+        .binaryTarget(
+            name: "EngineCore",
+            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.0/EngineCore.xcframework.zip",
+            checksum: "3ff4bebe634371cd251601b29dee70f2cec400a299c34d503b713e682912a916"
+        ),
         .target(
             name: "Engine",
-            dependencies: []),
-        .testTarget(
-            name: "EngineTests",
-            dependencies: ["Engine"]),
+            dependencies: [
+                "EngineCore"
+            ]
+        )
     ]
 )
