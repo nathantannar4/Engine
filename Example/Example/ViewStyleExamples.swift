@@ -9,7 +9,44 @@ import SwiftUI
 import Engine
 
 struct ViewStyleExamples: View {
+    @State var value = 0
+
     var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading) {
+                Text("StepperView")
+                    .font(.title3)
+                Text("Stepper made stylable")
+                    .font(.caption)
+            }
+            .frame(width: 160)
+
+            VStack(alignment: .leading) {
+                Text("Default Style")
+                    .font(.headline)
+
+                StepperView {
+                    Text(value.description)
+                } onIncrement: {
+                    value += 1
+                } onDecrement: {
+                    value -= 1
+                }
+
+                Text("Custom Style")
+                    .font(.headline)
+
+                StepperView {
+                    Text(value.description)
+                } onIncrement: {
+                    value += 1
+                } onDecrement: {
+                    value -= 1
+                }
+                .stepperViewStyle(InlineStepperViewStyle())
+            }
+        }
+        
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading) {
                 Text("LabeledView")
@@ -102,6 +139,118 @@ struct ViewStyleExamples: View {
                 }
             }
         }
+    }
+}
+
+protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration { }
+
+struct StepperViewStyleConfiguration {
+    struct Label: ViewAlias { }
+    var label: Label { .init() }
+
+    var onIncrement: () -> Void
+    var onDecrement: () -> Void
+}
+
+struct DefaultStepperViewStyle: StepperViewStyle {
+    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+        Stepper {
+            configuration.label
+        } onIncrement: {
+            configuration.onIncrement()
+        } onDecrement: {
+            configuration.onDecrement()
+        }
+    }
+}
+
+struct InlineStepperViewStyle: StepperViewStyle {
+    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+        HStack {
+            Button {
+                configuration.onDecrement()
+            } label: {
+                Image(systemName: "minus.circle.fill")
+            }
+
+            configuration.label
+
+            Button {
+                configuration.onIncrement()
+            } label: {
+                Image(systemName: "plus.circle.fill")
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                configuration.onIncrement()
+            case .decrement:
+                configuration.onDecrement()
+            default:
+                break
+            }
+        }
+    }
+}
+
+extension View {
+    func stepperViewStyle<Style: StepperViewStyle>(_ style: Style) -> some View {
+        styledViewStyle(StepperViewBody.self, style: style)
+    }
+}
+
+struct StepperView<Label: View>: View {
+    var label: Label
+    var onIncrement: () -> Void
+    var onDecrement: () -> Void
+
+    init(
+        @ViewBuilder label: () -> Label,
+        onIncrement: @escaping () -> Void,
+        onDecrement: @escaping () -> Void
+    ) {
+        self.label = label()
+        self.onIncrement = onIncrement
+        self.onDecrement = onDecrement
+    }
+
+    var body: some View {
+        StepperViewBody(
+            configuration: .init(
+                onIncrement: onIncrement,
+                onDecrement: onDecrement
+            )
+        )
+        .viewAlias(StepperViewStyleConfiguration.Label.self) {
+            label
+        }
+    }
+}
+
+extension StepperView where Label == StepperViewStyleConfiguration.Label {
+    init(_ configuration: StepperViewStyleConfiguration) {
+        self.label = configuration.label
+        self.onIncrement = configuration.onIncrement
+        self.onDecrement = configuration.onDecrement
+    }
+}
+
+struct StepperViewBody: ViewStyledView {
+    var configuration: StepperViewStyleConfiguration
+
+    var body: some View {
+        StepperView(configuration)
+            .padding(4)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.secondary)
+            )
+    }
+
+    static var defaultStyle: DefaultStepperViewStyle {
+        DefaultStepperViewStyle()
     }
 }
 

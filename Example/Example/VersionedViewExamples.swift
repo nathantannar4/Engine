@@ -15,8 +15,12 @@ struct VersionedViewExamples: View {
         GradientRectangle(color: .red)
             .frame(height: 32)
 
-        Text("Underline if #available")
-            .modifier(UnderlineIfAvailableModifier())
+        Button {
+
+        } label: {
+            Text("Underline if #available")
+        }
+        .buttonStyle(UnderlineButtonStyle())
     }
 }
 
@@ -56,6 +60,13 @@ struct GradientRectangle: VersionedView {
             startPoint: .top,
             endPoint: .bottom
         )
+    }
+}
+
+struct UnderlineButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .modifier(UnderlineIfAvailableModifier())
     }
 }
 
