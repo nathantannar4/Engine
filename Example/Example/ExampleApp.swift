@@ -1,8 +1,5 @@
 //
-//  ExampleApp.swift
-//  Example
-//
-//  Created by Nathan Tannar on 2022-11-12.
+// Copyright (c) Nathan Tannar
 //
 
 import SwiftUI

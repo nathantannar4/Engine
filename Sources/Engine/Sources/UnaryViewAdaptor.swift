@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import EngineCore
 
 /// A view that wraps `Content` in unary view.
 ///
@@ -20,18 +21,40 @@ import SwiftUI
 /// For example a unary view will result in a single subview when used as
 /// the source for a ``VariadicViewAdapter``. Whereas a `TupleView`
 /// would result in N subviews, one for each element in the tuple.
+/// 
 @frozen
 public struct UnaryViewAdaptor<Content: View>: View {
 
     @usableFromInline
-    var content: Content
+    var content: _UnaryViewAdaptor<Content>
 
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
-        self.content = content()
+        self.content = _UnaryViewAdaptor(content())
     }
 
-    public var body: some View {
-        _UnaryViewAdaptor(content)
+    public var body: Never {
+        bodyError()
+    }
+
+    public static func _makeView(
+        view: _GraphValue<Self>,
+        inputs: _ViewInputs
+    ) -> _ViewOutputs {
+        _UnaryViewAdaptor<Content>._makeView(view: view[\.content], inputs: inputs)
+    }
+
+    public static func _makeViewList(
+        view: _GraphValue<Self>,
+        inputs: _ViewListInputs
+    ) -> _ViewListOutputs {
+        _UnaryViewAdaptor<Content>._makeViewList(view: view[\.content], inputs: inputs)
+    }
+
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    public static func _viewListCount(
+        inputs: _ViewListCountInputs
+    ) -> Int? {
+        _UnaryViewAdaptor<Content>._viewListCount(inputs: inputs)
     }
 }

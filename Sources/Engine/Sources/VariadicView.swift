@@ -49,7 +49,7 @@ public struct AnyVariadicView: View, RandomAccessCollection {
     // MARK: Collection
 
     public typealias Element = Subview
-    public typealias Iterator = IndexingIterator<Array<Subview>>
+    public typealias Iterator = IndexingIterator<Array<Element>>
     public typealias Index = Int
 
     public func makeIterator() -> Iterator {

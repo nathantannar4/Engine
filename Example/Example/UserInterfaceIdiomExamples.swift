@@ -1,8 +1,5 @@
 //
-//  UserInterfaceIdiomExamples.swift
-//  Example
-//
-//  Created by Nathan Tannar on 2022-11-18.
+// Copyright (c) Nathan Tannar
 //
 
 import SwiftUI
