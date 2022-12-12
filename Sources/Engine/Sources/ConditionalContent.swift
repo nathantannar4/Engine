@@ -10,9 +10,9 @@ import SwiftUI
 /// made public
 @frozen
 public struct ConditionalContent<
-    TrueContent: View,
-    FalseContent: View
->: View {
+    TrueContent,
+    FalseContent
+> {
 
     @frozen
     public enum Storage {
@@ -31,7 +31,9 @@ public struct ConditionalContent<
     public init(_ falseContent: FalseContent) {
         self.storage = .falseContent(falseContent)
     }
+}
 
+extension ConditionalContent: View where TrueContent: View, FalseContent: View {
     @inlinable
     public init(
         if condition: Bool,

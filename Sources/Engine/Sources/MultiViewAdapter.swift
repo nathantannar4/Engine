@@ -67,7 +67,7 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
 
         func project<T>(_ value: T) -> Element {
             let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = Visitor(input: value)
+            var visitor = AnyViewVisitor(input: value)
             conformance.visit(visitor: &visitor)
             return visitor.output
         }
@@ -76,16 +76,6 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
 
     public func index(after index: Index) -> Index {
         index + 1
-    }
-
-    // MARK: Visitor
-
-    public func visit<Visitor: MultiViewVisitor>(
-        index: Int,
-        visitor: inout Visitor
-    ) {
-        var v = TupleViewVisitor(content: content, visitor: &visitor)
-        v.visit(index: index)
     }
 
     // MARK: View
@@ -116,7 +106,13 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
     }
 }
 
-private struct Visitor<Input>: ViewVisitor {
+extension MultiViewAdapter: MultiView {
+
+    public typealias Views = Content
+    public var views: Content { content.value }
+}
+
+private struct AnyViewVisitor<Input>: ViewVisitor {
     var input: Input
     var output: AnyView!
 
