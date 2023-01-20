@@ -71,6 +71,7 @@ extension VersionedViewModifier where Body == _VersionedViewModifierBody<Self> {
     }
 }
 
+@frozen
 public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: VersionedView {
 
     var content: Modifier.Content

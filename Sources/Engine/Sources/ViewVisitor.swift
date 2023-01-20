@@ -9,32 +9,6 @@ import EngineCore
 /// to visit the concrete `View` type.
 public typealias ViewVisitor = EngineCore.ViewVisitor
 
-/// A protocol that defines views that can be visited with
-/// a ``MultiViewVisitor``.
-public typealias MultiView = EngineCore.MultiView
-
-/// A ``MultiViewVisitor`` allows for an opaque collection of
-/// `some View` to be unwrapped to visit the concrete `View` element.
-public typealias MultiViewVisitor = EngineCore.MultiViewVisitor
-
-/// A an iterator for a ``MultiView`` that wraps a ``MultiViewVisitor``
-/// which allows for an opaque collection of  `some View` to be unwrapped to visit
-/// the concrete `View` element.
-public typealias MultiViewIteratorVisitor<
-    Content: MultiView,
-    Visitor: MultiViewVisitor
-> = EngineCore.MultiViewIteratorVisitor<Content, Visitor>
-
-/// A concrete visitor that visits a `TupleView` with a ``MultiViewVisitor``
-public typealias TupleViewVisitor = EngineCore.TupleViewVisitor
-
-/// A ``MultiViewVisitor`` wrapper for a `Group`
-public typealias GroupVisitor<Content: View, Visitor: MultiViewVisitor> = EngineCore.GroupVisitor<Content, Visitor>
-
-/// A ``ViewModifierVisitor`` allows for `some ViewModifier` to be unwrapped
-/// to visit the concrete `ViewModifier` type.
-public typealias ViewModifierVisitor = EngineCore.ViewModifierVisitor
-
 /// A protocol to statically define a descriptor to a type's metadata
 ///
 /// A ``TypeDescriptor`` can be used alongside a visitor to safely
@@ -67,9 +41,6 @@ public typealias TypeDescriptor = EngineCore.TypeDescriptor
 
 /// The ``TypeDescriptor`` for the `View` protocol
 public typealias ViewProtocolDescriptor = EngineCore.ViewProtocolDescriptor
-
-/// The ``TypeDescriptor`` for the `ViewModifier` protocol
-public typealias ViewModifierProtocolDescriptor = EngineCore.ViewModifierProtocolDescriptor
 
 #if os(iOS) || os(tvOS)
 

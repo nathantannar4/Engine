@@ -42,7 +42,7 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
 
     // MARK: Collection
 
-    public typealias Element = AnyView
+    public typealias Element = Any
     public typealias Iterator = IndexingIterator<Array<Element>>
     public typealias Index = Int
 
@@ -64,14 +64,7 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
             element = content.value
         }
         precondition(element != nil, "Index out of range")
-
-        func project<T>(_ value: T) -> Element {
-            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = AnyViewVisitor(input: value)
-            conformance.visit(visitor: &visitor)
-            return visitor.output
-        }
-        return _openExistential(element!, do: project)
+        return element
     }
 
     public func index(after index: Index) -> Index {
@@ -103,20 +96,5 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
         inputs: _ViewListCountInputs
     ) -> Int? {
         TupleView<Content>._viewListCount(inputs: inputs)
-    }
-}
-
-extension MultiViewAdapter: MultiView {
-
-    public typealias Views = Content
-    public var views: Content { content.value }
-}
-
-private struct AnyViewVisitor<Input>: ViewVisitor {
-    var input: Input
-    var output: AnyView!
-
-    mutating func visit<Content>(type: Content.Type) where Content: View {
-        output = AnyView(unsafeBitCast(input, to: Content.self))
     }
 }

@@ -27,6 +27,53 @@ public struct AnyVariadicView: View, RandomAccessCollection {
             element.id(as: ID.self)
         }
 
+        public subscript<K: _ViewTraitKey>(key: K.Type) -> K.Value {
+            get { element[K.self] }
+            set { element[K.self] = newValue }
+        }
+
+        public subscript<T>(key: String, as _: T.Type) -> T? {
+            if let conformance = ViewTraitKeyProtocolDescriptor.conformance(of: key) {
+                var visitor = AnyTraitVisitor<T>(element: element)
+                conformance.visit(visitor: &visitor)
+                return visitor.value
+            }
+            return nil
+        }
+
+        private struct AnyTraitVisitor<T>: ViewTraitKeyVisitor {
+            var element: _VariadicView.Children.Element
+            var value: T!
+
+            mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
+                value = element[Key.self] as? T
+            }
+        }
+
+        @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+        public func tag<T>(as _: T.Type) -> T? {
+            if let typeName = _mangledTypeName(T.self),
+                let conformance = ViewTraitKeyProtocolDescriptor.conformance(
+                of: "s7SwiftUI16TagValueTraitKeyVy\(typeName)G"
+            ) {
+                var visitor = TagTraitVisitor<T>(element: element)
+                conformance.visit(visitor: &visitor)
+                return visitor.tag
+            }
+            return nil
+        }
+
+        private struct TagTraitVisitor<T>: ViewTraitKeyVisitor {
+
+            var element: _VariadicView.Children.Element
+            var tag: T!
+
+            mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
+                let value = unsafeBitCast(element[Key.self], to: Optional<T>.self)
+                tag = value
+            }
+        }
+
         // MARK: View
 
         public var body: some View {
@@ -88,7 +135,7 @@ public struct ForEachSubview<
 
     public init(
         _ content: VariadicView<Content>,
-        _ subview: @escaping (Int, AnyVariadicView.Subview) -> Subview
+        @ViewBuilder _ subview: @escaping (Int, AnyVariadicView.Subview) -> Subview
     ) {
         self.content = content
         self.subview = subview
@@ -141,7 +188,7 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
         }
     }
 
-    private struct Root: _VariadicView.UnaryViewRoot {
+    private struct Root: _VariadicView.MultiViewRoot {
         var content: (VariadicView<Source>) -> Content
 
         func body(children: _VariadicView.Children) -> some View {
@@ -152,11 +199,57 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
 
 // MARK: - Previews
 
+enum PreviewCases: Int, Hashable, CaseIterable {
+    case one
+    case two
+    case three
+}
+
 struct VariadicView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             VariadicViewAdapter { content in
-                content
+                VStack {
+                    ForEachSubview(content) { index, subview in
+                        Text(subview.id(as: String.self) ?? "nil")
+                    }
+                }
+            } source: {
+                Text("Line 1").id("1")
+                Text("Line 2").id("2")
+            }
+
+            VariadicViewAdapter { content in
+                VStack {
+                    ForEachSubview(content) { index, subview in
+                        Text("\(subview.id(as: PreviewCases.self)?.rawValue ?? -1)")
+
+                        Text(String("\(subview.id)"))
+                    }
+                }
+            } source: {
+                ForEach(PreviewCases.allCases, id: \.self) {
+                    Text($0.rawValue.description)
+                }
+            }
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                VariadicViewAdapter { content in
+                    VStack {
+                        ForEachSubview(content) { index, subview in
+                            Text(subview.tag(as: String.self) ?? "nil")
+                        }
+                    }
+                } source: {
+                    Text("Line 1").tag("1")
+                    Text("Line 2").tag("2")
+                }
+            }
+
+            VariadicViewAdapter { content in
+                VStack {
+                    content
+                }
             } source: {
                 Text("Line 1")
                 Text("Line 2")
