@@ -64,7 +64,7 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
             element = content.value
         }
         precondition(element != nil, "Index out of range")
-        return element
+        return element!
     }
 
     public func index(after index: Index) -> Index {

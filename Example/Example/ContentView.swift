@@ -38,7 +38,7 @@ struct ContentView: View {
             Section {
                 VersionedViewExamples()
             } header: {
-                Text("VersionedView")
+                Text("VersionedView / VersionedViewModifier")
             } footer: {
                 Text("Makes working with #availability easier and more performant, since using `if #available(...)` within a `@ViewBuilder` results in `AnyView`.")
             }
@@ -56,7 +56,7 @@ struct ContentView: View {
             Section {
                 UserInterfaceIdiomExamples()
             } header: {
-                Text("UserInterfaceIdiom")
+                Text("UserInterfaceIdiomContent / UserInterfaceIdiomModifier")
             } footer: {
                 Text("Makes supported multiple device idioms easier.")
             }

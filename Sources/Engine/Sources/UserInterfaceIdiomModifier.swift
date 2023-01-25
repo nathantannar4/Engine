@@ -6,6 +6,9 @@ import SwiftUI
 
 /// A view modifier that's `Body` is statically conditional on the user interface idiom.
 ///
+/// > Important: The only `DynamicProperty` a `UserInterfaceIdiomModifier`
+/// can only contain is a `Binding`
+///
 /// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
 /// to aide with cross platform compatibility.
 ///

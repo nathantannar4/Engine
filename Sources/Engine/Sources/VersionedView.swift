@@ -10,6 +10,9 @@ import SwiftUI
 /// for type erasure. This is unlike `@ViewBuilder` which  requires an
 /// `if #available(...)` conditional to be type-erased by `AnyView`.
 ///
+/// > Important: The only `DynamicProperty` a `VersionedView`
+/// can only contain is a `Binding`
+///
 /// By default, unsupported versions will resolve to `EmptyView`. Supported
 /// versions that don't have their body implemented will resolve to the next
 /// version body that is implemented.

@@ -118,7 +118,7 @@ public struct LayoutThatFits: Layout {
         subviews: Subviews,
         cache: inout AnyLayout.Cache
     ) -> Bool {
-        let size = layout.sizeThatFits(proposal: proposal, subviews: subviews, cache: &cache)
+        let size = layout.sizeThatFits(proposal: .unspecified, subviews: subviews, cache: &cache)
 
         let widthFits = size.width <= (proposal.width ?? .infinity)
         let heightFits = size.height <= (proposal.height ?? .infinity)
