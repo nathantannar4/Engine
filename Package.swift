@@ -25,8 +25,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "EngineCore",
-            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.5/EngineCore.xcframework.zip",
-            checksum: "1e542816e2ef220394c4ec656050ed84736b7d552484ff80a959ecc5007d2af9"
+            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.6/EngineCore.xcframework.zip",
+            checksum: "6c9b77cf0ae37f1676cab97b53533b94a3813f795a30d761481659f805d2b3ac"
         ),
         .target(
             name: "Engine",
