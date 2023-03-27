@@ -176,8 +176,25 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     @usableFromInline
     var content: (VariadicView<Source>) -> Content
 
+    /*
+     FB12082130: Xcode 14.3 RC regression, type inference no longer works unless
+     the `Source` parameter is before the `content`
+
     @inlinable
-    public init(@ViewBuilder content: @escaping (VariadicView<Source>) -> Content, @ViewBuilder source: () -> Source) {
+    public init(
+        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content,
+        @ViewBuilder source: () -> Source
+    ) {
+        self.source = source()
+        self.content = content
+    }
+    */
+
+    @inlinable
+    public init(
+        @ViewBuilder source: () -> Source,
+        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content
+    ) {
         self.source = source()
         self.content = content
     }
@@ -208,70 +225,70 @@ enum PreviewCases: Int, Hashable, CaseIterable {
 struct VariadicView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            VariadicViewAdapter { content in
+            VariadicViewAdapter {
+                Text("Line 1").id("1")
+                Text("Line 2").id("2")
+            } content: { source in
                 VStack {
-                    ForEachSubview(content) { index, subview in
+                    ForEachSubview(source) { index, subview in
                         Text(subview.id(as: String.self) ?? "nil")
                     }
                 }
-            } source: {
-                Text("Line 1").id("1")
-                Text("Line 2").id("2")
             }
 
-            VariadicViewAdapter { content in
+            VariadicViewAdapter {
+                ForEach(PreviewCases.allCases, id: \.self) {
+                    Text($0.rawValue.description)
+                }
+            } content: { source in
                 VStack {
-                    ForEachSubview(content) { index, subview in
+                    ForEachSubview(source) { index, subview in
                         Text("\(subview.id(as: PreviewCases.self)?.rawValue ?? -1)")
 
                         Text(String("\(subview.id)"))
                     }
                 }
-            } source: {
-                ForEach(PreviewCases.allCases, id: \.self) {
-                    Text($0.rawValue.description)
-                }
             }
 
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-                VariadicViewAdapter { content in
+                VariadicViewAdapter {
+                    Text("Line 1").tag("1")
+                    Text("Line 2").tag("2")
+                } content: { source in
                     VStack {
-                        ForEachSubview(content) { index, subview in
+                        ForEachSubview(source) { index, subview in
                             Text(subview.tag(as: String.self) ?? "nil")
                         }
                     }
-                } source: {
-                    Text("Line 1").tag("1")
-                    Text("Line 2").tag("2")
                 }
             }
 
-            VariadicViewAdapter { content in
+            VariadicViewAdapter {
+                Text("Line 1")
+                Text("Line 2")
+            } content: { source in
                 VStack {
-                    content
+                    source
                 }
-            } source: {
-                Text("Line 1")
-                Text("Line 2")
             }
 
-            VariadicViewAdapter { content in
-                Text(content.children.count.description)
-            } source: {
+            VariadicViewAdapter {
                 EmptyView()
+            } content: { source in
+                Text(source.children.count.description)
             }
 
-            VariadicViewAdapter { content in
-                Text(content.children.count.description)
-            } source: {
+            VariadicViewAdapter {
                 Text("Line 1")
+            } content: { source in
+                Text(source.children.count.description)
             }
 
-            VariadicViewAdapter { content in
-                Text(content.children.count.description)
-            } source: {
+            VariadicViewAdapter {
                 Text("Line 1")
                 Text("Line 2")
+            } content: { source in
+                Text(source.children.count.description)
             }
         }
         .padding()

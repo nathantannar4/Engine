@@ -21,7 +21,9 @@ struct BulletList<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VariadicViewAdapter { content in
+        VariadicViewAdapter {
+            content
+        } content: { source in
             ForEachSubview(content) { index, subview in
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(index + 1).")
@@ -29,8 +31,6 @@ struct BulletList<Content: View>: View {
                     subview
                 }
             }
-        } source: {
-            content
         }
     }
 }
@@ -59,9 +59,12 @@ struct PickerView<Selection: Hashable, Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VariadicViewAdapter { content in
-            ForEachSubview(content) { index, subview in
+        VariadicViewAdapter {
+            content
+        } content: { source in
+            ForEachSubview(source) { index, subview in
                 HStack {
+                    // This works since the ForEach ID is the Fruit (ie Selection) type
                     let isSelected: Bool = selection == subview.id(as: Selection.self)
                     if isSelected {
                         Image(systemName: "checkmark")
@@ -74,8 +77,6 @@ struct PickerView<Selection: Hashable, Content: View>: View {
                     }
                 }
             }
-        } source: {
-            content
         }
     }
 }

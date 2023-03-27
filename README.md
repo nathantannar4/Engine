@@ -208,8 +208,8 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
 
     @inlinable
     public init(
-        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content, 
-        @ViewBuilder source: () -> Source
+        @ViewBuilder source: () -> Source,
+        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content 
     )
 }
 ```
@@ -247,8 +247,10 @@ struct PickerView<Selection: Hashable, Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VariadicViewAdapter { content in
-            ForEachSubview(content) { index, subview in
+        VariadicViewAdapter {
+            content
+        } content: { source in
+            ForEachSubview(source) { index, subview in
                 HStack {
                     // This works since the ForEach ID is the Fruit (ie Selection) type
                     let isSelected: Bool = selection == subview.id(as: Selection.self)
@@ -263,8 +265,6 @@ struct PickerView<Selection: Hashable, Content: View>: View {
                     }
                 }
             }
-        } source: {
-            content
         }
     }
 }
