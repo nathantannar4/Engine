@@ -14,19 +14,19 @@ import SwiftUI
 ///
 public protocol UserInterfaceIdiomContent: View where Body == Never {
     associatedtype PhoneBody: View = EmptyView
-    @ViewBuilder var phoneBody: PhoneBody { get }
+    @MainActor @ViewBuilder var phoneBody: PhoneBody { get }
 
     associatedtype PadBody: View = EmptyView
-    @ViewBuilder var padBody: PadBody { get }
+    @MainActor @ViewBuilder var padBody: PadBody { get }
 
     associatedtype MacBody: View = EmptyView
-    @ViewBuilder var macBody: MacBody { get }
+    @MainActor @ViewBuilder var macBody: MacBody { get }
 
     associatedtype TvBody: View = EmptyView
-    @ViewBuilder var tvBody: TvBody { get }
+    @MainActor @ViewBuilder var tvBody: TvBody { get }
 
     associatedtype WatchBody: View = EmptyView
-    @ViewBuilder var watchBody: WatchBody { get }
+    @MainActor @ViewBuilder var watchBody: WatchBody { get }
 }
 
 extension UserInterfaceIdiomContent where PhoneBody == EmptyView {

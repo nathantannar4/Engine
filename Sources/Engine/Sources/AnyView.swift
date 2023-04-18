@@ -8,6 +8,7 @@ import EngineCore
 extension AnyView {
 
     /// Creates a type-erased view from a type-erased value if that value is also a view
+    @_disfavoredOverload
     public init?(_ content: Any) {
         func project<T>(_ value: T) -> AnyView? {
             let conformance = ViewProtocolDescriptor.conformance(of: T.self)!

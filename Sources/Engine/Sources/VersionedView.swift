@@ -24,40 +24,40 @@ public protocol VersionedView: View where Body == Never {
     associatedtype V4Body: View = V3Body
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    @ViewBuilder var v4Body: V4Body { get }
+    @MainActor @ViewBuilder var v4Body: V4Body { get }
 
     associatedtype V3Body: View = V2Body
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    @ViewBuilder var v3Body: V3Body { get }
+    @MainActor @ViewBuilder var v3Body: V3Body { get }
 
     associatedtype V2Body: View = V1Body
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    @ViewBuilder var v2Body: V2Body { get }
+    @MainActor @ViewBuilder var v2Body: V2Body { get }
 
     associatedtype V1Body: View = EmptyView
 
-    @ViewBuilder var v1Body: V1Body { get }
+    @MainActor @ViewBuilder var v1Body: V1Body { get }
 }
 
 extension VersionedView where V4Body == V3Body {
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    public var v4Body: V4Body { v3Body }
+    @MainActor public var v4Body: V4Body { v3Body }
 }
 
 extension VersionedView where V3Body == V2Body {
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    public var v3Body: V3Body { v2Body }
+    @MainActor public var v3Body: V3Body { v2Body }
 }
 
 extension VersionedView where V2Body == V1Body {
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public var v2Body: V2Body { v1Body }
+    @MainActor public var v2Body: V2Body { v1Body }
 }
 
 extension VersionedView where V1Body == EmptyView {
-    public var v1Body: V1Body { EmptyView() }
+    @MainActor public var v1Body: V1Body { EmptyView() }
 }
 
 extension VersionedView where Body == Never{

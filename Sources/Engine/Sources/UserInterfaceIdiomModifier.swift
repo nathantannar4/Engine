@@ -14,19 +14,19 @@ import SwiftUI
 ///
 public protocol UserInterfaceIdiomModifier: ViewModifier {
     associatedtype PhoneBody: View = Content
-    @ViewBuilder func phoneBody(content: Content) -> PhoneBody
+    @MainActor @ViewBuilder func phoneBody(content: Content) -> PhoneBody
 
     associatedtype PadBody: View = Content
-    @ViewBuilder func padBody(content: Content) -> PadBody
+    @MainActor @ViewBuilder func padBody(content: Content) -> PadBody
 
     associatedtype MacBody: View = Content
-    @ViewBuilder func macBody(content: Content) -> MacBody
+    @MainActor @ViewBuilder func macBody(content: Content) -> MacBody
 
     associatedtype TvBody: View = Content
-    @ViewBuilder func tvBody(content: Content) -> TvBody
+    @MainActor @ViewBuilder func tvBody(content: Content) -> TvBody
 
     associatedtype WatchBody: View = Content
-    @ViewBuilder func watchBody(content: Content) -> WatchBody
+    @MainActor @ViewBuilder func watchBody(content: Content) -> WatchBody
 }
 
 extension UserInterfaceIdiomModifier where PhoneBody == Content {

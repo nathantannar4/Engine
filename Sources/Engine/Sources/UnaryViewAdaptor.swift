@@ -3,7 +3,6 @@
 //
 
 import SwiftUI
-import EngineCore
 
 /// A view that wraps `Content` in unary view.
 ///
@@ -26,35 +25,14 @@ import EngineCore
 public struct UnaryViewAdaptor<Content: View>: View {
 
     @usableFromInline
-    var content: _UnaryViewAdaptor<Content>
+    var content: Content
 
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
-        self.content = _UnaryViewAdaptor(content())
+        self.content = content()
     }
 
-    public var body: Never {
-        bodyError()
-    }
-
-    public static func _makeView(
-        view: _GraphValue<Self>,
-        inputs: _ViewInputs
-    ) -> _ViewOutputs {
-        _UnaryViewAdaptor<Content>._makeView(view: view[\.content], inputs: inputs)
-    }
-
-    public static func _makeViewList(
-        view: _GraphValue<Self>,
-        inputs: _ViewListInputs
-    ) -> _ViewListOutputs {
-        _UnaryViewAdaptor<Content>._makeViewList(view: view[\.content], inputs: inputs)
-    }
-
-    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
-        inputs: _ViewListCountInputs
-    ) -> Int? {
-        _UnaryViewAdaptor<Content>._viewListCount(inputs: inputs)
+    public var body: some View {
+        _UnaryViewAdaptor(content)
     }
 }
