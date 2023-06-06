@@ -24,7 +24,7 @@ struct BulletList<Content: View>: View {
         VariadicViewAdapter {
             content
         } content: { source in
-            ForEachSubview(content) { index, subview in
+            ForEachSubview(source) { index, subview in
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(index + 1).")
 

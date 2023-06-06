@@ -276,6 +276,11 @@ struct PickerView<Selection: Hashable, Content: View>: View {
 
 ```
 public protocol VersionedView: View where Body == Never {
+    associatedtype V5Body: View = V4Body
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @ViewBuilder var v5Body: V5Body { get }
+    
     associatedtype V4Body: View = V3Body
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)

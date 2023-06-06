@@ -21,6 +21,11 @@ import SwiftUI
 /// to aide with backwards compatibility.
 ///
 public protocol VersionedViewModifier: ViewModifier {
+    associatedtype V5Body: View = V4Body
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @ViewBuilder func v5Body(content: Content) -> V5Body
+
     associatedtype V4Body: View = V3Body
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
@@ -39,6 +44,13 @@ public protocol VersionedViewModifier: ViewModifier {
     associatedtype V1Body: View = Content
 
     @ViewBuilder func v1Body(content: Content) -> V1Body
+}
+
+extension VersionedViewModifier where V5Body == V4Body {
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    public func v5Body(content: Content) -> V5Body {
+        v4Body(content: content)
+    }
 }
 
 extension VersionedViewModifier where V4Body == V3Body {
@@ -79,6 +91,11 @@ public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: Versi
 
     var content: Modifier.Content
     var modifier: Modifier
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    public var v5Body: Modifier.V5Body {
+        modifier.v5Body(content: content)
+    }
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var v4Body: Modifier.V4Body {

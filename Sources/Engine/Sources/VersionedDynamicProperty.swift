@@ -81,6 +81,11 @@ import SwiftUI
 ///     }
 ///
 public protocol VersionedDynamicProperty: DynamicProperty {
+    associatedtype V5Property: DynamicProperty = V4Property
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    var v5Property: V5Property { get }
+
     associatedtype V4Property: DynamicProperty = V3Property
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
@@ -99,6 +104,11 @@ public protocol VersionedDynamicProperty: DynamicProperty {
     associatedtype V1Property: DynamicProperty = EmptyDynamicProperty
 
     var v1Property: V1Property { get }
+}
+
+extension VersionedDynamicProperty where V5Property == V4Property {
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    public var v5Property: V5Property { v4Property }
 }
 
 extension VersionedDynamicProperty where V4Property == V3Property {
@@ -173,7 +183,14 @@ extension VersionedDynamicProperty {
         fieldOffset: Int,
         inputs: inout _GraphInputs
     ) {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            V5Property._makeProperty(
+                in: &buffer,
+                container: container,
+                fieldOffset: fieldOffset,
+                inputs: &inputs
+            )
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             V4Property._makeProperty(
                 in: &buffer,
                 container: container,

@@ -21,6 +21,11 @@ import SwiftUI
 /// to aide with backwards compatibility.
 ///
 public protocol VersionedView: View where Body == Never {
+    associatedtype V5Body: View = V4Body
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @MainActor @ViewBuilder var v5Body: V5Body { get }
+
     associatedtype V4Body: View = V3Body
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
@@ -39,6 +44,11 @@ public protocol VersionedView: View where Body == Never {
     associatedtype V1Body: View = EmptyView
 
     @MainActor @ViewBuilder var v1Body: V1Body { get }
+}
+
+extension VersionedView where V5Body == V4Body {
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @MainActor public var v5Body: V5Body { v4Body }
 }
 
 extension VersionedView where V4Body == V3Body {
@@ -69,7 +79,9 @@ extension VersionedView where Body == Never{
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            return V5Body._makeView(view: view[\.v5Body], inputs: inputs)
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._makeView(view: view[\.v4Body], inputs: inputs)
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
             return V3Body._makeView(view: view[\.v3Body], inputs: inputs)
@@ -117,6 +129,7 @@ struct VersionedView_Previews: PreviewProvider {
     }
 
     struct Preview: VersionedView {
+        var v5Body: some View { Text("V5") }
         var v4Body: some View { Text("V4") }
         var v3Body: some View { Text("V3") }
         var v2Body: some View { Text("V2") }

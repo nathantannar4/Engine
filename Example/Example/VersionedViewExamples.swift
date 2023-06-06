@@ -44,6 +44,10 @@ struct VersionedViewWithDynamicProperties: VersionedView {
 }
 
 struct VersionText: VersionedView {
+    var v5Body: some View {
+        Text("iOS 17 / macOS 14")
+    }
+
     var v4Body: some View {
         Text("iOS 16 / macOS 13")
     }
