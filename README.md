@@ -11,8 +11,18 @@ A performance driven framework for developing SwiftUI frameworks and apps. `Engi
 
 ## Requirements
 
-- Deployment target: iOS 13.0, macOS 10.15, tvOS 13.0, or watchOS 6.0
+- Deployment target: iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0 or visionOS 1.0
 - Xcode 14.1+
+
+### Beta suppport for visionOS
+
+Support for visionOS is available on the branch [`visionOS`](https://github.com/nathantannar4/Engine/tree/visionOS)
+
+```swift
+dependencies: [
+	.package(url: "https://github.com/nathantannar4/Engine", branch: "visionOS"),
+]
+```
 
 ## Installation
 
