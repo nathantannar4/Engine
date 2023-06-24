@@ -27,6 +27,9 @@ public protocol UserInterfaceIdiomModifier: ViewModifier {
 
     associatedtype WatchBody: View = Content
     @MainActor @ViewBuilder func watchBody(content: Content) -> WatchBody
+
+    associatedtype VisionBody: View = Content
+    @MainActor @ViewBuilder func visionBody(content: Content) -> VisionBody
 }
 
 extension UserInterfaceIdiomModifier where PhoneBody == Content {
@@ -55,6 +58,12 @@ extension UserInterfaceIdiomModifier where TvBody == Content {
 
 extension UserInterfaceIdiomModifier where WatchBody == Content {
     public func watchBody(content: Content) -> WatchBody {
+        content
+    }
+}
+
+extension UserInterfaceIdiomModifier where VisionBody == Content {
+    public func visionBody(content: Content) -> VisionBody {
         content
     }
 }
@@ -89,5 +98,9 @@ public struct _UserInterfaceIdiomModifierBody<Modifier: UserInterfaceIdiomModifi
 
     public var watchBody: Modifier.WatchBody {
         modifier.watchBody(content: content)
+    }
+
+    public var visionBody: Modifier.VisionBody {
+        modifier.visionBody(content: content)
     }
 }

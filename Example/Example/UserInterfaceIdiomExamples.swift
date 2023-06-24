@@ -28,8 +28,8 @@ struct IdiomText: UserInterfaceIdiomContent {
         Text("TV")
     }
 
-    var carBody: some View {
-        Text("Car")
+    var visionBody: some View {
+        Text("Vision")
     }
 }
 

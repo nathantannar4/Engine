@@ -27,6 +27,9 @@ public protocol UserInterfaceIdiomContent: View where Body == Never {
 
     associatedtype WatchBody: View = EmptyView
     @MainActor @ViewBuilder var watchBody: WatchBody { get }
+
+    associatedtype VisionBody: View = EmptyView
+    @MainActor @ViewBuilder var visionBody: VisionBody { get }
 }
 
 extension UserInterfaceIdiomContent where PhoneBody == EmptyView {
@@ -59,6 +62,12 @@ extension UserInterfaceIdiomContent where WatchBody == EmptyView {
     }
 }
 
+extension UserInterfaceIdiomContent where VisionBody == EmptyView {
+    public var visionBody: VisionBody {
+        EmptyView()
+    }
+}
+
 extension UserInterfaceIdiomContent where Body == Never{
     public var body: Never {
         bodyError()
@@ -70,7 +79,13 @@ extension UserInterfaceIdiomContent where Body == Never{
     ) -> _ViewOutputs {
         #if os(macOS)
         return MacBody._makeView(view: view[\.macBody], inputs: inputs)
-        #elseif !os(watchOS)
+        #elseif os(watchOS)
+        return WatchBody._makeView(view: view[\.watchBody], inputs: inputs)
+        #elseif os(tvOS)
+        return TvBody._makeView(view: view[\.tvBody], inputs: inputs)
+        #elseif swift(>=5.9) && os(xrOS)
+        return VisionBody._makeView(view: view[\.visionBody], inputs: inputs)
+        #else
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             return PhoneBody._makeView(view: view[\.phoneBody], inputs: inputs)
@@ -78,15 +93,9 @@ extension UserInterfaceIdiomContent where Body == Never{
             return PadBody._makeView(view: view[\.padBody], inputs: inputs)
         case .mac:
             return MacBody._makeView(view: view[\.macBody], inputs: inputs)
-        case .tv:
-            return TvBody._makeView(view: view[\.tvBody], inputs: inputs)
-        case .unspecified, .carPlay:
-            fallthrough
-        @unknown default:
+        default:
             preconditionFailure("unsupported")
         }
-        #elseif os(watchOS)
-        return WatchBody._makeView(view: view[\.watchBody], inputs: inputs)
         #endif
     }
 
@@ -96,7 +105,13 @@ extension UserInterfaceIdiomContent where Body == Never{
     ) -> _ViewListOutputs {
         #if os(macOS)
         return MacBody._makeViewList(view: view[\.macBody], inputs: inputs)
-        #elseif !os(watchOS)
+        #elseif os(watchOS)
+        return WatchBody._makeViewList(view: view[\.watchBody], inputs: inputs)
+        #elseif os(tvOS)
+        return TvBody._makeViewList(view: view[\.tvBody], inputs: inputs)
+        #elseif swift(>=5.9) && os(xrOS)
+        return VisionBody._makeViewList(view: view[\.visionBody], inputs: inputs)
+        #else
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             return PhoneBody._makeViewList(view: view[\.phoneBody], inputs: inputs)
@@ -104,15 +119,9 @@ extension UserInterfaceIdiomContent where Body == Never{
             return PadBody._makeViewList(view: view[\.padBody], inputs: inputs)
         case .mac:
             return MacBody._makeViewList(view: view[\.macBody], inputs: inputs)
-        case .tv:
-            return TvBody._makeViewList(view: view[\.tvBody], inputs: inputs)
-        case .unspecified, .carPlay:
-            fallthrough
-        @unknown default:
+        default:
             preconditionFailure("unsupported")
         }
-        #elseif os(watchOS)
-        return WatchBody._makeViewList(view: view[\.watchBody], inputs: inputs)
         #endif
     }
 
@@ -122,7 +131,13 @@ extension UserInterfaceIdiomContent where Body == Never{
     ) -> Int? {
         #if os(macOS)
         return MacBody._viewListCount(inputs: inputs)
-        #elseif !os(watchOS)
+        #elseif os(watchOS)
+        return WatchBody._viewListCount(inputs: inputs)
+        #elseif os(tvOS)
+        return TvBody._viewListCount(inputs: inputs)
+        #elseif swift(>=5.9) && os(xrOS)
+        return VisionBody._viewListCount(inputs: inputs)
+        #else
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
             return PhoneBody._viewListCount(inputs: inputs)
@@ -130,15 +145,9 @@ extension UserInterfaceIdiomContent where Body == Never{
             return PadBody._viewListCount(inputs: inputs)
         case .mac:
             return MacBody._viewListCount(inputs: inputs)
-        case .tv:
-            return TvBody._viewListCount(inputs: inputs)
-        case .unspecified, .carPlay:
-            fallthrough
-        @unknown default:
+        default:
             preconditionFailure("unsupported")
         }
-        #elseif os(watchOS)
-        return WatchBody._viewListCount(inputs: inputs)
         #endif
     }
 }
