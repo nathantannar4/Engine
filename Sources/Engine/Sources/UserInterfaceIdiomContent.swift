@@ -27,6 +27,9 @@ public protocol UserInterfaceIdiomContent: View where Body == Never {
 
     associatedtype WatchBody: View = EmptyView
     @MainActor @ViewBuilder var watchBody: WatchBody { get }
+
+    associatedtype VisionBody: View = EmptyView
+    @MainActor @ViewBuilder var visionBody: VisionBody { get }
 }
 
 extension UserInterfaceIdiomContent where PhoneBody == EmptyView {
@@ -59,6 +62,12 @@ extension UserInterfaceIdiomContent where WatchBody == EmptyView {
     }
 }
 
+extension UserInterfaceIdiomContent where VisionBody == EmptyView {
+    public var visionBody: VisionBody {
+        EmptyView()
+    }
+}
+
 extension UserInterfaceIdiomContent where Body == Never{
     public var body: Never {
         bodyError()
@@ -80,6 +89,8 @@ extension UserInterfaceIdiomContent where Body == Never{
             return MacBody._makeView(view: view[\.macBody], inputs: inputs)
         case .tv:
             return TvBody._makeView(view: view[\.tvBody], inputs: inputs)
+        case .reality:
+            return VisionBody._makeView(view: view[\.visionBody], inputs: inputs)
         case .unspecified, .carPlay:
             fallthrough
         @unknown default:
@@ -106,6 +117,8 @@ extension UserInterfaceIdiomContent where Body == Never{
             return MacBody._makeViewList(view: view[\.macBody], inputs: inputs)
         case .tv:
             return TvBody._makeViewList(view: view[\.tvBody], inputs: inputs)
+        case .reality:
+            return VisionBody._makeViewList(view: view[\.visionBody], inputs: inputs)
         case .unspecified, .carPlay:
             fallthrough
         @unknown default:
@@ -132,6 +145,8 @@ extension UserInterfaceIdiomContent where Body == Never{
             return MacBody._viewListCount(inputs: inputs)
         case .tv:
             return TvBody._viewListCount(inputs: inputs)
+        case .reality:
+            return VisionBody._viewListCount(inputs: inputs)
         case .unspecified, .carPlay:
             fallthrough
         @unknown default:

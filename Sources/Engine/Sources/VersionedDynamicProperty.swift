@@ -83,7 +83,7 @@ import SwiftUI
 public protocol VersionedDynamicProperty: DynamicProperty {
     associatedtype V5Property: DynamicProperty = V4Property
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     var v5Property: V5Property { get }
 
     associatedtype V4Property: DynamicProperty = V3Property
@@ -107,7 +107,7 @@ public protocol VersionedDynamicProperty: DynamicProperty {
 }
 
 extension VersionedDynamicProperty where V5Property == V4Property {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     public var v5Property: V5Property { v4Property }
 }
 

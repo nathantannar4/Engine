@@ -23,7 +23,7 @@ import SwiftUI
 public protocol VersionedView: View where Body == Never {
     associatedtype V5Body: View = V4Body
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @MainActor @ViewBuilder var v5Body: V5Body { get }
 
     associatedtype V4Body: View = V3Body
@@ -47,7 +47,7 @@ public protocol VersionedView: View where Body == Never {
 }
 
 extension VersionedView where V5Body == V4Body {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @MainActor public var v5Body: V5Body { v4Body }
 }
 

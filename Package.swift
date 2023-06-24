@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.9
 
 import PackageDescription
 
@@ -9,7 +9,8 @@ let package = Package(
         .macOS(.v10_15),
         .macCatalyst(.v13),
         .tvOS(.v13),
-        .watchOS(.v6)
+        .watchOS(.v6),
+        .visionOS(.v1)
     ],
     products: [
         .library(
@@ -25,8 +26,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "EngineCore",
-            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.10/EngineCore.xcframework.zip",
-            checksum: "1e640b454bd9a626ad725c8ae34c3f2cd0523d5a78ee50794070593136288cef"
+            url: "https://github.com/nathantannar4/Engine/raw/visionOS/Sources/EngineCore.xcframework.zip",
+            checksum: "ee9967175086c7caaf21140eb86d7c31f5adf5ef869eff65d9ef7c4b20694beb"
         ),
         .target(
             name: "Engine",

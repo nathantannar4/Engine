@@ -23,7 +23,7 @@ import SwiftUI
 public protocol VersionedViewModifier: ViewModifier {
     associatedtype V5Body: View = V4Body
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @ViewBuilder func v5Body(content: Content) -> V5Body
 
     associatedtype V4Body: View = V3Body
@@ -47,7 +47,7 @@ public protocol VersionedViewModifier: ViewModifier {
 }
 
 extension VersionedViewModifier where V5Body == V4Body {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     public func v5Body(content: Content) -> V5Body {
         v4Body(content: content)
     }
@@ -92,7 +92,7 @@ public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: Versi
     var content: Modifier.Content
     var modifier: Modifier
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     public var v5Body: Modifier.V5Body {
         modifier.v5Body(content: content)
     }
