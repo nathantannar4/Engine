@@ -60,7 +60,7 @@ For some sample code to get started with `Engine`, build and run the included "E
 
 ### Custom View Styles
 
-```
+```swift
 public protocol ViewStyle {
     associatedtype Configuration
     associatedtype Body: View
@@ -86,7 +86,7 @@ A view style makes developing reusable components easier. This can be especially
 
 You can use the `ViewStyle` APIs to make components that share common behavior and/or styling, such as font/colors, while allowing for complete customization of the appearance and layout. For example, this `StepperView` is a component that defaults to `Stepper` but allows for a different custom styling to be used. 
 
-```
+```swift
 // 1. Define the style
 protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration { }
 
@@ -210,9 +210,84 @@ struct StepperViewBody: ViewStyledView {
 
 [Open Examples](https://github.com/nathantannar4/Engine/blob/main/Example/Example/ViewStyleExamples.swift)
 
+### View Input
+
+```swift
+public protocol ViewAlias: View where Body == Never {
+    associatedtype DefaultBody: View = EmptyView
+    @MainActor @ViewBuilder var defaultBody: DefaultBody { get }
+}
+
+extension View {
+
+    /// Statically type-erases `Source` to be resolved by the ``ViewAlias``.
+    @inlinable
+    public func viewAlias<
+        Alias: ViewAlias,
+        Source: View
+    >(
+        _ : Alias.Type,
+        @ViewBuilder source: () -> Source
+    ) -> some View
+}
+```
+
+A ``ViewAlias`` is can be defined statically by one of its ancestors. Because ``ViewAlias`` is guaranteed to be static it can be used for type-erasure without the performance impacts associated with `AnyView`.
+
+### View Output
+
+```swift
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+public protocol ViewOutputKey {
+    associatedtype Content: View = AnyView
+    typealias Value = ViewOutputList<Content>
+    static func reduce(value: inout Value, nextValue: () -> Value)
+}
+
+extension View {
+
+    /// A modifier that writes a `Source` view to a ``ViewOutputKey``
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    @inlinable
+    public func viewOutput<
+        Key: ViewOutputKey,
+        Source: View
+    >(
+        _ : Key.Type,
+        @ViewBuilder source: () -> Source
+    ) -> some View where Key.Content == Source
+```
+
+A `ViewOutputKey` allows for a descendent view to return one or more views to a parent view.  
+
+```swift
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+public protocol ViewOutputAlias: View where Body == Never {
+    associatedtype Content: View = AnyView
+    associatedtype DefaultBody: View = EmptyView
+    @MainActor @ViewBuilder var defaultBody: DefaultBody { get }
+}
+
+extension View {
+
+    /// Statically defines the `Source` to be resolved by the ``ViewOutputAlias``.
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    @inlinable
+    public func viewOutputAlias<
+        Alias: ViewOutputAlias,
+        Source: View
+    >(
+        _ : Alias.Type,
+        @ViewBuilder source: () -> Source
+    ) -> some View where Alias.Content == Source
+}
+```
+
+A `ViewOutputAlias` is a more streamlined variant of `ViewOutputKey` that only supports returning a single view from a descendent. 
+
 ### Variadic Views
 
-```
+```swift
 @frozen
 public struct VariadicViewAdapter<Source: View, Content: View>: View {
 
@@ -232,7 +307,7 @@ A variadic view allows many possibilities with SwiftUI to be unlocked, as it per
 
 You can use `VariadicViewAdapter` to write components like a custom picker view.
 
-```
+```swift
 enum Fruit: Hashable, CaseIterable {
     case apple
     case orange
@@ -284,11 +359,11 @@ struct PickerView<Selection: Hashable, Content: View>: View {
 
 ### Availability
 
-```
+```swift
 public protocol VersionedView: View where Body == Never {
     associatedtype V5Body: View = V4Body
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @ViewBuilder var v5Body: V5Body { get }
     
     associatedtype V4Body: View = V3Body
@@ -320,7 +395,7 @@ Supporting multiple release versions for SwiftUI can be tricky. If a modifier or
 
 You can use `VersionedViewModifier` to help adopt newer SwiftUI APIs with less friction. Such as adopting a new view type like `Grid`, while still supporting older iOS versions with a custom grid view; or using new view modifiers which due to the required `if #available(...)` checks can force you to refactor your code.
 
-```
+```swift
 struct ContentView: VersionedView {
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     var v4Body: some View {
@@ -336,10 +411,20 @@ struct ContentView: VersionedView {
     }
 }
 
-struct UnderlineIfAvailableModifier: VersionedViewModifier {
+struct UnderlineModifier: VersionedViewModifier {
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     func v4Body(content: Content) -> some View {
         content.underline()
+    }
+
+    // Add support for a semi-equivalent version for iOS 13-15
+    func v1Body(content: Content) -> some View {
+        content
+            .background(
+                Rectangle()
+                    .frame(height: 1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            )
     }
 }
 
@@ -366,7 +451,7 @@ struct ContentView: View {
 
 ### Static Conditionals
 
-```
+```swift
 public protocol StaticCondition {
     static var value: Bool { get }
 }
@@ -410,7 +495,7 @@ Should you ever have a modifier or view that is conditional upon a static flag, 
 
 You can use `StaticConditionalContent` to gate features or content to Debug or Testflight builds without impacting your production build performance.
 
-```
+```swift
 struct IsDebug: StaticCondition {
     static var value: Bool {
         #if DEBUG

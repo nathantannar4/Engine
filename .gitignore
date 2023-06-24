@@ -10,3 +10,4 @@ DerivedData/
 build.sh
 Sources/EngineCore
 Sources/EnginePrivate
+Sources/EngineCore.xcframework.zip

@@ -124,6 +124,16 @@ struct UnderlineModifier: VersionedViewModifier {
     func v4Body(content: Content) -> some View {
         content.underline()
     }
+
+    // Add support for a semi-equivalent version for iOS 13-15
+    func v1Body(content: Content) -> some View {
+        content
+            .background(
+                Rectangle()
+                    .frame(height: 1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            )
+    }
 }
 
 struct VersionedViewModifier_Previews: PreviewProvider {

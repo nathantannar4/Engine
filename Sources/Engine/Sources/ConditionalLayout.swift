@@ -18,6 +18,7 @@ public struct ConditionalLayout<
     TrueLayout: Layout,
     FalseLayout: Layout
 >: Layout {
+
     @frozen
     @usableFromInline
     enum Storage {
@@ -38,19 +39,28 @@ public struct ConditionalLayout<
         self.storage = .falseLayout(falseLayout)
     }
 
+    @inlinable
+    public init(
+        if condition: Bool,
+        @LayoutBuilder then: () -> TrueLayout,
+        @LayoutBuilder else: () -> FalseLayout
+    ) {
+        self.storage = condition ? .trueLayout(then()) : .falseLayout(`else`())
+    }
+
     public func sizeThatFits(
         proposal: ProposedViewSize,
         subviews: Subviews,
         cache: inout Cache
     ) -> CGSize {
         let size: CGSize
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             size = l.sizeThatFits(proposal: proposal, subviews: subviews, cache: &c)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             size = l.sizeThatFits(proposal: proposal, subviews: subviews, cache: &c)
-            cache = .falseCache(c)
+            cache = Cache(c)
         default:
             fatalError("Unexpected mismatch between layout and cache")
         }
@@ -63,13 +73,13 @@ public struct ConditionalLayout<
         subviews: Subviews,
         cache: inout Cache
     ) {
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             l.placeSubviews(in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             l.placeSubviews(in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .falseCache(c)
+            cache = Cache(c)
         default:
             fatalError("Unexpected mismatch between layout and cache")
         }
@@ -83,13 +93,13 @@ public struct ConditionalLayout<
         cache: inout Cache
     ) -> CGFloat? {
         let alignment: CGFloat?
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .falseCache(c)
+            cache = Cache(c)
         default:
             fatalError("Unexpected mismatch between layout and cache")
         }
@@ -104,13 +114,13 @@ public struct ConditionalLayout<
         cache: inout Cache
     ) -> CGFloat? {
         let alignment: CGFloat?
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
-            cache = .falseCache(c)
+            cache = Cache(c)
         default:
             fatalError("Unexpected mismatch between layout and cache")
         }
@@ -122,13 +132,13 @@ public struct ConditionalLayout<
         cache: inout Cache
     ) -> ViewSpacing {
         let spacing: ViewSpacing
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             spacing = l.spacing(subviews: subviews, cache: &c)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             spacing = l.spacing(subviews: subviews, cache: &c)
-            cache = .falseCache(c)
+            cache = Cache(c)
         default:
             fatalError("Unexpected mismatch between layout and cache")
         }
@@ -137,33 +147,29 @@ public struct ConditionalLayout<
 
     @frozen
     public struct Cache {
-        @usableFromInline
-        enum Value {
+        public enum Storage {
             case trueCache(TrueLayout.Cache)
             case falseCache(FalseLayout.Cache)
         }
 
-        @usableFromInline
-        var value: Value
+        public var storage: Storage
+        var lastValue: Storage?
 
-        @usableFromInline
-        var inverseValue: Value?
-
-        static func trueCache(_ cache: TrueLayout.Cache) -> Cache {
-            .init(value: .trueCache(cache))
+        init(_ cache: TrueLayout.Cache) {
+            self.storage = .trueCache(cache)
         }
 
-        static func falseCache(_ cache: FalseLayout.Cache) -> Cache {
-            .init(value: .falseCache(cache))
+        init(_ cache: FalseLayout.Cache) {
+            self.storage = .falseCache(cache)
         }
     }
 
     public func makeCache(subviews: Subviews) -> Cache {
         switch storage {
         case .trueLayout(let layout):
-            return .trueCache(layout.makeCache(subviews: subviews))
+            return Cache(layout.makeCache(subviews: subviews))
         case .falseLayout(let layout):
-            return .falseCache(layout.makeCache(subviews: subviews))
+            return Cache(layout.makeCache(subviews: subviews))
         }
     }
 
@@ -171,17 +177,21 @@ public struct ConditionalLayout<
         _ cache: inout Cache,
         subviews: Subviews
     ) {
-        switch (storage, cache.value) {
+        switch (storage, cache.storage) {
         case (.trueLayout(let l), .trueCache(var c)):
             l.updateCache(&c, subviews: subviews)
-            cache = .trueCache(c)
+            cache = Cache(c)
         case (.falseLayout(let l), .falseCache(var c)):
             l.updateCache(&c, subviews: subviews)
-            cache = .falseCache(c)
+            cache = Cache(c)
         case (.trueLayout, .falseCache), (.falseLayout, .trueCache):
-            let oldValue = cache.value
-            cache = makeCache(subviews: subviews)
-            cache.inverseValue = oldValue
+            let oldValue = cache.storage
+            if let lastValue = cache.lastValue {
+                cache.storage = lastValue
+            } else {
+                cache = makeCache(subviews: subviews)
+            }
+            cache.lastValue = oldValue
         }
     }
 
@@ -213,5 +223,42 @@ extension LayoutProperties {
             }
         }
         return result
+    }
+}
+
+// MARK: - Previews
+
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+struct ConditionalLayout_Previews: PreviewProvider {
+    struct Preview: View {
+        @State var condition = true
+
+        var body: some View {
+            VStack {
+                Toggle(
+                    isOn: $condition.animation(.default),
+                    label: { EmptyView() }
+                )
+                .labelsHidden()
+
+                ConditionalLayout(if: condition) {
+                    VStackLayout()
+                } else: {
+                    HStackLayout()
+                } {
+                    content
+                }
+            }
+        }
+
+        @ViewBuilder
+        var content: some View {
+            Text("Hello")
+            Text("World")
+        }
+    }
+
+    static var previews: some View {
+        Preview()
     }
 }

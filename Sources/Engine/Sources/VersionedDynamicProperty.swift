@@ -183,6 +183,7 @@ extension VersionedDynamicProperty {
         fieldOffset: Int,
         inputs: inout _GraphInputs
     ) {
+        #if !DEBUG
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
             V5Property._makeProperty(
                 in: &buffer,
@@ -219,6 +220,68 @@ extension VersionedDynamicProperty {
                 inputs: &inputs
             )
         }
+        #else
+        /// Support ``VersionInput`` for development support
+        let version = inputs[VersionInputKey.self]
+        switch version {
+        case .v5:
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+                V5Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+                return
+            }
+        case .v4:
+            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                V4Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+                return
+            }
+        case .v3:
+            if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+                V3Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+                return
+            }
+        case .v2:
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                V2Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+                return
+            }
+        case .v1:
+            V1Property._makeProperty(
+                in: &buffer,
+                container: container,
+                fieldOffset: fieldOffset,
+                inputs: &inputs
+            )
+            return
+        default:
+            break
+        }
+        EmptyDynamicProperty._makeProperty(
+            in: &buffer,
+            container: container,
+            fieldOffset: fieldOffset,
+            inputs: &inputs
+        )
+        #endif
     }
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)

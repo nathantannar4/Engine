@@ -7,27 +7,25 @@ import EngineCore
 
 extension AnyView {
 
-    /// Creates a type-erased view from a type-erased value if that value is also a view
+    /// Creates a type-erased view from a type-erased value if that value is also a `View`
     @_disfavoredOverload
     public init?(_ content: Any) {
-        func project<T>(_ value: T) -> AnyView? {
-            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = AnyViewVisitor(input: value)
-            conformance.visit(visitor: &visitor)
-            return visitor.output
-        }
-        guard let view = _openExistential(content, do: project) else {
+        guard let view = AnyView(visiting: content) else {
             return nil
         }
         self = view
     }
 }
 
-private struct AnyViewVisitor<Input>: ViewVisitor {
-    var input: Input
-    var output: AnyView!
+// MARK: - Previews
 
-    mutating func visit<Content>(type: Content.Type) where Content: View {
-        output = AnyView(unsafeBitCast(input, to: Content.self))
+struct AnyView_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            AnyView(Optional<String>.none as Any)
+
+            let content: Any = Text("Hello, World")
+            AnyView(content)
+        }
     }
 }

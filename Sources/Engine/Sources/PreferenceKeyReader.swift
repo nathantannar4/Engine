@@ -4,13 +4,13 @@
 
 import SwiftUI
 
-/// A proxy to a `Key.Value` that must be read by ``PreferenceKeyValueReader``
+/// A proxy to a `PreferenceKey.Value` that must be read by ``PreferenceKeyValueReader``
 @frozen
 public struct PreferenceKeyValueProxy<Key: PreferenceKey> {
     var value: _PreferenceValue<Key>
 }
 
-/// A container view that resolves it's content from a preference key
+/// A container view that resolves it's content from a `PreferenceKey`
 @frozen
 public struct PreferenceKeyReader<
     Key: PreferenceKey,
@@ -32,14 +32,14 @@ public struct PreferenceKeyReader<
 
     public var body: some View {
         Key._delay { value in
-            content(PreferenceKeyValueProxy(value: value))
+            content(Value(value: value))
         }
     }
 }
 
-/// A container view that resolves it's content from a preference key value
+/// A container view that resolves it's content from a `PreferenceKey` value
 ///
-/// > Important: The preference key value of `Content` is ignored
+/// > Important: The `PreferenceKey` value of `Content` is ignored
 @frozen
 public struct PreferenceKeyValueReader<
     Key: PreferenceKey,
@@ -54,7 +54,7 @@ public struct PreferenceKeyValueReader<
 
     @inlinable
     public init(
-        value: PreferenceKeyValueProxy<Key>,
+        _ value: PreferenceKeyValueProxy<Key>,
         @ViewBuilder content: @escaping (Key.Value) -> Content
     ) {
         self.value = value
@@ -70,25 +70,49 @@ public struct PreferenceKeyValueReader<
 
 // MARK: - Previews
 
-struct PreferenceKeyReader_Previews: PreviewProvider {
-    struct TestKey: PreferenceKey {
-        static let defaultValue = "default"
+struct PreviewPreferenceKey: PreferenceKey {
+    static let defaultValue = "default"
 
-        static func reduce(value: inout String, nextValue: () -> String) { }
+    static func reduce(
+        value: inout String,
+        nextValue: () -> String
+    ) {
+
     }
+}
 
+struct PreferenceKeyReader_Previews: PreviewProvider {
     static var previews: some View {
-        VStack {
-            PreferenceKeyReader(TestKey.self) { value in
-                VStack {
-                    Text("Label")
-                        .preference(key: TestKey.self, value: "Hello, World")
+        Group {
+            ZStack {
+                PreferenceKeyReader(PreviewPreferenceKey.self) { proxy in
+                    VStack {
+                        Text("Label")
+                            .preference(
+                                key: PreviewPreferenceKey.self,
+                                value: "Hello, World"
+                            )
 
-                    PreferenceKeyValueReader(value: value) { value in
-                        Text(value)
+                        PreferenceKeyValueReader(proxy) { value in
+                            Text(value) // "Hello, World"
+                        }
                     }
                 }
             }
+            .previewDisplayName("Correct Usage")
+
+            ZStack {
+                PreferenceKeyReader(PreviewPreferenceKey.self) { proxy in
+                    PreferenceKeyValueReader(proxy) { value in
+                        Text(value) // "default"
+                            .preference(
+                                key: PreviewPreferenceKey.self,
+                                value: "Hello, World"
+                            )
+                    }
+                }
+            }
+            .previewDisplayName("Incorrect Usage")
         }
     }
 }

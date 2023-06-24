@@ -9,7 +9,8 @@ let package = Package(
         .macOS(.v10_15),
         .macCatalyst(.v13),
         .tvOS(.v13),
-        .watchOS(.v6)
+        .watchOS(.v6),
+//        .visionOS(.v1),
     ],
     products: [
         .library(
@@ -25,8 +26,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "EngineCore",
-            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.11/EngineCore.xcframework.zip",
-            checksum: "fab9275d8e2eec39eb498a084b0818f3328078c90805b966816319ef4ad5d85d"
+            url: "https://github.com/nathantannar4/Engine/releases/download/0.1.13/EngineCore.xcframework.zip",
+            checksum: "803b5f45aa79fbaa03d42967434358ec6b609d1d5cbedc6f75d413326d6bc0f9"
         ),
         .target(
             name: "Engine",

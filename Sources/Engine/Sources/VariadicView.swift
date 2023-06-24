@@ -211,71 +211,123 @@ enum PreviewCases: Int, Hashable, CaseIterable {
 struct VariadicView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            VariadicViewAdapter {
-                Text("Line 1").id("1")
-                Text("Line 2").id("2")
-            } content: { source in
-                VStack {
-                    ForEachSubview(source) { index, subview in
-                        Text(subview.id(as: String.self) ?? "nil")
-                    }
-                }
-            }
-
-            VariadicViewAdapter {
-                ForEach(PreviewCases.allCases, id: \.self) {
-                    Text($0.rawValue.description)
-                }
-            } content: { source in
-                VStack {
-                    ForEachSubview(source) { index, subview in
-                        Text("\(subview.id(as: PreviewCases.self)?.rawValue ?? -1)")
-
-                        Text(String("\(subview.id)"))
-                    }
-                }
-            }
-
-            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+            ZStack {
                 VariadicViewAdapter {
-                    Text("Line 1").tag("1")
-                    Text("Line 2").tag("2")
+                    Text("Line 1").id("1")
+                    Text("Line 2").id("2")
                 } content: { source in
                     VStack {
                         ForEachSubview(source) { index, subview in
-                            Text(subview.tag(as: String.self) ?? "nil")
+                            Text(subview.id(as: String.self) ?? "nil")
                         }
                     }
                 }
             }
+            .previewDisplayName("Custom ID")
 
-            VariadicViewAdapter {
-                Text("Line 1")
-                Text("Line 2")
-            } content: { source in
-                VStack {
-                    source
+            ZStack {
+                VariadicViewAdapter {
+                    ForEach(PreviewCases.allCases, id: \.self) {
+                        Text($0.rawValue.description)
+                    }
+                } content: { source in
+                    VStack {
+                        ForEachSubview(source) { index, subview in
+                            HStack {
+                                Text("\(subview.id(as: PreviewCases.self)?.rawValue ?? -1)")
+
+                                Text(String("\(subview.id)"))
+                            }
+                            .background(index.isMultiple(of: 2) ? Color.red : Color.blue)
+                        }
+                    }
                 }
             }
+            .previewDisplayName("ForEach")
 
-            VariadicViewAdapter {
-                EmptyView()
-            } content: { source in
-                Text(source.children.count.description)
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                ZStack {
+                    VariadicViewAdapter {
+                        Text("Line 1").tag("1")
+                        Text("Line 2").tag("2")
+                    } content: { source in
+                        VStack {
+                            ForEachSubview(source) { index, subview in
+                                Text(subview.tag(as: String.self) ?? "nil")
+                            }
+                        }
+                    }
+                }
+                .previewDisplayName("Custom Tag")
             }
 
-            VariadicViewAdapter {
-                Text("Line 1")
-            } content: { source in
-                Text(source.children.count.description)
+            ZStack {
+                VariadicViewAdapter {
+                    Text("Line 1")
+                    Text("Line 2")
+                } content: { source in
+                    VStack {
+                        source
+                    }
+                }
             }
+            .previewDisplayName("TupleView")
 
-            VariadicViewAdapter {
-                Text("Line 1")
-                Text("Line 2")
-            } content: { source in
-                Text(source.children.count.description)
+            ZStack {
+                VariadicViewAdapter {
+                    Group {
+                        Text("Line 1")
+                        Text("Line 2")
+                    }
+                } content: { source in
+                    HStack {
+                        Text(source.children.count.description)
+
+                        VStack {
+                            source
+                        }
+                    }
+                }
             }
+            .previewDisplayName("Group")
+
+            ZStack {
+                VariadicViewAdapter {
+                    Text("Line 1")
+
+                    Group {
+                        Text("Line 2")
+                        Text("Line 3")
+                    }
+                } content: { source in
+                    HStack {
+                        Text(source.children.count.description)
+
+                        VStack {
+                            source
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("TupleView + Group")
+
+            ZStack {
+                VariadicViewAdapter {
+                    EmptyView()
+                } content: { source in
+                    Text(source.children.count.description)
+                }
+            }
+            .previewDisplayName("EmptyView")
+
+            ZStack {
+                VariadicViewAdapter {
+                    Text("Line 1")
+                } content: { source in
+                    Text(source.children.count.description)
+                }
+            }
+            .previewDisplayName("Text View")
         }
         .padding()
         .previewLayout(.sizeThatFits)

@@ -49,11 +49,8 @@ import EngineCore
 public typealias ViewAlias = EngineCore.ViewAlias
 
 extension View {
-    /// Statically type-erases `Content` to be resolved by the ``ViewAlias`` `Alias.
-    ///
-    /// - Parameters:
-    ///   - type: The ``ViewAlias`` that `Source` should be resolved to
-    ///   - source: The value the ``ViewAlias`` should resolve to
+
+    /// Statically type-erases `Source` to be resolved by the ``ViewAlias``.
     @inlinable
     public func viewAlias<
         Alias: ViewAlias,
@@ -62,6 +59,54 @@ extension View {
         _ : Alias.Type,
         @ViewBuilder source: () -> Source
     ) -> some View {
-        modifier(ViewAliasSourceModifier(Alias.self, source: source()))
+        modifier(
+            ViewAliasSourceModifier(
+                Alias.self,
+                source: source()
+            )
+        )
+    }
+}
+
+// MARK: - Previews
+
+struct PreviewAlias: ViewAlias {
+    var defaultBody: some View {
+        Text("Default")
+    }
+}
+
+struct ViewAlias_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ZStack {
+                VStack {
+                    PreviewAlias()
+
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
+            }
+            .previewDisplayName("Text")
+
+            ZStack {
+                VStack {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    ForEach(0...2, id: \.self) { index in
+                        Text(index.description)
+                    }
+                }
+            }
+            .previewDisplayName("ForEach")
+
+            ZStack {
+                PreviewAlias()
+            }
+            .previewDisplayName("DefaultBody")
+        }
     }
 }

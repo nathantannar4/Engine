@@ -410,6 +410,9 @@ struct DoubleLabelStyle: LabeledViewStyle {
             configuration.label
                 .border(Color.yellow, width: 2)
 
+            configuration.label
+                .border(Color.red, width: 2)
+
             LabeledView {
                 configuration.content
             } label: {

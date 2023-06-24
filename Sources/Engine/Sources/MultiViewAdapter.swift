@@ -23,52 +23,54 @@ import EngineCore
 /// collection of views to a `UIViewController` when bridging to UIKit
 /// components.
 ///
+///  ``MultiViewAdapter`` relies on the ``MultiView`` protocol which
+///  a ``MultiViewVisitor`` uses to iterate over each subview.
+///
 @frozen
-public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
+public struct MultiViewAdapter<Content: View & MultiView>: View {
 
     @usableFromInline
-    var content: TupleView<Content>
+    var content: Content
 
     @inlinable
-    public init(@ViewBuilder content: () -> TupleView<Content>) {
+    public init(
+        @ViewBuilder content: () -> Content
+    ) {
         self.content = content()
     }
 
     @_disfavoredOverload
     @inlinable
-    public init(@ViewBuilder content: () -> Content) where Content: View {
+    public init<UnaryContent: View>(
+        @ViewBuilder content: () -> UnaryContent
+    ) where Content == TupleView<UnaryContent> {
         self.content = TupleView(content())
     }
 
     // MARK: Collection
 
-    public typealias Element = Any
-    public typealias Iterator = IndexingIterator<Array<Element>>
-    public typealias Index = Int
+    public typealias Element = AnyView
+    public typealias Iterator = Content.Iterator
+    public typealias Index = Content.Index
 
     public func makeIterator() -> Iterator {
-        indices.map { self[$0] }.makeIterator()
+        content.makeIterator()
     }
 
     public var startIndex: Index {
-        return 0
+        return content.startIndex
     }
 
     public var endIndex: Index {
-        swift_getTupleCount(content.value) ?? 1
+        return content.endIndex
     }
 
     public subscript(position: Index) -> Element {
-        var element = swift_getTupleElement(position, content.value)
-        if element == nil, position == 0 {
-            element = content.value
-        }
-        precondition(element != nil, "Index out of range")
-        return element!
+        return AnyView(visiting: content[position])!
     }
 
-    public func index(after index: Index) -> Index {
-        index + 1
+    public var subviews: [Element] {
+        return content.subviews
     }
 
     // MARK: View
@@ -81,20 +83,119 @@ public struct MultiViewAdapter<Content>: View, RandomAccessCollection {
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        TupleView<Content>._makeView(view: view[\.content], inputs: inputs)
+        Content._makeView(view: view[\.content], inputs: inputs)
     }
 
     public static func _makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        TupleView<Content>._makeViewList(view: view[\.content], inputs: inputs)
+        Content._makeViewList(view: view[\.content], inputs: inputs)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        TupleView<Content>._viewListCount(inputs: inputs)
+        Content._viewListCount(inputs: inputs)
+    }
+}
+
+// MARK: - Previews
+
+struct MultiViewAdapter_Previews: PreviewProvider {
+    struct Preview: View {
+        var body: some View {
+            ZStack {
+                makeView {
+                    Color.red
+
+                    Text("Hello, World")
+                }
+            }
+        }
+
+        func makeView<Content: View & MultiView>(
+            @ViewBuilder content: () -> Content
+        ) -> some View {
+            let adapter = MultiViewAdapter(content: content)
+            return adapter
+        }
+    }
+
+    static var previews: some View {
+        Group {
+            HStack {
+                let adapter = MultiViewAdapter {
+                    Text("Hello, World")
+                }
+                Text(adapter.endIndex.description)
+
+                VStack {
+                    adapter
+                }
+            }
+            .previewDisplayName("Text")
+
+            HStack {
+                let adapter = MultiViewAdapter {
+                    Text("Hello")
+                    Text("World")
+                }
+                Text(adapter.endIndex.description)
+
+                VStack {
+                    adapter
+                }
+            }
+            .previewDisplayName("TupleView")
+
+            HStack {
+                let adapter = MultiViewAdapter {
+                    Group {
+                        Text("Line 1")
+                        Text("Line 2")
+                    }
+                }
+                Text(adapter.endIndex.description)
+
+                VStack {
+                    adapter
+                }
+            }
+            .previewDisplayName("Group")
+
+            HStack {
+                let adapter = MultiViewAdapter {
+                    Text("Line 1")
+
+                    Group {
+                        Text("Line 2")
+                        Text("Line 3")
+                    }
+                }
+                Text(adapter.endIndex.description)
+
+                VStack {
+                    adapter
+                }
+            }
+            .previewDisplayName("TupleView + Group")
+
+            HStack {
+                let adapter = MultiViewAdapter {
+                    let indices = [0, 1, 2]
+                    ForEach(indices, id: \.self) { index in
+                        Text("Index \(index)")
+                    }
+                }
+                Text(adapter.endIndex.description)
+
+                VStack {
+                    adapter
+                }
+            }
+            .previewDisplayName("ForEach")
+        }
     }
 }
