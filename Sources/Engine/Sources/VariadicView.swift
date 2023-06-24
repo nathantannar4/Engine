@@ -176,20 +176,6 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     @usableFromInline
     var content: (VariadicView<Source>) -> Content
 
-    /*
-     FB12082130: Xcode 14.3 RC regression, type inference no longer works unless
-     the `Source` parameter is before the `content`
-
-    @inlinable
-    public init(
-        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content,
-        @ViewBuilder source: () -> Source
-    ) {
-        self.source = source()
-        self.content = content
-    }
-    */
-
     @inlinable
     public init(
         @ViewBuilder source: () -> Source,

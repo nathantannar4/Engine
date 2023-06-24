@@ -3,7 +3,7 @@
 //
 
 import SwiftUI
-import Engine
+import EngineCore
 
 struct ViewStyleExamples: View {
     @State var value = 0
