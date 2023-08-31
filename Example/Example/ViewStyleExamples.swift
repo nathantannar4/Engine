@@ -5,6 +5,17 @@
 import SwiftUI
 import EngineCore
 
+struct ViewStyleEnvironmentTestKey: EnvironmentKey {
+    static let defaultValue = "defaultValue"
+}
+
+extension EnvironmentValues {
+    var testValue: String {
+        get { self[ViewStyleEnvironmentTestKey.self] }
+        set { self[ViewStyleEnvironmentTestKey.self] = newValue }
+    }
+}
+
 struct ViewStyleExamples: View {
     @State var value = 0
 
@@ -16,7 +27,7 @@ struct ViewStyleExamples: View {
                 Text("Stepper made stylable")
                     .font(.caption)
             }
-            .frame(width: 160)
+            .frame(width: 120)
 
             VStack(alignment: .leading) {
                 Text("Default Style")
@@ -42,6 +53,7 @@ struct ViewStyleExamples: View {
                 }
                 .stepperViewStyle(InlineStepperViewStyle())
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         
         HStack(alignment: .firstTextBaseline) {
@@ -51,58 +63,88 @@ struct ViewStyleExamples: View {
                 Text("A backwards compatible port of LabeledContent")
                     .font(.caption)
             }
-            .frame(width: 160)
+            .frame(width: 120)
 
             VStack(alignment: .leading) {
-                Text("Default Style")
-                    .font(.headline)
+                Group {
+                    Text("Default Style")
+                        .font(.headline)
 
-                LabeledView {
-                    Text("Content")
-                } label: {
-                    Text("Label")
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+
+                    Text("Padded Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(PaddedLabeledViewStyle())
+
+                    Text("Padded -> Bordered Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(BorderedLabeledViewStyle())
+                    .labeledViewStyle(PaddedLabeledViewStyle())
+
+                    Text("Bordered -> Padded Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(PaddedLabeledViewStyle())
+                    .labeledViewStyle(BorderedLabeledViewStyle())
+
+                    Text("Leading Label Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(LeadingLabeledViewStyle())
+                    .labeledViewStyle(BorderedLabeledViewStyle())
                 }
 
-                Text("Padded Style")
-                    .font(.headline)
 
-                LabeledView {
-                    Text("Content")
-                } label: {
-                    Text("Label")
+                Group {
+                    Text("Environment Reading Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(EnvironmentReadingLabeledViewStyle())
+                    .environment(\.testValue, "CustomValue")
+
+                    Text("Double Label Style")
+                        .font(.headline)
+
+                    LabeledView {
+                        Text("Content")
+                    } label: {
+                        Text("Label")
+                    }
+                    .labeledViewStyle(DoubleLabelStyle())
                 }
-                .labeledViewStyle(PaddedLabeledViewStyle())
-
-                Text("Padded -> Bordered Style")
-                    .font(.headline)
-
-                LabeledView {
-                    Text("Content")
-                } label: {
-                    Text("Label")
-                }
-                .labeledViewStyle(BorderedLabeledViewStyle())
-                .labeledViewStyle(PaddedLabeledViewStyle())
-
-                Text("Bordered -> Padded Style")
-                    .font(.headline)
-
-                LabeledView {
-                    Text("Content")
-                } label: {
-                    Text("Label")
-                }
-                .labeledViewStyle(PaddedLabeledViewStyle())
-                .labeledViewStyle(BorderedLabeledViewStyle())
-
-                LabeledView {
-                    Text("Content")
-                } label: {
-                    Text("Label")
-                }
-                .labeledViewStyle(LeadingLabeledViewStyle())
-                .labeledViewStyle(BorderedLabeledViewStyle())
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
 
         if #available(iOS 15.0, macOS 12.0, *) {
@@ -113,7 +155,7 @@ struct ViewStyleExamples: View {
                     Text("A simple example to showcase ViewStyle")
                         .font(.caption)
                 }
-                .frame(width: 160)
+                .frame(width: 120)
 
                 VStack(alignment: .leading) {
                     PasteboardButton(text: "+1234567890") {
@@ -134,6 +176,7 @@ struct ViewStyleExamples: View {
                     .labelStyle(.iconOnly)
                     .buttonStyle(.bordered)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -342,6 +385,37 @@ struct LeadingLabeledViewStyle: LabeledViewStyle {
         VStack(alignment: .leading) {
             configuration.label
             configuration.content
+        }
+    }
+}
+
+/// This style demonstrates that styles can read from the environment
+struct EnvironmentReadingLabeledViewStyle: LabeledViewStyle {
+
+    @Environment(\.testValue) var testValue
+
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+        HStack {
+            Text(testValue)
+
+            LabeledView(configuration)
+        }
+    }
+}
+
+/// This style demonstrates that a `ViewAlias` can be used multiple times
+struct DoubleLabelStyle: LabeledViewStyle {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+        HStack {
+            configuration.label
+                .border(Color.yellow, width: 2)
+
+            LabeledView {
+                configuration.content
+            } label: {
+                configuration.label
+                    .border(Color.blue, width: 2)
+            }
         }
     }
 }
