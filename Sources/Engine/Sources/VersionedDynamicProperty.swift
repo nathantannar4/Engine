@@ -223,7 +223,9 @@ extension VersionedDynamicProperty {
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public static var _propertyBehaviors: UInt32 {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            return V5Property._propertyBehaviors
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Property._propertyBehaviors
         } else {
             return V3Property._propertyBehaviors

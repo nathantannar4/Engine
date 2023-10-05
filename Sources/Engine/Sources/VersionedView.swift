@@ -96,7 +96,9 @@ extension VersionedView where Body == Never{
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            return V5Body._makeViewList(view: view[\.v5Body], inputs: inputs)
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._makeViewList(view: view[\.v4Body], inputs: inputs)
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
             return V3Body._makeViewList(view: view[\.v3Body], inputs: inputs)
@@ -111,7 +113,9 @@ extension VersionedView where Body == Never{
     public static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            return V5Body._viewListCount(inputs: inputs)
+        } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._viewListCount(inputs: inputs)
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
             return V3Body._viewListCount(inputs: inputs)
