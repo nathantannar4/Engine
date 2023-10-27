@@ -3,7 +3,7 @@
 //
 
 import SwiftUI
-import EngineCore
+import Engine
 
 struct ViewStyleEnvironmentTestKey: EnvironmentKey {
     static let defaultValue = "defaultValue"
