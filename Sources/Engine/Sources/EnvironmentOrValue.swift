@@ -55,18 +55,18 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
 
 // MARK: - Previews
 
-enum TestKey: EnvironmentKey {
-    static let defaultValue = "default"
-}
-
 extension EnvironmentValues {
-    var test: String {
-        get { self[TestKey.self] }
-        set { self[TestKey.self] = newValue }
+    fileprivate var test: String {
+        get { self[EnvironmentOrValue_Previews.TestKey.self] }
+        set { self[EnvironmentOrValue_Previews.TestKey.self] = newValue }
     }
 }
 
 struct EnvironmentOrValue_Previews: PreviewProvider {
+    enum TestKey: EnvironmentKey {
+        static let defaultValue = "default"
+    }
+
     struct Preview: View {
         var body: some View {
             VStack(alignment: .leading) {

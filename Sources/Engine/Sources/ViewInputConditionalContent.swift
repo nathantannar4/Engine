@@ -4,16 +4,19 @@
 
 import SwiftUI
 
-/// A view that is statically either `TrueContent` or `FalseContent`.
+/// A `View` that is statically either `TrueContent` or `FalseContent`.
 @frozen
-public struct StaticConditionalContent<
-    Condition: StaticCondition,
+public struct ViewInputConditionalContent<
+    Condition: ViewInputsCondition,
     TrueContent: View,
     FalseContent: View
 >: View {
 
     @usableFromInline
-    var content: ConditionalContent<TrueContent, FalseContent>
+    var trueContent: TrueContent
+
+    @usableFromInline
+    var falseContent: FalseContent
 
     @inlinable
     public init(
@@ -21,25 +24,8 @@ public struct StaticConditionalContent<
         @ViewBuilder then: () -> TrueContent,
         @ViewBuilder otherwise: () -> FalseContent
     ) {
-        self.content = Condition.value ? .init(then()) : .init(otherwise())
-    }
-
-    private var trueContent: TrueContent {
-        switch content.storage {
-        case .trueContent(let content):
-            return content
-        case .falseContent:
-            fatalError("Condition \(String(describing: Condition.self)) produced a dynamic result")
-        }
-    }
-
-    private var falseContent: FalseContent {
-        switch content.storage {
-        case .trueContent:
-            fatalError("Condition \(String(describing: Condition.self)) produced a dynamic result")
-        case .falseContent(let content):
-            return content
-        }
+        self.trueContent = then()
+        self.falseContent = otherwise()
     }
 
     public var body: Never {
@@ -50,7 +36,7 @@ public struct StaticConditionalContent<
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueContent._makeView(view: view[\.trueContent], inputs: inputs)
             : FalseContent._makeView(view: view[\.falseContent], inputs: inputs)
     }
@@ -59,7 +45,7 @@ public struct StaticConditionalContent<
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueContent._makeViewList(view: view[\.trueContent], inputs: inputs)
             : FalseContent._makeViewList(view: view[\.falseContent], inputs: inputs)
     }
@@ -68,13 +54,13 @@ public struct StaticConditionalContent<
     public static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueContent._viewListCount(inputs: inputs)
             : FalseContent._viewListCount(inputs: inputs)
     }
 }
 
-extension StaticConditionalContent where FalseContent == EmptyView {
+extension ViewInputConditionalContent where FalseContent == EmptyView {
     public init(
         _ : Condition.Type = Condition.self,
         @ViewBuilder then: () -> TrueContent
@@ -85,20 +71,17 @@ extension StaticConditionalContent where FalseContent == EmptyView {
 
 // MARK: - Previews
 
-struct StaticConditionalContent_Previews: PreviewProvider {
-    struct PreviewCondition: StaticCondition {
-        static var value: Bool {
-            #if DEBUG
-            return true
-            #else
-            return false
-            #endif
-        }
-    }
+struct ViewInputConditionalContent_Previews: PreviewProvider {
+    struct PreviewFlag: ViewInputFlag { }
 
     static var previews: some View {
-        StaticConditionalContent(PreviewCondition.self) {
-            Text("DEBUG")
+        VStack {
+            ViewInputConditionalContent(PreviewFlag.self) {
+                Text("TRUE")
+            } otherwise: {
+                Text("FALSE")
+            }
+            .input(PreviewFlag.self)
         }
     }
 }

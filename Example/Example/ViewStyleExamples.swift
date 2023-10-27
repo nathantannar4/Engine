@@ -3,7 +3,7 @@
 //
 
 import SwiftUI
-import EngineCore
+import Engine
 
 struct ViewStyleEnvironmentTestKey: EnvironmentKey {
     static let defaultValue = "defaultValue"
@@ -182,7 +182,9 @@ struct ViewStyleExamples: View {
     }
 }
 
-protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration { }
+protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration {
+    associatedtype Configuration = Configuration
+}
 
 struct StepperViewStyleConfiguration {
     struct Label: ViewAlias { }
@@ -193,7 +195,7 @@ struct StepperViewStyleConfiguration {
 }
 
 struct DefaultStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         Stepper {
             configuration.label
         } onIncrement: {
@@ -205,7 +207,7 @@ struct DefaultStepperViewStyle: StepperViewStyle {
 }
 
 struct InlineStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         HStack {
             Button {
                 configuration.onDecrement()
@@ -294,7 +296,9 @@ struct StepperViewBody: ViewStyledView {
     }
 }
 
-protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration { }
+protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
+    associatedtype Configuration = Configuration
+}
 
 struct LabeledViewStyleConfiguration {
     struct Label: ViewAlias { }
@@ -305,7 +309,7 @@ struct LabeledViewStyleConfiguration {
 }
 
 struct DefaultLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .firstTextBaseline) {
             configuration.label
             configuration.content
@@ -362,7 +366,7 @@ extension LabeledView where
 /// next `LabeledViewStyle` that was defined, or the `DefaultLabeledViewStyle`
 /// if no other style was set.
 struct PaddedLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         LabeledView(configuration)
             .padding()
     }
@@ -372,7 +376,7 @@ struct PaddedLabeledViewStyle: LabeledViewStyle {
 /// next `LabeledViewStyle` that was defined, or the `DefaultLabeledViewStyle`
 /// if no other style was set.
 struct BorderedLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         LabeledView(configuration)
             .border(Color.red, width: 2)
     }
@@ -381,7 +385,7 @@ struct BorderedLabeledViewStyle: LabeledViewStyle {
 /// This style does not return another `LabeledView`, so there will
 /// be no further styling.
 struct LeadingLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading) {
             configuration.label
             configuration.content
@@ -423,7 +427,9 @@ struct DoubleLabelStyle: LabeledViewStyle {
     }
 }
 
-protocol PasteboardButtonStyle: ViewStyle where Configuration == PasteboardButtonStyleConfiguration { }
+protocol PasteboardButtonStyle: ViewStyle where Configuration == PasteboardButtonStyleConfiguration {
+    associatedtype Configuration = Configuration
+}
 
 struct PasteboardButtonStyleConfiguration {
     struct Label: ViewAlias { }
@@ -433,7 +439,7 @@ struct PasteboardButtonStyleConfiguration {
 }
 
 struct DefaultPasteboardButtonStyle: PasteboardButtonStyle {
-    func makeBody(configuration: PasteboardButtonStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         configuration.label
     }
 }
@@ -499,7 +505,7 @@ extension PasteboardButton where
 }
 
 struct IconPasteboardButtonStyle: PasteboardButtonStyle {
-    func makeBody(configuration: PasteboardButtonStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         Label {
             configuration.label
         } icon: {

@@ -117,23 +117,23 @@ extension View {
 
 // MARK: - Previews
 
-struct PreviewVersionInputView: VersionedView {
-    var v5Body: some View { Text("V5") }
-    var v4Body: some View { Text("V4") }
-    var v3Body: some View { Text("V3") }
-    var v2Body: some View { Text("V2") }
-    var v1Body: some View { Text("V1") }
-}
-
-struct PreviewVersionInputViewModifier: VersionedViewModifier {
-    func v5Body(content: Content) -> some View { Text("V5") }
-    func v4Body(content: Content) -> some View { Text("V4") }
-    func v3Body(content: Content) -> some View { Text("V3") }
-    func v2Body(content: Content) -> some View { Text("V2") }
-    func v1Body(content: Content) -> some View { Text("V1") }
-}
-
 struct VersionInput_Previews: PreviewProvider {
+    struct PreviewVersionInputView: VersionedView {
+        var v5Body: some View { Text("V5") }
+        var v4Body: some View { Text("V4") }
+        var v3Body: some View { Text("V3") }
+        var v2Body: some View { Text("V2") }
+        var v1Body: some View { Text("V1") }
+    }
+
+    struct PreviewVersionInputViewModifier: VersionedViewModifier {
+        func v5Body(content: Content) -> some View { Text("V5") }
+        func v4Body(content: Content) -> some View { Text("V4") }
+        func v3Body(content: Content) -> some View { Text("V3") }
+        func v2Body(content: Content) -> some View { Text("V2") }
+        func v1Body(content: Content) -> some View { Text("V1") }
+    }
+
     static var previews: some View {
         Group {
             VStack {

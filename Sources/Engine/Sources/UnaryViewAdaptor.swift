@@ -36,3 +36,24 @@ public struct UnaryViewAdaptor<Content: View>: View {
         _UnaryViewAdaptor(content)
     }
 }
+
+// MARK: - Previews
+
+struct UnaryViewAdaptor_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            let views = Group {
+                Text("Line 1")
+                Text("Line 2")
+            }
+
+            views
+                .border(Color.red)
+
+            UnaryViewAdaptor {
+                views
+            }
+            .border(Color.red)
+        }
+    }
+}

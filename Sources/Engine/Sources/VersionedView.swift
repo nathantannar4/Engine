@@ -100,7 +100,7 @@ extension VersionedView where Body == Never{
         }
         #else
         /// Support ``VersionInput`` for development support
-        let version = inputs.base[VersionInputKey.self]
+        let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
@@ -145,7 +145,7 @@ extension VersionedView where Body == Never{
         }
         #else
         /// Support ``VersionInput`` for development support
-        let version = inputs.base[VersionInputKey.self]
+        let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
@@ -188,7 +188,7 @@ extension VersionedView where Body == Never{
         }
         #else
         /// Support ``VersionInput`` for development support
-        let version = inputs.base[VersionInputKey.self]
+        let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {

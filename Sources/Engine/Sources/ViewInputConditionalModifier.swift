@@ -6,21 +6,17 @@ import SwiftUI
 
 /// A `ViewModifier` that is statically either `TrueModifier` or `FalseModifier`.
 @frozen
-public struct StaticConditionalModifier<
-    Condition: StaticCondition,
+public struct ViewInputConditionalModifier<
+    Condition: ViewInputsCondition,
     TrueModifier: ViewModifier,
     FalseModifier: ViewModifier
 >: ViewModifier {
 
-    @frozen
     @usableFromInline
-    enum Storage {
-        case trueModifier(TrueModifier)
-        case falseModifier(FalseModifier)
-    }
+    var trueModifier: TrueModifier
 
     @usableFromInline
-    var storage: Storage
+    var falseModifier: FalseModifier
 
     @inlinable
     public init(
@@ -28,25 +24,8 @@ public struct StaticConditionalModifier<
         @ViewModifierBuilder then: () -> TrueModifier,
         @ViewModifierBuilder otherwise: () -> FalseModifier
     ) {
-        self.storage = Condition.value ? .trueModifier(then()) : .falseModifier(otherwise())
-    }
-
-    var trueModifier: TrueModifier {
-        switch storage {
-        case .trueModifier(let content):
-            return content
-        case .falseModifier:
-            fatalError("Condition \(String(describing: Condition.self)) produced a dynamic result")
-        }
-    }
-
-    var falseModifier: FalseModifier {
-        switch storage {
-        case .trueModifier:
-            fatalError("Condition \(String(describing: Condition.self)) produced a dynamic result")
-        case .falseModifier(let content):
-            return content
-        }
+        self.trueModifier = then()
+        self.falseModifier = otherwise()
     }
 
     public func body(content: Content) -> Never {
@@ -58,7 +37,7 @@ public struct StaticConditionalModifier<
         inputs: _ViewInputs,
         body: @escaping (_Graph, _ViewInputs) -> _ViewOutputs
     ) -> _ViewOutputs {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueModifier._makeView(modifier: modifier[\.trueModifier], inputs: inputs, body: body)
             : FalseModifier._makeView(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
@@ -68,7 +47,7 @@ public struct StaticConditionalModifier<
         inputs: _ViewListInputs,
         body: @escaping (_Graph, _ViewListInputs) -> _ViewListOutputs
     ) -> _ViewListOutputs {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueModifier._makeViewList(modifier: modifier[\.trueModifier], inputs: inputs, body: body)
             : FalseModifier._makeViewList(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
@@ -78,13 +57,13 @@ public struct StaticConditionalModifier<
         inputs: _ViewListCountInputs,
         body: (_ViewListCountInputs) -> Int?
     ) -> Int? {
-        Condition.value
+        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
             ? TrueModifier._viewListCount(inputs: inputs, body: body)
             : FalseModifier._viewListCount(inputs: inputs, body: body)
     }
 }
 
-extension StaticConditionalModifier where Condition: StaticCondition, FalseModifier == EmptyModifier {
+extension ViewInputConditionalModifier where FalseModifier == EmptyModifier {
     public init(
         _ : Condition.Type = Condition.self,
         @ViewModifierBuilder then: () -> TrueModifier
@@ -95,17 +74,8 @@ extension StaticConditionalModifier where Condition: StaticCondition, FalseModif
 
 // MARK: - Previews
 
-struct StaticConditionalModifier_Previews: PreviewProvider {
-    struct PreviewCondition: StaticCondition {
-        static var value: Bool {
-            #if DEBUG
-            return true
-            #else
-            return false
-            #endif
-        }
-    }
-
+struct ViewInputConditionalModifier_Previews: PreviewProvider {
+    struct PreviewFlag: ViewInputFlag { }
     struct BorderModifier: ViewModifier {
         func body(content: Content) -> some View {
             content.border(Color.red)
@@ -113,11 +83,14 @@ struct StaticConditionalModifier_Previews: PreviewProvider {
     }
 
     static var previews: some View {
-        Text("Hello, World")
-            .modifier(
-                StaticConditionalModifier(PreviewCondition.self) {
-                    BorderModifier()
-                }
-            )
+        VStack {
+            Text("Hello, World")
+                .modifier(
+                    ViewInputConditionalModifier(PreviewFlag.self) {
+                        BorderModifier()
+                    }
+                )
+                .input(PreviewFlag.self)
+        }
     }
 }

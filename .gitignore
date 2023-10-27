@@ -1,6 +1,7 @@
 .DS_Store
 /.build
 /Packages
+Package.resolved
 /*.xcodeproj
 xcuserdata/
 DerivedData/
@@ -8,6 +9,7 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 build.sh
-Sources/EngineCore
 Sources/EnginePrivate
-Sources/EngineCore.xcframework.zip
+Sources/EngineCore/EngineCore.xcframework
+Sources/EngineCore/EngineCore.xcframework.zip
+Sources/EngineCore/Example

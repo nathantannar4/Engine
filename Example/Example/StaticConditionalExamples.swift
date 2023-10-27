@@ -15,7 +15,7 @@ struct BuildConfigurationText: View {
     var body: some View {
         StaticConditionalContent(IsDebug.self) {
             Text("Debug")
-        } else: {
+        } otherwise: {
             Text("Release")
         }
     }

@@ -202,13 +202,13 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
 
 // MARK: - Previews
 
-enum PreviewCases: Int, Hashable, CaseIterable {
-    case one
-    case two
-    case three
-}
-
 struct VariadicView_Previews: PreviewProvider {
+    enum PreviewCases: Int, Hashable, CaseIterable {
+        case one
+        case two
+        case three
+    }
+
     static var previews: some View {
         Group {
             ZStack {

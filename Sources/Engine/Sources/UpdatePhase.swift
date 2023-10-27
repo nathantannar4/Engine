@@ -7,6 +7,9 @@ import Combine
 
 /// A property wrapper that automatically updates its value
 /// when the `View` it is attached to updates.
+///
+/// > Tip: Useful for when you need to observe when a view updates
+///
 @propertyWrapper
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)

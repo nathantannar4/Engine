@@ -43,9 +43,9 @@ public struct ConditionalLayout<
     public init(
         if condition: Bool,
         @LayoutBuilder then: () -> TrueLayout,
-        @LayoutBuilder else: () -> FalseLayout
+        @LayoutBuilder otherwise: () -> FalseLayout
     ) {
-        self.storage = condition ? .trueLayout(then()) : .falseLayout(`else`())
+        self.storage = condition ? .trueLayout(then()) : .falseLayout(otherwise())
     }
 
     public func sizeThatFits(
@@ -243,7 +243,7 @@ struct ConditionalLayout_Previews: PreviewProvider {
 
                 ConditionalLayout(if: condition) {
                     VStackLayout()
-                } else: {
+                } otherwise: {
                     HStackLayout()
                 } {
                     content

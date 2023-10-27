@@ -7,6 +7,7 @@ A performance driven framework for developing SwiftUI frameworks and apps. `Engi
 ## See Also
 
 - [Turbocharger](https://github.com/nathantannar4/Turbocharger)
+- [Ignition](https://github.com/nathantannar4/Ignition)
 - [Transmission](https://github.com/nathantannar4/Transmission)
 
 ## Requirements
@@ -88,7 +89,9 @@ You can use the `ViewStyle` APIs to make components that share common behavior a
 
 ```swift
 // 1. Define the style
-protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration { }
+protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration {
+    associatedtype Configuration = Configuration
+}
 
 // 2. Define the style's configuration
 struct StepperViewStyleConfiguration {
@@ -101,7 +104,7 @@ struct StepperViewStyleConfiguration {
 
 // 3. Define the default style
 struct DefaultStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         Stepper {
             configuration.label
         } onIncrement: {
@@ -114,7 +117,7 @@ struct DefaultStepperViewStyle: StepperViewStyle {
 
 // 4. Define your custom styles
 struct InlineStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+    func makeBody(configuration: Configuration) -> some View {
         HStack {
             Button {
                 configuration.onDecrement()
@@ -234,6 +237,8 @@ extension View {
 
 A ``ViewAlias`` is can be defined statically by one of its ancestors. Because ``ViewAlias`` is guaranteed to be static it can be used for type-erasure without the performance impacts associated with `AnyView`.
 
+[Open ViewAlias.swift](https://github.com/nathantannar4/Engine/blob/main/Sources/Engine/Sources/ViewAlias.swift)
+
 ### View Output
 
 ```swift
@@ -258,7 +263,9 @@ extension View {
     ) -> some View where Key.Content == Source
 ```
 
-A `ViewOutputKey` allows for a descendent view to return one or more views to a parent view.  
+A `ViewOutputKey` allows for a descendent view to return one or more views to a parent view.
+
+[Open ViewOutputKey.swift](https://github.com/nathantannar4/Engine/blob/main/Sources/Engine/Sources/ViewOutputKey.swift)  
 
 ```swift
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -284,6 +291,8 @@ extension View {
 ```
 
 A `ViewOutputAlias` is a more streamlined variant of `ViewOutputKey` that only supports returning a single view from a descendent. 
+
+[Open ViewOutputAlias.swift](https://github.com/nathantannar4/Engine/blob/main/Sources/Engine/Sources/ViewOutputAlias.swift)
 
 ### Variadic Views
 
@@ -447,7 +456,7 @@ struct ContentView: View {
 }
 ```
 
-[Open More Examples](https://github.com/nathantannar4/Engine/blob/main/Example/Example/VersionedViewExamples.swift)
+[Open VersionedViewModifier.swift](https://github.com/nathantannar4/Engine/blob/main/Sources/Engine/Sources/VersionedViewModifier.swift)
 
 ### Static Conditionals
 
@@ -467,7 +476,7 @@ public struct StaticConditionalContent<
     public init(
         _ : Condition.Type = Condition.self,
         @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder else: () -> FalseContent
+        @ViewBuilder otherwise: () -> FalseContent
     )
 }
 
@@ -482,7 +491,7 @@ public struct StaticConditionalModifier<
     public init(
         _ : Condition.Type = Condition.self,
         @ViewModifierBuilder then: () -> TrueModifier,
-        @ViewModifierBuilder else: () -> FalseModifier
+        @ViewModifierBuilder otherwise: () -> FalseModifier
     )
 }
 ```
@@ -510,7 +519,7 @@ struct ProfileView: View {
     var body: some View {
         StaticConditionalContent(IsDebug.self) { // More performant than `if IsDebug.value ...`
             NewProfileView()
-        } else: {
+        } otherwise: {
             LegacyProfileView()
         }
     }

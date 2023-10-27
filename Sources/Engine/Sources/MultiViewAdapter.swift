@@ -10,7 +10,7 @@ import EngineCore
 /// Most views such as `ZStack`, `VStack` and `HStack` are
 /// unary views. This means they would produce a single subview
 /// if transformed by a ``VariadicViewAdapter``. This is contrary
-/// to `TupleView` and `Group` which would produce multiple
+/// to `ForEach`, `TupleView` and `Group` which would produce multiple
 /// subviews. This different in behaviour can be crucial, as it impacts:
 /// layout, how a view is modified by a `ViewModifier`, and
 /// performance.

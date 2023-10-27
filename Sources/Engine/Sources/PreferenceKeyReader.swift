@@ -70,18 +70,16 @@ public struct PreferenceKeyValueReader<
 
 // MARK: - Previews
 
-struct PreviewPreferenceKey: PreferenceKey {
-    static let defaultValue = "default"
-
-    static func reduce(
-        value: inout String,
-        nextValue: () -> String
-    ) {
-
-    }
-}
-
 struct PreferenceKeyReader_Previews: PreviewProvider {
+    struct PreviewPreferenceKey: PreferenceKey {
+        static let defaultValue = "default"
+
+        static func reduce(
+            value: inout String,
+            nextValue: () -> String
+        ) { }
+    }
+
     static var previews: some View {
         Group {
             ZStack {

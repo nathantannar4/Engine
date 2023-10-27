@@ -38,9 +38,9 @@ extension ConditionalContent: View where TrueContent: View, FalseContent: View {
     public init(
         if condition: Bool,
         @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder else: () -> FalseContent
+        @ViewBuilder otherwise: () -> FalseContent
     ) {
-        self.storage = condition ? .trueContent(then()) : .falseContent(`else`())
+        self.storage = condition ? .trueContent(then()) : .falseContent(otherwise())
     }
 
     public var body: some View {
@@ -59,7 +59,7 @@ extension ConditionalContent where TrueContent: View, FalseContent == EmptyView 
         if condition: Bool,
         @ViewBuilder then: () -> TrueContent
     ) {
-        self.init(if: condition, then: then, else: { EmptyView() })
+        self.init(if: condition, then: then, otherwise: { EmptyView() })
     }
 }
 
@@ -94,7 +94,7 @@ struct ConditionalContent_Previews: PreviewProvider {
                     VStack {
                         content
                     }
-                } else: {
+                } otherwise: {
                     HStack {
                         content
                     }
