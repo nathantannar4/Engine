@@ -296,6 +296,22 @@ struct StepperViewBody: ViewStyledView {
     }
 }
 
+// LabeledView is the full definition of a styled view, or you can use the
+// @StyledView macro with a `StyledView`
+@StyledView
+struct _LabeledView<Label: View, Content: View>: StyledView {
+    var label: Label
+    var content: Content
+
+    var body: some View {
+        HStack {
+            label
+
+            content
+        }
+    }
+}
+
 protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
     associatedtype Configuration = Configuration
 }

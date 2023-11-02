@@ -83,7 +83,7 @@ import SwiftUI
 public protocol VersionedDynamicProperty: DynamicProperty {
     associatedtype V5Property: DynamicProperty = V4Property
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     var v5Property: V5Property { get }
 
     associatedtype V4Property: DynamicProperty = V3Property
@@ -107,7 +107,7 @@ public protocol VersionedDynamicProperty: DynamicProperty {
 }
 
 extension VersionedDynamicProperty where V5Property == V4Property {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     public var v5Property: V5Property { v4Property }
 }
 
@@ -184,7 +184,7 @@ extension VersionedDynamicProperty {
         inputs: inout _GraphInputs
     ) {
         #if !DEBUG
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
             V5Property._makeProperty(
                 in: &buffer,
                 container: container,
@@ -225,7 +225,7 @@ extension VersionedDynamicProperty {
         let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
                 V5Property._makeProperty(
                     in: &buffer,
                     container: container,
@@ -286,7 +286,7 @@ extension VersionedDynamicProperty {
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public static var _propertyBehaviors: UInt32 {
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
             return V5Property._propertyBehaviors
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Property._propertyBehaviors

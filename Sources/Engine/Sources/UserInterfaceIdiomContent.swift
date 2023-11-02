@@ -83,7 +83,7 @@ extension UserInterfaceIdiomContent where Body == Never{
         return WatchBody._makeView(view: view[\.watchBody], inputs: inputs)
         #elseif os(tvOS)
         return TvBody._makeView(view: view[\.tvBody], inputs: inputs)
-        #elseif swift(>=5.9) && os(xrOS)
+        #elseif os(xrOS)
         return VisionBody._makeView(view: view[\.visionBody], inputs: inputs)
         #else
         switch UIDevice.current.userInterfaceIdiom {
@@ -109,7 +109,7 @@ extension UserInterfaceIdiomContent where Body == Never{
         return WatchBody._makeViewList(view: view[\.watchBody], inputs: inputs)
         #elseif os(tvOS)
         return TvBody._makeViewList(view: view[\.tvBody], inputs: inputs)
-        #elseif swift(>=5.9) && os(xrOS)
+        #elseif os(xrOS)
         return VisionBody._makeViewList(view: view[\.visionBody], inputs: inputs)
         #else
         switch UIDevice.current.userInterfaceIdiom {
@@ -135,7 +135,7 @@ extension UserInterfaceIdiomContent where Body == Never{
         return WatchBody._viewListCount(inputs: inputs)
         #elseif os(tvOS)
         return TvBody._viewListCount(inputs: inputs)
-        #elseif swift(>=5.9) && os(xrOS)
+        #elseif os(xrOS)
         return VisionBody._viewListCount(inputs: inputs)
         #else
         switch UIDevice.current.userInterfaceIdiom {

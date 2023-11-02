@@ -1,6 +1,7 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.9
 
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
     name: "Engine",
@@ -20,9 +21,11 @@ let package = Package(
         .library(
             name: "Engine",
             targets: ["Engine"]
-        )
+        ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
+    ],
     targets: [
         .binaryTarget(
             name: "EngineCore",
@@ -32,8 +35,24 @@ let package = Package(
         .target(
             name: "Engine",
             dependencies: [
-                "EngineCore"
+                "EngineCore",
+                "EngineMacros",
             ]
-        )
+        ),
+        .macro(
+            name: "EngineMacros",
+            dependencies: [
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+            ]
+        ),
+        .testTarget(
+            name: "EngineTests",
+            dependencies: [
+                "Engine",
+                "EngineMacros",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]
+        ),
     ]
 )

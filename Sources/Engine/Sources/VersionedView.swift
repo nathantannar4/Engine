@@ -24,7 +24,7 @@ import EngineCore
 public protocol VersionedView: View where Body == Never {
     associatedtype V5Body: View = V4Body
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @MainActor @ViewBuilder var v5Body: V5Body { get }
 
     associatedtype V4Body: View = V3Body
@@ -48,7 +48,7 @@ public protocol VersionedView: View where Body == Never {
 }
 
 extension VersionedView where V5Body == V4Body {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
     @MainActor public var v5Body: V5Body { v4Body }
 }
 
@@ -87,7 +87,7 @@ extension VersionedView where Body == Never{
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         #if !DEBUG
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
             return V5Body._makeView(view: view[\.v5Body], inputs: inputs)
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._makeView(view: view[\.v4Body], inputs: inputs)
@@ -103,7 +103,7 @@ extension VersionedView where Body == Never{
         let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
                 return V5Body._makeView(view: view[\.v5Body], inputs: inputs)
             }
         case .v4:
@@ -132,7 +132,7 @@ extension VersionedView where Body == Never{
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         #if !DEBUG
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
             return V5Body._makeViewList(view: view[\.v5Body], inputs: inputs)
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._makeViewList(view: view[\.v4Body], inputs: inputs)
@@ -148,7 +148,7 @@ extension VersionedView where Body == Never{
         let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
                 return V5Body._makeViewList(view: view[\.v5Body], inputs: inputs)
             }
         case .v4:
@@ -177,7 +177,7 @@ extension VersionedView where Body == Never{
         inputs: _ViewListCountInputs
     ) -> Int? {
         #if !DEBUG
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
             return V5Body._viewListCount(inputs: inputs)
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return V4Body._viewListCount(inputs: inputs)
@@ -191,7 +191,7 @@ extension VersionedView where Body == Never{
         let version = inputs[VersionInputKey.self]
         switch version {
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *) {
                 return V5Body._viewListCount(inputs: inputs)
             }
         case .v4:

@@ -22,6 +22,8 @@ import SwiftUI
 /// your ``ViewStyledView``. You will need to create  a new view that uses the ``ViewStyledView``
 /// in it's `Body` in addition to defining the type-erased view parameters with ``View/viewAlias(_:source:)``
 ///
+/// > Tip: You can use the ``@StyledView`` macro to automate the creation of a styled view for any `View`
+///
 /// ```
 /// protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
 ///     associatedtype Configuration = Configuration
