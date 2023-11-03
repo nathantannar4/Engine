@@ -7,7 +7,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public struct StyledViewMacro: PeerMacro, MemberMacro, ExtensionMacro {
+public struct StyledViewMacro: PeerMacro, MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
@@ -112,35 +112,6 @@ public struct StyledViewMacro: PeerMacro, MemberMacro, ExtensionMacro {
             )
         ]
     }
-
-    public static func expansion(
-        of node: AttributeSyntax,
-        attachedTo declaration: some DeclGroupSyntax,
-        providingExtensionsOf type: some TypeSyntaxProtocol,
-        conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext
-    ) throws -> [ExtensionDeclSyntax] {
-        let type = try getType(
-            declaration: declaration
-        )
-        let name = type.name.text
-        let prefix = getPrefix(
-            modifiers: type.modifiers
-        )
-        let declaration = try ExtensionDeclSyntax(
-            """
-            extension View {
-                \(raw: prefix)func \(raw: name.asFunctionName)Style<Style: \(raw: name)Style>(_ style: Style) -> some View {
-                    modifier(\(raw: name)StyleModifier(style))
-                }
-            }
-            """
-        )
-        return [
-            declaration
-        ]
-    }
-
 
     private static func getType(
         declaration: some SyntaxProtocol

@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import EngineCore
 import os.log
 
 @frozen
@@ -39,13 +40,21 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
             var ptr = inputs.elements
             while let p = ptr {
                 dump(p, to: &message)
-                message += "  ▿ fields: \(dump(p.pointee.fields, to: &message))"
-                func project<T>(_ type: T.Type) -> String {
-                    return p.pointee.withUnsafeValuePointer(T.self) { ref in
-                        return "  ▿ value: \(dump(ref.pointee.value))\n"
+                dump(p.pointee.fields, to: &message)
+                func project<T>(_ type: T.Type) {
+                    p.pointee.withUnsafeValuePointer(T.self) { ref in
+                        let value = ref.pointee.value
+                        message += "  ▿ value: \(dump(value))\n"
+                        let fields = swift_getFields(value)
+                        for (field, value) in fields {
+                            func _project<P>(_ type: P.Type) {
+                                message += "    - \(field.key): \(value as! P)\n"
+                            }
+                            _openExistential(field.type, do: _project)
+                        }
                     }
                 }
-                message += _openExistential(p.pointee.fields.keyType, do: project)
+                _openExistential(p.pointee.fields.keyType, do: project)
                 ptr = p.pointee.fields.after
             }
             return message
@@ -60,7 +69,7 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
 /// This fixes:
 /// - Resetting SwiftUI view styles
 /// - Resetting Engine view styles
-/// - Resetting NavigationStack
+/// - Resetting Context (such as NavigationStack)
 @frozen
 public struct _ViewInputsBridgeModifier: ViewModifier {
 
@@ -69,7 +78,6 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
-            ._defaultContext()
             .modifier(Modifier())
     }
 
@@ -218,6 +226,7 @@ private struct CustomInputsLayout {
             ptr = p.pointee.fields.after
         }
         if let last {
+            _ = Unmanaged<AnyObject>.fromOpaque(last).retain() // Prevent dealloc
             tail.pointee.fields.after = last
         }
     }

@@ -142,6 +142,27 @@ struct ViewStyleExamples: View {
                         Text("Label")
                     }
                     .labeledViewStyle(DoubleLabelStyle())
+
+                    Text("Multiple View Styling")
+                        .font(.headline)
+
+                    HStack {
+                        LabeledView {
+                            Text("Content")
+                        } label: {
+                            Text("Label")
+                        }
+                        .border(Color.blue)
+
+                        LabeledView {
+                            Text("Content")
+                        } label: {
+                            Text("Label")
+                        }
+                        .labeledViewStyle(PaddedLabeledViewStyle())
+                        .border(Color.blue)
+                    }
+                    .labeledViewStyle(BorderedLabeledViewStyle())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

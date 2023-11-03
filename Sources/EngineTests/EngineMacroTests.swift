@@ -124,12 +124,6 @@ final class MyMacroTests: XCTestCase {
                 content.styledViewStyle(LabelViewBody.self, style: style)
             }
         }
-
-        extension View {
-            func labelViewStyle<Style: LabelViewStyle>(_ style: Style) -> some View {
-                modifier(LabelViewStyleModifier(style))
-            }
-        }
         """
         assertMacroExpansion(
             sourceInput,

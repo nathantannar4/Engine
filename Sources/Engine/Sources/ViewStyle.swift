@@ -90,23 +90,63 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// # Recursive Custom Styles
+/// # Adding Custom Styles
 ///
-/// Multiple ``ViewStyle``'s can be applied recursively so long as the
-/// `Body`contains another related ``ViewStyledView``.
+/// Now imagine you need a "vertical" style that uses a `VStack` rather than an `HStack`.
+/// With a custom style you can achieve this in a performant and type safe way.
 ///
-/// For example, `PaddedLabeledViewStyle` is another `LabeledView`
-/// but with the `padding()` modifier. Assuming no other styles were applied,
-/// the `LabeledView` would then be styled with the `DefaultLabeledViewStyle`.
+///     struct VerticalLabeledViewStyle: LabeledViewStyle {
+///         func makeBody(configuration: Configuration) -> some View {
+///             VStack {
+///                 configuration.label
 ///
-/// ```
-/// struct PaddedLabeledViewStyle: LabeledViewStyle {
-///     func makeBody(configuration: Configuration) -> some View {
-///         LabeledView(configuration)
-///             .padding()
+///                 configuration.content
+///             }
+///         }
 ///     }
-/// }
-/// ```
+///
+/// Now imagine you need a "bordered" style that uses the existing or default style but also adds
+/// a border. You can achieve this by returning related ``ViewStyledView`` in the custom style body.
+/// This showcases the major benefit with the view style approach as it allows for multiple styles
+/// to be composed and reused together. The ``ViewStyledView`` used within custom style body
+/// will use the next ``ViewStyle`` if one exists, or the default style.
+///
+///     struct BorderedLabeledViewStyle: LabeledViewStyle {
+///         func makeBody(configuration: Configuration) -> some View {
+///             LabeledView(configuration)
+///                 .border(Color.red)
+///         }
+///     }
+///
+/// Now that you have created some custom styles, you can apply them with the style modifier.
+/// Styles are composable which means the order you apply them does matter.
+///
+///     var body: some View {
+///         VStack {
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(VerticalLabeledViewStyle())
+///
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(VerticalLabeledViewStyle()) // Applied 1st
+///             .labelStyle(BorderedLabeledViewStyle()) // Ignored
+///
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(BorderedLabeledViewStyle()) // Applied 1st
+///             .labelStyle(VerticalLabeledViewStyle()) // Applied 2nd
+///         }
+///     }
 ///
 /// # Final Styling
 ///
@@ -115,6 +155,9 @@ import SwiftUI
 ///
 /// > Note: Unlike the default style which is only applied if another style is defined,
 /// the styling defined by the `body` of ``ViewStyledView`` is always applied once.
+///
+/// > Note: ``ViewStyle``'s stack when applied to a view, so the order you apply them
+/// does matter.
 ///
 public protocol ViewStyle: DynamicProperty {
     associatedtype Configuration
@@ -125,7 +168,7 @@ public protocol ViewStyle: DynamicProperty {
 
 /// A protocol that defines a view that is styled with the related ``ViewStyle``.
 ///
-/// > Info: For more on how to create custom view styles, see ``ViewStyle``.
+/// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
 public protocol ViewStyledView: View {
     associatedtype Configuration
@@ -138,7 +181,7 @@ public protocol ViewStyledView: View {
 /// A modifier that statically applies the `Style` the all descendent `StyledView`
 /// views in the view hierarchy.
 ///
-/// > Info: For more on how to create custom view styles, see ``ViewStyle``.
+/// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 @frozen
 public struct ViewStyleModifier<
     StyledView: ViewStyledView,
@@ -206,7 +249,7 @@ extension View {
     /// Statically applies the `Style` the all descendent `StyledView`
     /// views in the view hierarchy.
     ///
-    /// > Info: For more on how to create custom view styles, see ``ViewStyle``.
+    /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
     @inlinable
     public func styledViewStyle<
         StyledView: ViewStyledView,

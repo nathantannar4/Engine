@@ -7,7 +7,8 @@ import SwiftUI
 /// A macro that adds the necessary components of a ``StyledView``
 ///
 /// A ``StyledView`` is an easier way to adopt the ``ViewStyle`` API
-/// to transform a `View` into one that can be styled.
+/// to transform a `View` into one that can be styled. The `body` of a
+/// ``StyledView`` will become the default style if no other styled is applied.
 ///
 /// ```
 /// @StyledView
@@ -23,11 +24,34 @@ import SwiftUI
 ///         }
 ///     }
 /// }
+///
+/// extension View {
+///     func labelViewStyle<Style: LabelViewStyle>(_ style: Style) -> some View {
+///         modifier(LabelViewStyleModifier(style))
+///     }
+/// }
 /// ```
 ///
-/// For example, you can now defined a "bordered" style that itself returns another LabeledView.
+/// Now imagine you need a "vertical" style that uses a `VStack` rather than an `HStack`.
+/// With a custom style you can achieve this in a performant and type safe way.
+/// Custom styles have access to all properties of the original ``StyledView``.
+///
+///     struct VerticalLabeledViewStyle: LabeledViewStyle {
+///         func makeBody(configuration: Configuration) -> some View {
+///             VStack {
+///                 configuration.label
+///
+///                 configuration.content
+///             }
+///         }
+///     }
+///
+/// Now imagine you need a "bordered" style that uses the existing or default style but also adds
+/// a border. You can achieve this by returning another ``StyledView`` in the custom style body.
 /// This showcases the major benefit with the view style approach as it allows for multiple styles
-/// to be composed and reused together.
+/// to be composed and reused together. The ``StyledView`` used within custom style body
+/// will use the next ``ViewStyle`` if one exists, or the default style - which is the `body` of
+/// the ``StyledView``.
 ///
 ///     struct BorderedLabeledViewStyle: LabeledViewStyle {
 ///         func makeBody(configuration: Configuration) -> some View {
@@ -36,21 +60,38 @@ import SwiftUI
 ///         }
 ///     }
 ///
-/// The style and view can then be used as suggested below:
+/// Now that you have created some custom styles, you can apply them with the style modifier.
+/// Styles are composable which means the order you apply them does matter.
 ///
 ///     var body: some View {
-///         LabeledView {
-///             Text("Label")
-///         } content: {
-///             Text("Content")
+///         VStack {
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(VerticalLabeledViewStyle())
+///
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(VerticalLabeledViewStyle()) // Applied 1st
+///             .labelStyle(BorderedLabeledViewStyle()) // Ignored
+///
+///             LabeledView {
+///                 Text("Label")
+///             } content: {
+///                 Text("Content")
+///             }
+///             .labelStyle(BorderedLabeledViewStyle()) // Applied 1st
+///             .labelStyle(VerticalLabeledViewStyle()) // Applied 2nd
 ///         }
-///         .labelStyle(BorderedLabeledViewStyle())
 ///     }
-/// ```
-/// 
+///
 @attached(peer, names: suffixed(Configuration), suffixed(Body), suffixed(Style), suffixed(StyleModifier), suffixed(DefaultStyle))
 @attached(member, names: named(_body), named(init))
-@attached(extension, names: arbitrary)
 public macro StyledView() = #externalMacro(module: "EngineMacros", type: "StyledViewMacro")
 
 /// A protocol intended to be used with the ``@StyledView`` macro define a
