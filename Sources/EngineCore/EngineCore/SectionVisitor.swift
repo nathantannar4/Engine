@@ -18,28 +18,45 @@ extension Section: MultiView where Parent: View, Content: View, Footer: View {
         try! swift_getFieldValue("footer", Footer.self, self)
     }
 
-    public var startIndex: Int {
-        return 0
+    public func makeSubviewIterator() -> some MultiViewIterator {
+        SectionSubviewIterator(content: self)
     }
+}
 
-    public var endIndex: Int {
-        return 3
-    }
 
-    public subscript(position: Int) -> Any {
-        switch position {
-        case 0:
-            return parent
-        case 1:
-            return content
-        case 2:
-            return footer
-        default:
-            preconditionFailure("Index out of range")
-        }
-    }
+private struct SectionSubviewIterator<
+    Parent: View,
+    Content: View,
+    Footer: View
+>: MultiViewIterator {
 
-    public func makeIterator() -> MultiViewSubviewIterator<(Parent, Content, Footer)> {
-        MultiViewSubviewIterator(content: (parent, content, footer))
+    var content: Section<Parent, Content, Footer>
+
+    func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: Context,
+        stop: inout Bool
+    ) {
+        var context = context
+        context.traits = []
+        visitor.value.visit(
+            content: content.parent,
+            context: context.union(.header),
+            stop: &stop
+        )
+        guard !stop else { return }
+        content.content.visit(
+            visitor: visitor,
+            context: context,
+            stop: &stop
+        )
+        guard !stop else { return }
+        visitor.value.visit(
+            content: content.footer,
+            context: context.union(.footer),
+            stop: &stop
+        )
     }
 }

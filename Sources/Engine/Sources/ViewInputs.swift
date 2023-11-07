@@ -44,7 +44,9 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
                 func project<T>(_ type: T.Type) {
                     p.pointee.withUnsafeValuePointer(T.self) { ref in
                         let value = ref.pointee.value
-                        message += "  ▿ value: \(dump(value))\n"
+                        var valueString = ""
+                        dump(value, to: &valueString)
+                        message += "  ▿ value: \(valueString)\n"
                         let fields = swift_getFields(value)
                         for (field, value) in fields {
                             func _project<P>(_ type: P.Type) {

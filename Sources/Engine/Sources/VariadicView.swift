@@ -120,34 +120,6 @@ public struct AnyVariadicView: View, RandomAccessCollection {
     }
 }
 
-/// A view that transforms a each variadic view subview
-@frozen
-public struct ForEachSubview<
-    Content: View,
-    Subview: View
->: View {
-
-    @usableFromInline
-    var content: VariadicView<Content>
-
-    @usableFromInline
-    var subview: (Int, AnyVariadicView.Subview) -> Subview
-
-    public init(
-        _ content: VariadicView<Content>,
-        @ViewBuilder _ subview: @escaping (Int, AnyVariadicView.Subview) -> Subview
-    ) {
-        self.content = content
-        self.subview = subview
-    }
-
-    public var body: some View {
-        ForEach(Array(content.children.enumerated()), id: \.element.id) { (index, element) in
-            subview(index, element)
-        }
-    }
-}
-
 /// A container view with type-erased subviews
 ///
 /// A variadic view impacts layout and how a `ViewModifier` is applied,
@@ -166,7 +138,22 @@ public struct VariadicView<Content: View>: View {
     }
 }
 
-/// A view that transforms a view into a variadic view
+/// A view that transforms a `Source` view to `Content`
+///
+/// Most views such as `ZStack`, `VStack` and `HStack` are
+/// unary views. This means they would produce a single subview
+/// if transformed by a ``VariadicViewAdapter``. This is contrary
+/// to `ForEach`, `TupleView`, `Section` and `Group` which
+/// would produce multiple subviews. This different in behaviour can be
+/// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
+/// and performance.
+///
+/// With ``VariadicViewAdapter`` an alias to the individual views can
+/// be accessed along with any `_ViewTraitKey`,  the `.tag(...)`
+/// value and `.id(...)`. This can be particularly useful when building
+/// a custom picker, mapping a `Hashable` selection, or bridging to
+/// UIKit/AppKit components.
+///
 @frozen
 public struct VariadicViewAdapter<Source: View, Content: View>: View {
 

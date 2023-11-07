@@ -8,11 +8,11 @@ import SwiftUI
 ///
 /// Most views such as `ZStack`, `VStack` and `HStack` are
 /// unary views. This means they would produce a single subview
-/// if transformed by a ``VariadicViewAdapter``. This is contrary
-/// to `TupleView` and `Group` which would produce multiple
-/// subviews. This different in behaviour can be crucial, as it impacts:
-/// layout, how a view is modified by a `ViewModifier`, and
-/// performance.
+/// if transformed by a ``VariadicViewAdapter``.  This is contrary
+/// to `ForEach`, `TupleView`, `Section` and `Group` which
+/// would produce multiple subviews. This different in behaviour can be
+/// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
+/// and performance.
 ///
 /// > Tip: In most cases you shouldn't need to use ``UnaryViewAdaptor``,
 /// but it can help fix rare performance problems or layout crashes.

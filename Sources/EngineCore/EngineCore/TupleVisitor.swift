@@ -4,50 +4,63 @@
 
 import SwiftUI
 
-public func swift_getTupleCount<InstanceType>(_ instance: InstanceType) -> Int? {
-    guard let metadata = Metadata<TupleMetadata>(InstanceType.self)
-    else {
-        return nil
-    }
-
-    return metadata[\.numberOfElements]
-}
-
-public func swift_getTupleElement<InstanceType>(_ index: Int, _ instance: InstanceType) -> Any? {
-    guard let metadata = Metadata<TupleMetadata>(InstanceType.self)
-    else {
-        return nil
-    }
-
-    let element = metadata[\.elements][index]
-    func project<Element>(_: Element.Type) -> Element {
-        withUnsafePointer(to: instance) { pointer in
-            UnsafeRawPointer(pointer)
-                .advanced(by: element.offset)
-                .assumingMemoryBound(to: Element.self)
-                .pointee
-        }
-    }
-    return _openExistential(element.type, do: project)
-}
-
 /// A ``TupleVisitor`` allows for a tuple to be unwrapped
 /// to visit the concrete type for each index
-protocol TupleVisitor {
-    mutating func visit<Element>(type: Element.Type, offset: Offset)
+public protocol TupleVisitor {
+    mutating func visit<Element>(element: Element, offset: Offset, stop: inout Bool)
 
-    typealias Offset = TupleMetadata.Element.Layout.Offset
+    typealias Offset = Int
 }
 
-extension Metadata where Kind == TupleMetadata {
+/// A type metadata enforced wrapper for a tuple
+@frozen
+public struct Tuple<Values> {
+
+    public var values: Values
+
+    public var count: Int {
+        let metadata = Metadata<TupleMetadata>(Values.self)!
+        return metadata[\.numberOfElements]
+    }
+
+    init?(_ values: Values) {
+        let descriptor = unsafeBitCast(Values.self, to: UnsafeRawPointer.self)
+        guard MetadataKind(ptr: descriptor) == .tuple else {
+            return nil
+        }
+        self.values = values
+    }
 
     /// Unwraps the elements to be visited by the `Visitor`
-    func visit<Visitor: TupleVisitor>(visitor: UnsafeMutablePointer<Visitor>) {
-        for element in self[\.elements] {
+    @inline(__always)
+    public func visit<Visitor: TupleVisitor>(
+        visitor: UnsafeMutablePointer<Visitor>
+    ) {
+        var stop = false
+        visit(visitor: visitor, stop: &stop)
+    }
+
+    public func visit<Visitor: TupleVisitor>(
+        visitor: UnsafeMutablePointer<Visitor>,
+        stop: inout Bool
+    ) {
+        let metadata = Metadata<TupleMetadata>(Values.self)!
+        for element in metadata[\.elements] {
             func project<Element>(_: Element.Type) {
-                visitor.value.visit(type: Element.self, offset: element.offset)
+                withUnsafePointer(to: values) { ptr in
+                    UnsafeRawPointer(ptr)
+                        .advanced(by: element.offset)
+                        .withMemoryRebound(to: Element.self, capacity: 1) { ptr in
+                            visitor.value.visit(
+                                element: ptr.pointee,
+                                offset: element.offset,
+                                stop: &stop
+                            )
+                        }
+                }
             }
             _openExistential(element.type, do: project)
+            guard !stop else { return }
         }
     }
 }

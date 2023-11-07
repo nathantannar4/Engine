@@ -28,41 +28,78 @@ public func swift_getFields<InstanceType>(_ instance: InstanceType) -> [(field: 
     return fields
 }
 
-public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ type: Value.Type, _ instance: InstanceType) throws -> Value {
-    try getFieldValue(key, type, instance)
+public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType) throws -> Value {
+    try getFieldValue(key, value, instance)
 }
 
-public func swift_setFieldValue<Value, ObjectType: AnyObject>(_ key: String, _ value: Value, _ object: ObjectType) throws {
-    var instance = object
-    try setFieldValue(key, value, &instance)
+public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType?) throws -> Value? {
+    guard let instance else {
+        return nil
+    }
+    return try getFieldValue(key, value, instance)
 }
 
-@_disfavoredOverload
 public func swift_setFieldValue<Value, InstanceType>(_ key: String, _ value: Value, _ instance: inout InstanceType) throws {
     try setFieldValue(key, value, &instance)
 }
 
+public func swift_setFieldValue<Value, InstanceType>(_ key: String, _ value: Value, _ instance: inout InstanceType?) throws {
+    guard instance != nil else { return }
+    try setFieldValue(key, value, &instance!)
+}
+
+public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _ value: Value, _ instance: InstanceType) throws {
+    var instance = instance
+    try setFieldValue(key, value, &instance)
+}
+
+public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _ value: Value, _ instance: InstanceType?) throws {
+    guard var instance else { return }
+    try setFieldValue(key, value, &instance)
+}
+
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
-    var type: Any.Type
     var key: String
     var instance: Any.Type
 
     var description: String {
-        "\(key) of type \(String(describing: type)) was not found on instance type \(instance)"
+        "\(key) was not found on instance type \(instance)"
+    }
+}
+
+struct SwiftFieldTypeMismatchError: Error, CustomStringConvertible {
+    var key: String
+    var expected: Any.Type
+    var received: Any.Type
+    var instance: Any.Type
+
+    var description: String {
+        "Expected type of \(expected) for key \(key) but recieved \(received) on instance type \(instance)"
     }
 }
 
 private func getFieldValue<Value, InstanceType>(
     _ key: String,
-    _ type: Value.Type,
+    _ value: Value.Type,
     _ instance: InstanceType
 ) throws -> Value {
-    let field = try swift_getField(key, type, Swift.type(of: instance))
+    let field = try swift_getField(key, instance)
+    guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || value == Any.self else {
+        throw SwiftFieldTypeMismatchError(
+            key: key,
+            expected: field.type,
+            received: value,
+            instance: type(of: instance)
+        )
+    }
     return try withUnsafeInstancePointer(instance) { pointer in
         func project<S>(_ type: S.Type) -> Value {
-            pointer.advanced(by: field.offset).withMemoryRebound(to: S.self, capacity: 1) { ptr in
-                unsafePartialBitCast(ptr.pointee, to: Value.self)
+            let buffer = pointer.advanced(by: field.offset).assumingMemoryBound(to: S.self)
+            if value == Any.self {
+                let box = buffer.pointee as Any
+                return box as! Value
             }
+            return unsafeBitCast(buffer.pointee, to: value)
         }
         return _openExistential(field.type, do: project)
     }
@@ -73,17 +110,34 @@ private func setFieldValue<Value, InstanceType>(
     _ value: Value,
     _ instance: inout InstanceType
 ) throws {
-    let field = try swift_getField(key, Value.self, Swift.type(of: instance))
+    let instanceType = type(of: instance)
+    let field = try swift_getField(key, instance)
+    guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || Value.self == Any.self else {
+        throw SwiftFieldTypeMismatchError(
+            key: key,
+            expected: field.type,
+            received: Value.self,
+            instance: instanceType
+        )
+    }
     try withUnsafeMutableInstancePointer(&instance) { pointer in
-        func project<S>(_ type: S.Type) {
+        func project<S>(_: S.Type) throws {
             let buffer = pointer.advanced(by: field.offset).assumingMemoryBound(to: S.self)
-            withUnsafePointer(to: value) { ptr in
-                ptr.withMemoryRebound(to: S.self, capacity: 1) { ptr in
-                    buffer.pointee = ptr.pointee
+            if Value.self == Any.self {
+                guard let value = value as? S else {
+                    throw SwiftFieldTypeMismatchError(
+                        key: key,
+                        expected: field.type,
+                        received: Any.self,
+                        instance: instanceType
+                    )
                 }
+                buffer.pointee = value
+            } else {
+                buffer.pointee = unsafeBitCast(value, to: S.self)
             }
         }
-        _openExistential(field.type, do: project)
+        try _openExistential(field.type, do: project)
     }
 }
 
@@ -109,17 +163,22 @@ private class FieldLookupCache {
     }
 }
 
-private func swift_getField<Value>(
+private func swift_getField(
     _ key: String,
-    _ type: Value.Type,
-    _ instanceType: Any.Type
+    _ instance: Any
 ) throws -> Field {
-
+    var type: Any.Type = type(of: instance)
+    if type == Any.self {
+        func project<T>(_: T) -> Any.Type {
+            return T.self
+        }
+        type = _openExistential(instance, do: project)
+    }
     if let field = FieldLookupCache.shared[type, key] {
         return field
     }
     do {
-        let field = try swift_getField_slow(key, type, instanceType)
+        let field = try swift_getField_slow(key, type)
         FieldLookupCache.shared[type, key] = field
         return field
     } catch {
@@ -127,9 +186,8 @@ private func swift_getField<Value>(
     }
 }
 
-private func swift_getField_slow<Value>(
+private func swift_getField_slow(
     _ key: String,
-    _ type: Value.Type,
     _ instanceType: Any.Type
 ) throws -> Field {
     let count = swift_reflectionMirror_recursiveCount(instanceType)
@@ -143,22 +201,10 @@ private func swift_getField_slow<Value>(
         else {
             continue
         }
-
-        if fieldType != type {
-            func getTypeSize<FieldType>(type: FieldType) -> Int {
-                MemoryLayout<FieldType>.size
-            }
-            let fieldSize = _openExistential(fieldType, do: getTypeSize)
-            let valueSize = MemoryLayout<Value>.size
-            guard valueSize <= fieldSize else {
-                break
-            }
-        }
-
         let offset = swift_reflectionMirror_recursiveChildOffset(instanceType, index: i)
         return Field(type: fieldType, offset: offset)
     }
-    throw SwiftFieldNotFoundError(type: Value.self, key: key, instance: instanceType)
+    throw SwiftFieldNotFoundError(key: key, instance: instanceType)
 }
 
 private func withUnsafeInstancePointer<InstanceType, Result>(
@@ -195,6 +241,13 @@ private func withUnsafeMutableInstancePointer<InstanceType, Result>(
             return try body(ptr)
         }
     }
+}
+
+private func swift_getSize(of type: Any.Type) -> Int {
+    func project<T>(_: T.Type) -> Int {
+        MemoryLayout<T>.size
+    }
+    return _openExistential(type, do: project)
 }
 
 private struct Field {

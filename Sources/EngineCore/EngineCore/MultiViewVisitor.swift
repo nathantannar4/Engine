@@ -7,70 +7,61 @@ import SwiftUI
 /// A ``MultiViewVisitor`` allows for an opaque collection of
 /// `some View` to be unwrapped to visit the concrete `View` element.
 public protocol MultiViewVisitor {
-    mutating func visit<Element: View>(element: Element, context: Context)
+    mutating func visit<Content: View>(content: Content, context: Context, stop: inout Bool)
 
-    #if os(iOS) || os(tvOS)
-    @available(iOS 13.0, tvOS 13.0, *)
-    @available(macOS, unavailable)
-    @available(watchOS, unavailable)
-    mutating func visit<Element: UIViewControllerRepresentable>(element: Element, context: Context)
-    #endif
-
-    #if os(macOS)
-    @available(macOS 10.15, *)
-    @available(iOS, unavailable)
-    @available(tvOS, unavailable)
-    @available(watchOS, unavailable)
-    mutating func visit<Element: NSViewControllerRepresentable>(element: Element, context: Context)
-    #endif
-
-    typealias Context = _MultiViewVisitorContext
+    typealias Context = MultiViewElementContext
 }
 
 @frozen
-public struct _MultiViewVisitorContext {
+public struct MultiViewElementContext {
 
-    @usableFromInline
-    struct Flags: OptionSet {
-        @usableFromInline
-        var rawValue: UInt8
+    public struct ID: Hashable {
 
-        @usableFromInline
-        init(rawValue: UInt8) {
+        private indirect enum Storage: Hashable {
+            case root(TypeIdentifier)
+            case subview(Storage, TypeIdentifier)
+            case offset(Storage, AnyHashable)
+        }
+        private var storage: Storage
+
+        init<Content: View>(_: Content.Type) {
+            self.storage = .root(TypeIdentifier(Content.self))
+        }
+
+        mutating func append<Content: View>(_: Content.Type) {
+            storage = .subview(storage, TypeIdentifier(Content.self))
+        }
+
+        mutating func append<Offset: Hashable>(offset: Offset) {
+            storage = .offset(storage, AnyHashable(offset))
+        }
+    }
+
+    public struct Traits: OptionSet {
+        public var rawValue: UInt8
+
+        public init(rawValue: UInt8) {
             self.rawValue = rawValue
         }
 
-        static let null = Flags(rawValue: 1 << 0)
-        static let header = Flags(rawValue: 1 << 1)
-        static let footer = Flags(rawValue: 1 << 2)
+        public static let header = Traits(rawValue: 1 << 0)
+        public static let footer = Traits(rawValue: 1 << 1)
     }
 
-    @usableFromInline
-    var flags: Flags
+    public var id: ID
+    public var traits: Traits
 
-    @inlinable
-    public init() {
-        self.flags = Flags()
+    init(context: MultiViewIteratorContext) {
+        self.traits = context.traits
+        self.id = context.id
     }
-
-    init(flags: Flags) {
-        self.flags = flags
-    }
-
-    public var isNil: Bool { flags.contains(.null) }
-
-    public var isHeader: Bool { flags.contains(.header) }
-
-    public var isFooter: Bool { flags.contains(.footer) }
 }
 
-extension MultiViewVisitor {
-    public mutating func visit<Element: View>(element: Element, context: Context) { }
-}
-
-struct MultiViewVisitorContext {
+private struct MultiViewVisitorContext {
     var visitor: UnsafeMutableRawPointer
     var type: MultiViewVisitor.Type
+    var context: MultiViewIteratorContext
+    var stop: Bool
 }
 
 @_silgen_name("c_visit_MultiView")
@@ -83,41 +74,94 @@ func c_visit_MultiView(
 )
 
 /// A protocol that defines views with children that can be iterated
-public protocol MultiView {
-
-    /// A tuple of multiple views, or any singular view
-    associatedtype Subview
-    
-    associatedtype Index: Comparable = Int
-    var startIndex: Index { get }
-    var endIndex: Index { get }
-
-    subscript(position: Index) -> Subview { get }
+public protocol MultiView: View {
 
     associatedtype Iterator: MultiViewIterator
-    func makeIterator() -> Iterator
+    func makeSubviewIterator() -> Iterator
 }
 
 public protocol MultiViewIterator {
-    mutating func visit<Visitor: MultiViewVisitor>(visitor: UnsafeMutablePointer<Visitor>)
+    mutating func visit<Visitor: MultiViewVisitor>(
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: Context,
+        stop: inout Bool
+    )
+
+    typealias Context = MultiViewIteratorContext
+}
+
+public struct MultiViewIteratorContext {
+
+    var traits: MultiViewElementContext.Traits
+    var modifier: Any?
+    var id: MultiViewElementContext.ID
+
+    public init<Content: View>(_: Content.Type = Content.self) {
+        self.traits = []
+        self.modifier = nil
+        self.id = .init(Content.self)
+    }
+
+    public func union(_ traits: MultiViewElementContext.Traits) -> Self {
+        var copy = self
+        copy.traits.formUnion(traits)
+        return copy
+    }
+
+    public func modifier<Modifier: ViewModifier>(_ modifier: Modifier) -> Self {
+        var copy = self
+        guard let m = self.modifier else {
+            copy.modifier = modifier
+            return copy
+        }
+        func project<M>(_ m: M) -> Any {
+            let conformance = ViewModifierProtocolDescriptor.conformance(of: M.self)!
+            var visitor = MultiViewIteratorContextModifierVisitor(
+                existing: m,
+                inserting: modifier
+            )
+            conformance.visit(visitor: &visitor)
+            return visitor.output!
+        }
+        copy.modifier = _openExistential(m, do: project)
+        return copy
+    }
 }
 
 extension MultiView {
 
     /// Unwraps the type to be visited by the `Visitor`
+    @inline(__always)
     public func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>
     ) {
-        var iterator = makeIterator()
-        iterator.visit(visitor: visitor)
+        var stop = false
+        visit(visitor: visitor, stop: &stop)
     }
 
-    public var subviews: [AnyView] {
-        var visitor = MultiViewSubviewVisitor()
-        visit(visitor: &visitor)
-        return visitor.subviews
+    /// Unwraps the type to be visited by the `Visitor`
+    @inline(__always)
+    public func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>,
+        stop: inout Bool
+    ) {
+        visit(visitor: visitor, context: .init(Self.self), stop: &stop)
+    }
+
+    @inlinable
+    public func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: MultiViewIteratorContext,
+        stop: inout Bool
+    ) {
+        var iterator = makeSubviewIterator()
+        iterator.visit(visitor: visitor, context: context, stop: &stop)
     }
 }
 
@@ -129,19 +173,27 @@ extension ProtocolConformance where P == MultiViewProtocolDescriptor {
         Visitor: MultiViewVisitor
     >(
         content: Content,
-        visitor: UnsafeMutablePointer<Visitor>
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: MultiViewIteratorContext,
+        stop: inout Bool
     ) {
         precondition(unsafeBitCast(Content.self, to: UnsafeRawPointer.self) == metadata)
-        var ctx = MultiViewVisitorContext(visitor: visitor, type: Visitor.self)
+        var context = MultiViewVisitorContext(
+            visitor: visitor,
+            type: Visitor.self,
+            context: context,
+            stop: stop
+        )
         withUnsafePointer(to: content) { content in
-            withUnsafeMutablePointer(to: &ctx) {
+            withUnsafeMutablePointer(to: &context) {
                 c_visit_MultiView(content, $0, metadata, conformance, P.descriptor)
             }
         }
+        stop = context.stop
     }
 }
 
-/// The ``TypeDescriptor`` for the `MultiView` protocol
+/// The ``TypeDescriptor`` for the ``MultiView`` protocol
 public struct MultiViewProtocolDescriptor: TypeDescriptor {
     public static var descriptor: UnsafeRawPointer {
         _MultiViewProtocolDescriptor()
@@ -161,100 +213,73 @@ public func _swift_visit_MultiView<Content: MultiView>(
     func project<Visitor: MultiViewVisitor>(type: Visitor.Type) {
         let visitor = c.value.visitor.assumingMemoryBound(to: Visitor.self)
         let content = content.assumingMemoryBound(to: Content.self)
-        content.pointee.visit(visitor: visitor)
+        content.pointee.visit(
+            visitor: visitor,
+            context: c.pointee.context,
+            stop: &c.pointee.stop
+        )
     }
     _openExistential(c.value.type, do: project)
 }
 
-@frozen
-public struct MultiViewSubviewIterator<Content>: MultiViewIterator {
-
-    public var content: Content
-    public init(content: Content) {
-        self.content = content
-    }
-
-    public mutating func visit<
-        Visitor: MultiViewVisitor
-    >(
-        visitor: UnsafeMutablePointer<Visitor>
+extension MultiViewVisitor {
+    public mutating func visit<Content: View>(
+        content: Content,
+        context: MultiViewIteratorContext,
+        stop: inout Bool
     ) {
-        func project<Element>(_ element: Element) {
-            visit(element: element, visitor: visitor)
-        }
-
-        if let count = swift_getTupleCount(content) {
-            for index in 0..<count {
-                let value = swift_getTupleElement(index, content)!
-                _openExistential(value, do: project)
+        var context = context
+        context.id.append(Content.self)
+        if let modifier = context.modifier {
+            stop = withUnsafeMutablePointer(to: &self) { ptr in
+                func project<Modifier>(_ modifier: Modifier) -> Bool {
+                    let conformance = ViewModifierProtocolDescriptor.conformance(of: Modifier.self)!
+                    var visitor = MultiViewIteratorModifierVisitor(
+                        content: content,
+                        modifier: modifier,
+                        context: context,
+                        visitor: ptr
+                    )
+                    conformance.visit(visitor: &visitor)
+                    return visitor.stop
+                }
+                return _openExistential(modifier, do: project)
             }
         } else {
-            project(content)
-        }
-    }
-
-    private func visit<
-        Element,
-        Visitor: MultiViewVisitor
-    >(
-        element: Element,
-        visitor: UnsafeMutablePointer<Visitor>
-    ) {
-        var visitor = TupleMultiViewElementVisitor(
-            element: element,
-            visitor: visitor
-        )
-        #if os(iOS) || os(tvOS)
-        if let conformance = UIViewControllerRepresentableProtocolDescriptor.conformance(of: Element.self) {
-            conformance.visit(visitor: &visitor)
-        }
-        #elseif os(macOS)
-        if let conformance = NSViewControllerRepresentableProtocolDescriptor.conformance(of: Element.self) {
-            conformance.visit(visitor: &visitor)
-        }
-        #endif
-        if let conformance = ViewProtocolDescriptor.conformance(of: Element.self) {
-            conformance.visit(visitor: &visitor)
+            visit(content: content, context: .init(context: context), stop: &stop)
         }
     }
 }
 
-private struct TupleMultiViewElementVisitor<
-    Element,
+private struct MultiViewIteratorModifierVisitor<
+    Content: View,
+    M,
     Visitor: MultiViewVisitor
->: ViewVisitor {
+>: ViewModifierVisitor {
 
-    var element: Element
+    var content: Content
+    var modifier: M
+    var context: MultiViewIteratorContext
     var visitor: UnsafeMutablePointer<Visitor>
+    var stop = false
 
-    func visit<Content>(type: Content.Type) where Content: View {
-        let element = unsafeBitCast(element, to: Content.self)
-        if let conformance = MultiViewProtocolDescriptor.conformance(of: Element.self) {
-            conformance.visit(content: element, visitor: visitor)
-        } else {
-            visitor.value.visit(element: element, context: .init())
-        }
+    mutating func visit<Modifier: ViewModifier>(type: Modifier.Type) {
+        let modifier = unsafeBitCast(modifier, to: Modifier.self)
+        visitor.pointee.visit(
+            content: content.modifier(modifier),
+            context: .init(context: context),
+            stop: &stop
+        )
     }
-
-    #if os(iOS) || os(tvOS)
-    mutating func visit<Content>(type: Content.Type) where Content: UIViewControllerRepresentable {
-        let element = unsafeBitCast(element, to: Content.self)
-        visitor.value.visit(element: element, context: .init())
-    }
-    #endif
-
-    #if os(macOS)
-    mutating func visit<Content>(type: Content.Type) where Content: NSViewControllerRepresentable {
-        let element = unsafeBitCast(element, to: Content.self)
-        visitor.value.visit(element: element, context: .init())
-    }
-    #endif
 }
 
-private struct MultiViewSubviewVisitor: MultiViewVisitor {
-    var subviews: [AnyView] = []
+private struct MultiViewIteratorContextModifierVisitor<M, N: ViewModifier>: ViewModifierVisitor {
+    var existing: M
+    var inserting: N
+    var output: Any!
 
-    mutating func visit<Element: View>(element: Element, context: Context) {
-        subviews.append(AnyView(element))
+    mutating func visit<Modifier: ViewModifier>(type: Modifier.Type) {
+        let existing = unsafeBitCast(existing, to: Modifier.self)
+        output = inserting.concat(existing)
     }
 }

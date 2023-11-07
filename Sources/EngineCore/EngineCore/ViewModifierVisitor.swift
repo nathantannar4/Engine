@@ -10,7 +10,7 @@ public protocol ViewModifierVisitor {
     mutating func visit<Modifier: ViewModifier>(type: Modifier.Type)
 }
 
-struct ViewModifierVisitorContext {
+private struct ViewModifierVisitorContext {
     var visitor: UnsafeMutableRawPointer
     var type: ViewModifierVisitor.Type
 }

@@ -209,7 +209,11 @@ extension LayoutProperties {
     }
 
     func combined(with other: LayoutProperties) -> LayoutProperties {
-        let other = unsafePartialBitCast(other, to: _LayoutProperties.self)
+        let other = withUnsafePointer(to: other) { ptr in
+            ptr.withMemoryRebound(to: _LayoutProperties.self, capacity: 1) { ptr in
+                return ptr.pointee
+            }
+        }
         var result = self
         withMemoryRebound(&result, to: _LayoutProperties.self) { result in
             if result.stackOrientation != other.stackOrientation {

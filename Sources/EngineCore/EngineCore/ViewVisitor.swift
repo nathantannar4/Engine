@@ -37,10 +37,10 @@ public protocol ViewVisitor {
 }
 
 extension ViewVisitor {
-    public mutating func visit<Content: View>(type: Content.Type) { }
+    public func visit<Content: View>(type: Content.Type) { }
 }
 
-struct ViewVisitorContext {
+private struct ViewVisitorContext {
     var visitor: UnsafeMutableRawPointer
     var type: ViewVisitor.Type
 }

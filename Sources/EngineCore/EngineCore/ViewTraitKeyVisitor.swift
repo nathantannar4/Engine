@@ -10,7 +10,7 @@ public protocol ViewTraitKeyVisitor {
     mutating func visit<Key: _ViewTraitKey>(type: Key.Type)
 }
 
-struct ViewTraitKeyVisitorContext {
+private struct ViewTraitKeyVisitorContext {
     var visitor: UnsafeMutableRawPointer
     var type: ViewTraitKeyVisitor.Type
 }

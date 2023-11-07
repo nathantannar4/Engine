@@ -200,6 +200,44 @@ struct ViewStyleExamples: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading) {
+                Text("Icon")
+                    .font(.title3)
+                Text("A @StyledView macro example")
+                    .font(.caption)
+            }
+            .frame(width: 120)
+
+            VStack(alignment: .leading) {
+                Icon(label: Text("Delete"), image: Image(systemName: "trash"))
+
+                Icon(label: Text("Delete"), image: Image(systemName: "trash"))
+                    .modifier(IconStyleModifier(DetailedIconStyle()))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+@StyledView
+struct Icon: StyledView {
+    var label: Text
+    var image: Image
+
+    var body: some View {
+        image.accessibilityLabel(label)
+    }
+}
+
+struct DetailedIconStyle: IconStyle {
+    func makeBody(configuration: IconConfiguration) -> some View {
+        HStack {
+            configuration.image
+
+            configuration.label
+        }
     }
 }
 

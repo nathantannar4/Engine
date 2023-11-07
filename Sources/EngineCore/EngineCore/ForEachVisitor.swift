@@ -6,47 +6,55 @@ import SwiftUI
 
 extension ForEach: MultiView where Content: View {
 
-    public var startIndex: Data.Index {
-        data.startIndex
-    }
-
-    public var endIndex: Data.Index {
-        data.endIndex
-    }
-
-    public subscript(position: Data.Index) -> Content {
-        content(data[position])
-    }
-
-    public func makeIterator() -> MultiViewForEachIterator<Data, ID, Content> {
-        MultiViewForEachIterator(content: self)
+    public func makeSubviewIterator() -> some MultiViewIterator {
+        ForEachSubviewIterator(content: self)
     }
 }
 
-@frozen
-public struct MultiViewForEachIterator<
+
+private struct ForEachSubviewIterator<
     Data: RandomAccessCollection,
     ID: Hashable,
     Content: View
 >: MultiViewIterator {
 
-    public var content: ForEach<Data, ID, Content>
-    public init(content: ForEach<Data, ID, Content>) {
-        self.content = content
-    }
+    var content: ForEach<Data, ID, Content>
 
-    public mutating func visit<
+    func visit<
         Visitor: MultiViewVisitor
     >(
-        visitor: UnsafeMutablePointer<Visitor>
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: Context,
+        stop: inout Bool
     ) {
-        for value in content.data {
-            let element = content.content(value)
-            if let conformance = MultiViewProtocolDescriptor.conformance(of: Content.self) {
-                conformance.visit(content: element, visitor: visitor)
-            } else {
-                visitor.value.visit(element: element, context: .init())
+        let offset: (Data.Index) -> AnyHashable
+        if let idGenerator = try? swift_getFieldValue("idGenerator", Any.self, self),
+           let keyPath = Mirror(reflecting: idGenerator).children.first?.value as? KeyPath<Data.Element, ID>
+        {
+            offset = { index in
+                content.data[index][keyPath: keyPath]
             }
+        } else {
+            var counter = 0
+            offset = { index in
+                if let index = index as? AnyHashable {
+                    return index
+                } else {
+                    defer { counter += 1 }
+                    return AnyHashable(counter)
+                }
+            }
+        }
+        for index in content.data.indices {
+            let element = content.content(content.data[index])
+            var context = context
+            context.id.append(offset: offset(index))
+            element.visit(
+                visitor: visitor,
+                context: context,
+                stop: &stop
+            )
+            guard !stop else { return }
         }
     }
 }
