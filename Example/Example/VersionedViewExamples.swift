@@ -9,6 +9,9 @@ struct VersionedViewExamples: View {
     var body: some View {
         VersionText()
 
+        VersionText()
+            .version(.v4)
+
         VersionedViewWithDynamicProperties()
 
         GradientRectangle(color: .red)

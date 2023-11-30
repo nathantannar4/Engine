@@ -45,6 +45,10 @@ let package = Package(
 )
 ```
 
+### Xcode Cloud / Github Actions / Fastlane / CI
+
+`Engine` includes a Swift macro, which requires user validation to enable or the build will fail. When configuring your CI, pass the flag `-skipMacroValidation` to `xcodebuild` to fix this.
+
 ## Introduction to Engine
 
 For some sample code to get started with `Engine`, build and run the included "Example" project.
@@ -421,7 +425,7 @@ struct PickerView<Selection: Hashable, Content: View>: View {
 public protocol VersionedView: View where Body == Never {
     associatedtype V5Body: View = V4Body
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, xrOS 1.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     @ViewBuilder var v5Body: V5Body { get }
     
     associatedtype V4Body: View = V3Body
@@ -576,6 +580,41 @@ struct ProfileView: View {
 ```
 
 [Open More Examples](https://github.com/nathantannar4/Engine/blob/main/Example/Example/StaticConditionalExamples.swift)
+
+### EngineCore
+
+The visitor pattern enables casting from a generic type T to a  protocol with an associated type so that the concrete type can be utilized.
+
+```swift
+struct ViewAccessor: ViewVisitor {
+    var input: Any
+
+    var output: AnyView {
+        func project<T>(_ input: T) -> AnyView {
+            var visitor = Visitor(input: input)
+            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
+            conformance.visit(visitor: &visitor)
+            return visitor.output
+        }
+        return _openExistential(input, do: project)
+    }
+
+    struct Visitor<T>: ViewVisitor {
+        var input: T
+        var output: AnyView!
+
+        mutating func visit<Content: View>(type: Content.Type) {
+            let view = unsafeBitCast(input, to: Content.self)
+            output = AnyView(view)
+        }
+    }
+}
+
+let value: Any = Text("Hello, World!")
+let accessor = ViewAccessor(input: value)
+let view = accessor.output
+print(view) // AnyView(Text("Hello, World!"))
+```
 
 ## License
 

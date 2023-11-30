@@ -1,13 +1,8 @@
 .DS_Store
-/.build
 /Packages
 Package.resolved
 /*.xcodeproj
 xcuserdata/
 DerivedData/
-.swiftpm/config/registries.json
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+/.swiftpm
 .netrc
-Sources/EngineCore/EngineCore.xcframework
-Sources/EngineCore/EngineCore.xcframework.zip
-Sources/EngineCore/Example
