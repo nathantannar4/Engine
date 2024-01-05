@@ -2,8 +2,8 @@ import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
 
-#if canImport(EngineMacros)
-@testable import EngineMacros
+#if canImport(EngineMacrosCore)
+@testable import EngineMacrosCore
 
 let testMacros: [String: Macro.Type] = [
     "StyledView": StyledViewMacro.self,

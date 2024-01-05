@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import Engine
 
 /// A macro that adds the necessary components of a ``StyledView``
 ///
@@ -92,7 +93,7 @@ import SwiftUI
 ///
 @attached(peer, names: suffixed(Configuration), suffixed(Body), suffixed(Style), suffixed(StyleModifier), suffixed(DefaultStyle))
 @attached(member, names: named(_body), named(init))
-public macro StyledView() = #externalMacro(module: "EngineMacros", type: "StyledViewMacro")
+public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "StyledViewMacro")
 
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.

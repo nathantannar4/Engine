@@ -4,6 +4,9 @@
 
 import SwiftUI
 import Engine
+#if canImport(EngineMacros)
+import EngineMacros
+#endif
 
 struct ViewStyleEnvironmentTestKey: EnvironmentKey {
     static let defaultValue = "defaultValue"
@@ -163,6 +166,18 @@ struct ViewStyleExamples: View {
                         .border(Color.blue)
                     }
                     .labeledViewStyle(BorderedLabeledViewStyle())
+
+                    #if canImport(EngineMacros)
+                    Text("@ViewStyle")
+                        .font(.headline)
+
+                    _LabeledView {
+                        Text("Content")
+                    } content: {
+                        Text("Label")
+                    }
+                    .modifier(_LabeledViewStyleModifier(_BorderedLabeledViewStyle()))
+                    #endif
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -201,6 +216,7 @@ struct ViewStyleExamples: View {
             }
         }
 
+        #if canImport(EngineMacros)
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading) {
                 Text("Icon")
@@ -218,8 +234,11 @@ struct ViewStyleExamples: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        #endif
     }
 }
+
+#if canImport(EngineMacros)
 
 @StyledView
 struct Icon: StyledView {
@@ -240,6 +259,8 @@ struct DetailedIconStyle: IconStyle {
         }
     }
 }
+
+#endif
 
 protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration {
     associatedtype Configuration = Configuration
@@ -355,6 +376,7 @@ struct StepperViewBody: ViewStyledView {
     }
 }
 
+#if canImport(EngineMacros)
 // LabeledView is the full definition of a styled view, or you can use the
 // @StyledView macro with a `StyledView`
 @StyledView
@@ -370,6 +392,14 @@ struct _LabeledView<Label: View, Content: View>: StyledView {
         }
     }
 }
+
+struct _BorderedLabeledViewStyle: _LabeledViewStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        _LabeledView(configuration)
+            .border(Color.red)
+    }
+}
+#endif
 
 protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
     associatedtype Configuration = Configuration

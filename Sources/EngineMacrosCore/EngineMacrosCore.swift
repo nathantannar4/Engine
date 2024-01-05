@@ -6,7 +6,7 @@ import SwiftCompilerPlugin
 import SwiftSyntaxMacros
 
 @main
-struct EngineMacros: CompilerPlugin {
+struct EngineMacrosCore: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         StyledViewMacro.self
     ]

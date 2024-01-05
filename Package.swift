@@ -26,6 +26,10 @@ let package = Package(
             name: "EngineCoreC",
             targets: ["EngineCoreC"]
         ),
+        .library(
+            name: "EngineMacros",
+            targets: ["EngineMacros"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
@@ -35,7 +39,6 @@ let package = Package(
             name: "Engine",
             dependencies: [
                 "EngineCore",
-                "EngineMacros",
             ]
         ),
         .target(
@@ -47,8 +50,15 @@ let package = Package(
         .target(
             name: "EngineCoreC"
         ),
-        .macro(
+        .target(
             name: "EngineMacros",
+            dependencies: [
+                "Engine",
+                "EngineMacrosCore",
+            ]
+        ),
+        .macro(
+            name: "EngineMacrosCore",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")

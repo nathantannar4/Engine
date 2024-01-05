@@ -36,6 +36,7 @@ let package = Package(
             name: "YourPackageTarget",
             dependencies: [
                 .product(name: "Engine", package: "Engine"),
+                .product(name: "EngineMacros", package: "Engine"), // Optional
             ],
             //...
         ),
@@ -72,6 +73,8 @@ With the `@StyledView` macro nearly any `View` can be transformed into one that 
 #### Examples
 
 ```swift
+import EngineMacros
+
 @StyledView
 struct LabeledView<Label: View, Content: View>: StyledView {
     var label: Label
