@@ -269,6 +269,48 @@ struct StepperViewBody: ViewStyledView {
 
 [Open Examples](https://github.com/nathantannar4/Engine/blob/main/Example/Example/ViewStyleExamples.swift)
 
+### Shapes
+
+```swift
+@frozen
+public struct AnyShape: Shape {
+    @inlinable
+    public init<S: Shape>(shape: S)
+}
+
+/// A custom parameter attribute that constructs a `Shape` from closures.
+@resultBuilder
+public struct ShapeBuilder { }
+
+extension View {
+
+    /// Sets a clipping shape for this view.
+    @inlinable
+    public func clipShape<S: Shape>(
+        style: FillStyle = FillStyle(),
+        @ShapeBuilder shape: () -> S
+    ) -> some View
+
+    /// Defines the content shape for hit testing.
+    @inlinable
+    public func contentShape<S: Shape>(
+        eoFill: Bool = false,
+        @ShapeBuilder shape: () -> S
+    ) -> some View
+
+    /// Sets the content shape for this view.
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    @inlinable
+    public func contentShape<S: Shape>(
+        _ kind: ContentShapeKinds,
+        eoFill: Bool = false,
+        @ShapeBuilder shape: () -> S
+    ) -> some View
+}
+```
+
+A backwards compatible `AnyShape` type erasure.
+
 ### View Input
 
 ```swift

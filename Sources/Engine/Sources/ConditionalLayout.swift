@@ -3,7 +3,6 @@
 //
 
 import SwiftUI
-
 import EngineCore
 
 /// A layout that is dynamically either `TrueLayout` or `FalseLayout`.
@@ -12,40 +11,19 @@ import EngineCore
 /// since it does not use type-erasure. Additionally, the `Cache` of each `Layout` is
 /// stored separately as opposed to being invalidated when the dynamic condition changes.
 ///
-@frozen
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-public struct ConditionalLayout<
-    TrueLayout: Layout,
-    FalseLayout: Layout
->: Layout {
+public typealias ConditionalLayout<TrueLayout: Layout, FalseLayout: Layout> = ConditionalContent<TrueLayout, FalseLayout>
 
-    @frozen
-    @usableFromInline
-    enum Storage {
-        case trueLayout(TrueLayout)
-        case falseLayout(FalseLayout)
-    }
-
-    @usableFromInline
-    var storage: Storage
-
-    @inlinable
-    public init(_ trueLayout: TrueLayout) {
-        self.storage = .trueLayout(trueLayout)
-    }
-
-    @inlinable
-    public init(_ falseLayout: FalseLayout) {
-        self.storage = .falseLayout(falseLayout)
-    }
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+extension ConditionalLayout: Layout {
 
     @inlinable
     public init(
         if condition: Bool,
-        @LayoutBuilder then: () -> TrueLayout,
-        @LayoutBuilder otherwise: () -> FalseLayout
+        @LayoutBuilder then: () -> TrueContent,
+        @LayoutBuilder otherwise: () -> FalseContent
     ) {
-        self.storage = condition ? .trueLayout(then()) : .falseLayout(otherwise())
+        self.storage = condition ? .trueContent(then()) : .falseContent(otherwise())
     }
 
     public func sizeThatFits(
@@ -55,10 +33,10 @@ public struct ConditionalLayout<
     ) -> CGSize {
         let size: CGSize
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             size = l.sizeThatFits(proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             size = l.sizeThatFits(proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
         default:
@@ -74,10 +52,10 @@ public struct ConditionalLayout<
         cache: inout Cache
     ) {
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             l.placeSubviews(in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             l.placeSubviews(in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
         default:
@@ -94,10 +72,10 @@ public struct ConditionalLayout<
     ) -> CGFloat? {
         let alignment: CGFloat?
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
         default:
@@ -115,10 +93,10 @@ public struct ConditionalLayout<
     ) -> CGFloat? {
         let alignment: CGFloat?
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             alignment = l.explicitAlignment(of: guide, in: bounds, proposal: proposal, subviews: subviews, cache: &c)
             cache = Cache(c)
         default:
@@ -133,10 +111,10 @@ public struct ConditionalLayout<
     ) -> ViewSpacing {
         let spacing: ViewSpacing
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             spacing = l.spacing(subviews: subviews, cache: &c)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             spacing = l.spacing(subviews: subviews, cache: &c)
             cache = Cache(c)
         default:
@@ -148,27 +126,27 @@ public struct ConditionalLayout<
     @frozen
     public struct Cache {
         public enum Storage {
-            case trueCache(TrueLayout.Cache)
-            case falseCache(FalseLayout.Cache)
+            case trueCache(TrueContent.Cache)
+            case falseCache(FalseContent.Cache)
         }
 
         public var storage: Storage
         var lastValue: Storage?
 
-        init(_ cache: TrueLayout.Cache) {
+        init(_ cache: TrueContent.Cache) {
             self.storage = .trueCache(cache)
         }
 
-        init(_ cache: FalseLayout.Cache) {
+        init(_ cache: FalseContent.Cache) {
             self.storage = .falseCache(cache)
         }
     }
 
     public func makeCache(subviews: Subviews) -> Cache {
         switch storage {
-        case .trueLayout(let layout):
+        case .trueContent(let layout):
             return Cache(layout.makeCache(subviews: subviews))
-        case .falseLayout(let layout):
+        case .falseContent(let layout):
             return Cache(layout.makeCache(subviews: subviews))
         }
     }
@@ -178,13 +156,13 @@ public struct ConditionalLayout<
         subviews: Subviews
     ) {
         switch (storage, cache.storage) {
-        case (.trueLayout(let l), .trueCache(var c)):
+        case (.trueContent(let l), .trueCache(var c)):
             l.updateCache(&c, subviews: subviews)
             cache = Cache(c)
-        case (.falseLayout(let l), .falseCache(var c)):
+        case (.falseContent(let l), .falseCache(var c)):
             l.updateCache(&c, subviews: subviews)
             cache = Cache(c)
-        case (.trueLayout, .falseCache), (.falseLayout, .trueCache):
+        case (.trueContent, .falseCache), (.falseContent, .trueCache):
             let oldValue = cache.storage
             if let lastValue = cache.lastValue {
                 cache.storage = lastValue
@@ -196,7 +174,7 @@ public struct ConditionalLayout<
     }
 
     public static var layoutProperties: LayoutProperties {
-        TrueLayout.layoutProperties.combined(with: FalseLayout.layoutProperties)
+        TrueContent.layoutProperties.combined(with: FalseContent.layoutProperties)
     }
 }
 

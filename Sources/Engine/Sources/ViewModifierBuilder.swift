@@ -7,16 +7,20 @@ import SwiftUI
 /// A custom parameter attribute that constructs a `ViewModifier` from closures.
 @resultBuilder
 public struct ViewModifierBuilder {
+
+    @_alwaysEmitIntoClient
     public static func buildBlock() -> EmptyModifier {
         EmptyModifier()
     }
 
+    @_alwaysEmitIntoClient
     public static func buildBlock<Modifier: ViewModifier>(
         _ modifier: Modifier
     ) -> Modifier {
         modifier
     }
 
+    @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
         M1: ViewModifier
@@ -27,6 +31,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1)
     }
 
+    @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
         M1: ViewModifier,
@@ -39,6 +44,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1).concat(m2)
     }
 
+    @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
         M1: ViewModifier,
@@ -53,6 +59,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1).concat(m2).concat(m3)
     }
 
+    @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
         M1: ViewModifier,

@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-/// A view that is dynamically either `TrueContent` or `FalseContent`.
+/// A type that is dynamically either `TrueContent` or `FalseContent`.
 ///
 /// > Note: Similar to `SwiftUI._ConditionalContent` but with the underlying storage
 /// made public
@@ -15,7 +15,7 @@ public struct ConditionalContent<
 > {
 
     @frozen
-    public enum Storage {
+    public enum Storage: @unchecked Sendable {
         case trueContent(TrueContent)
         case falseContent(FalseContent)
     }
@@ -33,34 +33,35 @@ public struct ConditionalContent<
     }
 }
 
-extension ConditionalContent: View where TrueContent: View, FalseContent: View {
-    @inlinable
-    public init(
-        if condition: Bool,
-        @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder otherwise: () -> FalseContent
-    ) {
-        self.storage = condition ? .trueContent(then()) : .falseContent(otherwise())
-    }
-
-    public var body: some View {
-        switch storage {
-        case .trueContent(let trueContent):
-            trueContent
-        case .falseContent(let falseContent):
-            falseContent
+extension ConditionalContent: Animatable where TrueContent: Animatable, FalseContent: Animatable {
+    public var animatableData: AnyAnimatableData {
+        get {
+            switch storage {
+            case .trueContent(let layout):
+                return AnyAnimatableData(layout.animatableData)
+            case .falseContent(let layout):
+                return AnyAnimatableData(layout.animatableData)
+            }
+        }
+        set {
+            switch storage {
+            case .trueContent(var layout):
+                if let newValue = newValue.as(TrueContent.AnimatableData.self) {
+                    layout.animatableData = newValue
+                    storage = .trueContent(layout)
+                }
+            case .falseContent(var layout):
+                if let newValue = newValue.as(FalseContent.AnimatableData.self) {
+                    layout.animatableData = newValue
+                    storage = .falseContent(layout)
+                }
+            }
         }
     }
 }
 
-extension ConditionalContent where TrueContent: View, FalseContent == EmptyView {
-    @inlinable
-    public init(
-        if condition: Bool,
-        @ViewBuilder then: () -> TrueContent
-    ) {
-        self.init(if: condition, then: then, otherwise: { EmptyView() })
-    }
+extension ConditionalContent: Sendable where TrueContent: Sendable, FalseContent: Sendable {
+
 }
 
 extension ConditionalContent: Equatable where TrueContent: Equatable, FalseContent: Equatable {
@@ -73,43 +74,5 @@ extension ConditionalContent: Equatable where TrueContent: Equatable, FalseConte
         default:
             return false
         }
-    }
-}
-
-// MARK: - Previews
-
-struct ConditionalContent_Previews: PreviewProvider {
-    struct Preview: View {
-        @State var condition = true
-
-        var body: some View {
-            VStack {
-                Toggle(
-                    isOn: $condition.animation(.default),
-                    label: { EmptyView() }
-                )
-                .labelsHidden()
-
-                ConditionalContent(if: condition) {
-                    VStack {
-                        content
-                    }
-                } otherwise: {
-                    HStack {
-                        content
-                    }
-                }
-            }
-        }
-
-        @ViewBuilder
-        var content: some View {
-            Text("Hello")
-            Text("World")
-        }
-    }
-
-    static var previews: some View {
-        Preview()
     }
 }

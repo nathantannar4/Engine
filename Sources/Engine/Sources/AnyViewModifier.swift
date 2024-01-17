@@ -52,7 +52,7 @@ class AnyViewModifierStorageBase {
 }
 
 private class AnyViewModifierStorage<Modifier: ViewModifier>: AnyViewModifierStorageBase {
-    var modifier: Modifier
+    let modifier: Modifier
     init(_ modifier: Modifier) { self.modifier = modifier }
 
     override func body(content: AnyViewModifier.Content) -> AnyView {
