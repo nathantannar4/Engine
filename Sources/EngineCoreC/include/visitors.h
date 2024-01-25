@@ -7,6 +7,8 @@
 
 #include <TargetConditionals.h>
 
+extern void _swift_visit_EnvironmentKey(void *_Nonnull visitor, const void *_Nonnull type, const void *_Nonnull metadata, const void *_Nonnull conformance) __attribute__((swiftcall));
+
 extern void _swift_visit_ViewTraitKey(void *_Nonnull visitor, const void *_Nonnull type, const void *_Nonnull metadata, const void *_Nonnull conformance) __attribute__((swiftcall));
 
 extern void _swift_visit_View(void *_Nonnull visitor, const void *_Nonnull type, const void *_Nonnull metadata, const void *_Nonnull conformance) __attribute__((swiftcall));

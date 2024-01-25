@@ -36,6 +36,11 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
                 return nil
             }
             self.ptr = ptr
+        case .struct:
+            guard Kind.self == StructMetadata.self else {
+                return nil
+            }
+            self.ptr = ptr
         default:
             return nil
         }
@@ -44,6 +49,77 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
     subscript<Value>(_ keyPath: KeyPath<Kind, Value>) -> Value {
         let kind = unsafeBitCast(ptr, to: Kind.self)
         return kind[keyPath: keyPath]
+    }
+}
+
+protocol ContextDescriptor {
+    var ptr: UnsafeRawPointer { get }
+}
+
+struct ContextDescriptorLayout {
+    let flags: ContextDescriptorFlags
+}
+
+struct GenericContext {
+    var ptr: UnsafeRawPointer
+
+    var numParams: Int {
+        Int(ptr.load(as: GenericContextLayout.self).numParams)
+    }
+}
+
+struct GenericContextLayout {
+    let numParams: UInt16
+    let numRequirements: UInt16
+    let numKeyArguments: UInt16
+    let numExtraArguments: UInt16
+}
+
+extension ContextDescriptor {
+    var flags: ContextDescriptorFlags {
+        ptr.load(as: ContextDescriptorLayout.self).flags
+    }
+}
+
+struct StructMetadata: TypeMetadata {
+    struct Layout {
+        let kind: Int
+        let descriptor: UnsafePointer<Descriptor>
+    }
+
+    struct Descriptor: ContextDescriptor {
+        let ptr: UnsafeRawPointer
+    }
+
+    let ptr: UnsafeRawPointer
+
+    var descriptor: Descriptor {
+        Descriptor(ptr: ptr.load(as: Layout.self).descriptor)
+    }
+
+    var genericArgumentPtr: UnsafeRawPointer {
+        ptr + MemoryLayout<Layout>.size
+    }
+
+    var genericTypes: [Any.Type]? {
+        guard descriptor.flags.isGeneric else {
+            return nil
+        }
+
+        let genericContext = GenericContext(ptr: genericArgumentPtr)
+        let numParams = genericContext.numParams
+        return Array(unsafeUninitializedCapacity: numParams) {
+            let gap = genericArgumentPtr
+            for i in 0 ..< numParams {
+                let type = gap.load(
+                    fromByteOffset: i * MemoryLayout<Any.Type>.stride,
+                    as: Any.Type.self
+                )
+
+                $0[i] = type
+            }
+            $1 = numParams
+        }
     }
 }
 
@@ -96,6 +172,14 @@ struct TupleMetadata: TypeMetadata {
             }
             $1 = numberOfElements
         }
+    }
+}
+
+struct ContextDescriptorFlags {
+    let bits: UInt32
+
+    var isGeneric: Bool {
+        bits & 0x80 != 0
     }
 }
 

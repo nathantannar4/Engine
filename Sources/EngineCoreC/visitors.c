@@ -4,6 +4,12 @@
 
 #include "visitors.h"
 
+extern char $s7SwiftUI14EnvironmentKeyMp;
+
+const void *_EnvironmentKeyProtocolDescriptor(void) {
+    return &$s7SwiftUI14EnvironmentKeyMp;
+}
+
 extern char $s7SwiftUI13_ViewTraitKeyMp;
 
 const void *_ViewTraitKeyProtocolDescriptor(void) {
@@ -60,11 +66,15 @@ const void *_NSViewControllerRepresentableProtocolDescriptor(void) {
 
 #endif
 
+void c_visit_EnvironmentKey(void *_Nonnull visitor, const void *_Nonnull metadata, const void *_Nonnull conformance)
+{
+    _swift_visit_EnvironmentKey(visitor, metadata, metadata, conformance);
+}
+
 void c_visit_ViewTraitKey(void *_Nonnull visitor, const void *_Nonnull metadata, const void *_Nonnull conformance)
 {
     _swift_visit_ViewTraitKey(visitor, metadata, metadata, conformance);
 }
-
 
 void c_visit_View(void *_Nonnull visitor, const void *_Nonnull metadata, const void *_Nonnull conformance, const void *_Nonnull descriptor)
 {

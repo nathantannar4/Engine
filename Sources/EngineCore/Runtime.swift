@@ -58,6 +58,13 @@ public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _
     try setFieldValue(key, value, &instance)
 }
 
+public func swift_getStructGenerics(for type: Any.Type) -> [Any.Type]? {
+    guard let metadata = Metadata<StructMetadata>(type) else {
+        return nil
+    }
+    return metadata[\.genericTypes]
+}
+
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
     var key: String
     var instance: Any.Type

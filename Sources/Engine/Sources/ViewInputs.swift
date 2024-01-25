@@ -35,6 +35,7 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
         modifier: _GraphValue<Self>,
         inputs: inout _GraphInputs
     ) {
+        #if DEBUG
         let log: String = inputs.withCustomInputs { inputs in
             var message = "\n=== ViewInputs ===\n"
             var ptr = inputs.elements
@@ -62,6 +63,7 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
             return message
         }
         os_log(.debug, "%@", log)
+        #endif
     }
 }
 
@@ -96,16 +98,16 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
 }
 
 extension _GraphInputs {
-    fileprivate var customInputs: CustomInputsLayout {
-        withUnsafePointer(to: self) { ptr -> CustomInputsLayout in
-            ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> CustomInputsLayout in
+    fileprivate var customInputs: PropertyList {
+        withUnsafePointer(to: self) { ptr -> PropertyList in
+            ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> PropertyList in
                 ptr.pointee.customInputs
             }
         }
     }
 
     fileprivate mutating func withCustomInputs<ReturnType>(
-        do body: (inout CustomInputsLayout) -> ReturnType
+        do body: (inout PropertyList) -> ReturnType
     ) -> ReturnType {
         withUnsafeMutablePointer(to: &self) { ptr -> ReturnType in
             ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> ReturnType in
@@ -118,7 +120,7 @@ extension _GraphInputs {
         _ : Input.Type
     ) -> Input.Value {
         get {
-            customInputs.value(Input.self) ?? Input.defaultValue
+            customInputs.value(Input.self, as: Input.Value.self) ?? Input.defaultValue
         }
         set {
             withCustomInputs {
@@ -132,7 +134,7 @@ extension _GraphInputs {
         _ : Input.Type
     ) -> Input.Value? {
         get {
-            customInputs.value(Input.self)
+            customInputs.value(Input.self, as: Input.Value.self)
         }
         set {
             withCustomInputs {
@@ -143,45 +145,11 @@ extension _GraphInputs {
 }
 
 private struct GraphInputsLayout {
-    var customInputs: CustomInputsLayout
+    var customInputs: PropertyList
 }
 
-private struct CustomInputsLayout {
-    struct ElementLayout {
-        var metadata: (Any.Type, UInt)
-        var fields: ElementFields
-
-        mutating func withUnsafeValuePointer<T, ReturnType>(
-            _ type: T.Type,
-            do body: (UnsafeMutablePointer<CustomInputsLayout.TypedElementLayout<T>>) -> ReturnType
-        ) -> ReturnType {
-            withUnsafeMutablePointer(to: &self) { ptr -> ReturnType in
-                ptr.withMemoryRebound(
-                    to: CustomInputsLayout.TypedElementLayout<T>.self,
-                    capacity: 1,
-                    body
-                )
-            }
-        }
-    }
-
-    struct ElementFields {
-        var keyType: Any.Type
-        var before: UnsafeMutablePointer<ElementLayout>?
-        var after: UnsafeMutablePointer<ElementLayout>?
-        var length: Int
-        var keyFilter: UInt
-        var id: UInt
-    }
-
-    struct TypedElementLayout<Value> {
-        var base: ElementLayout
-        var value: Value
-    }
-
-    var elements: UnsafeMutablePointer<ElementLayout>?
-
-    mutating func detach() {
+extension PropertyList {
+    fileprivate mutating func detach() {
         var ptr = elements
         while let p = ptr {
             let key = _typeName(ptr!.pointee.fields.keyType, qualified: true)
@@ -231,63 +199,6 @@ private struct CustomInputsLayout {
             _ = Unmanaged<AnyObject>.fromOpaque(last).retain() // Prevent dealloc
             tail.pointee.fields.after = last
         }
-    }
-
-    func withUnsafeValuePointer<Input: ViewInputKey, ReturnType>(
-        _ type: Input.Type,
-        do body: (UnsafeMutablePointer<CustomInputsLayout.TypedElementLayout<Input.Value>>) -> ReturnType
-    ) -> ReturnType? {
-        var ptr: UnsafeMutablePointer<ElementLayout>? = elements
-        while let p = ptr {
-            if p.pointee.fields.keyType == Input.self {
-                return p.pointee.withUnsafeValuePointer(Input.Value.self) { ptr in
-                    body(ptr)
-                }
-            }
-            ptr = p.pointee.fields.after
-        }
-        return nil
-    }
-
-    func value<Input: ViewInputKey>(_ : Input.Type) -> Input.Value? {
-        withUnsafeValuePointer(Input.self) { ptr in
-            ptr.pointee.value
-        }
-    }
-
-    mutating func add<Input: ViewInputKey>(
-        _ input: Input.Type,
-        _ newValue: Input.Value
-    ) {
-        guard let lastValue = elements else {
-            return
-        }
-        let newValue = TypedElementLayout<Input.Value>(
-            base: ElementLayout(
-                metadata: lastValue.pointee.metadata,
-                fields: .init(
-                    keyType: Input.self,
-                    before: nil,
-                    after: lastValue,
-                    length: lastValue.pointee.fields.length + 1,
-                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                    id: UniqueID.generate()
-                )
-            ),
-            value: newValue
-        )
-        let ref = UnsafeMutablePointer<TypedElementLayout<Input.Value>>.allocate(capacity: 1)
-        ref.initialize(to: newValue)
-        elements = UnsafeMutableRawPointer(ref).assumingMemoryBound(to: ElementLayout.self)
-    }
-}
-
-private struct UniqueID {
-    private static var seed: UInt = .max
-
-    static func generate() -> UInt {
-        defer { seed = seed &- 1 }
-        return seed
     }
 }
 
