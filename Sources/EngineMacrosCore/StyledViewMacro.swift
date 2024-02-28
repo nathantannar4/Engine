@@ -301,7 +301,6 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
     ) -> String {
         return """
         \(prefix)protocol \(name)Style: ViewStyle where Configuration == \(name)Configuration {
-            associatedtype Configuration = Configuration
         }
         """
     }

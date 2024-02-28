@@ -56,6 +56,26 @@ open class HostingView<
 
     public var disablesSafeArea: Bool = false
 
+    #if os(iOS) || os(tvOS)
+    @available(iOS 16.0, tvOS 16.0, *)
+    public var allowUIKitAnimationsForNextUpdate: Bool {
+        get {
+            let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
+            return result ?? false
+        }
+        set {
+            try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
+        }
+    }
+
+    @available(iOS 16.0, tvOS 16.0, *)
+    public var automaticallyAllowUIKitAnimationsForNextUpdate: Bool {
+        get { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate }
+        set { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate = newValue }
+    }
+    private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
+    #endif
+
     #if os(macOS)
     @available(macOS 11.0, *)
     open override var safeAreaInsets: NSEdgeInsets {
@@ -91,6 +111,17 @@ open class HostingView<
     public required init(rootView: Content) {
         fatalError("init(rootView:) has not been implemented")
     }
+
+    #if os(iOS) || os(tvOS)
+    open override func layoutSubviews() {
+        if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate, 
+            UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false
+        {
+            allowUIKitAnimationsForNextUpdate = true
+        }
+        super.layoutSubviews()
+    }
+    #endif
 
     #if os(macOS)
     open override func hitTest(_ point: NSPoint) -> NSView? {

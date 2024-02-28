@@ -24,7 +24,7 @@ open class HostingController<
 
     public var disablesSafeArea: Bool {
         get {
-            if #available(macOS 13.3, iOS 16.4, *) {
+            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
                 return safeAreaRegions.isEmpty
             } else {
                 #if os(iOS) || os(tvOS)
@@ -35,7 +35,7 @@ open class HostingController<
             }
         }
         set {
-            if #available(macOS 13.3, iOS 16.4, *) {
+            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
                 safeAreaRegions = newValue ? [] : .all
             } else {
                 #if os(iOS) || os(tvOS)

@@ -96,7 +96,6 @@ final class MyMacroTests: XCTestCase {
         }
 
         protocol LabelViewStyle: ViewStyle where Configuration == LabelViewConfiguration {
-            associatedtype Configuration = Configuration
         }
 
         struct LabelViewDefaultStyle: LabelViewStyle {

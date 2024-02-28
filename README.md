@@ -96,7 +96,7 @@ extension View {
 }
 
 struct VerticalLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         VStack {
             configuration.label
 
@@ -106,7 +106,7 @@ struct VerticalLabeledViewStyle: LabeledViewStyle {
 }
 
 struct BorderedLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         LabeledView(configuration)
             .border(Color.red)
     }
@@ -146,7 +146,6 @@ You can use the `ViewStyle` APIs to make components that share common behavior a
 ```swift
 // 1. Define the style
 protocol StepperViewStyle: ViewStyle where Configuration == StepperViewStyleConfiguration {
-    associatedtype Configuration = Configuration
 }
 
 // 2. Define the style's configuration
@@ -160,7 +159,7 @@ struct StepperViewStyleConfiguration {
 
 // 3. Define the default style
 struct DefaultStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
         Stepper {
             configuration.label
         } onIncrement: {
@@ -173,7 +172,7 @@ struct DefaultStepperViewStyle: StepperViewStyle {
 
 // 4. Define your custom styles
 struct InlineStepperViewStyle: StepperViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
         HStack {
             Button {
                 configuration.onDecrement()
