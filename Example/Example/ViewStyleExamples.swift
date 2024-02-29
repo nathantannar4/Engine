@@ -394,7 +394,7 @@ struct _LabeledView<Label: View, Content: View>: StyledView {
 }
 
 struct _BorderedLabeledViewStyle: _LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: _LabeledViewConfiguration) -> some View {
         _LabeledView(configuration)
             .border(Color.red)
     }
@@ -402,7 +402,6 @@ struct _BorderedLabeledViewStyle: _LabeledViewStyle {
 #endif
 
 protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
-    associatedtype Configuration = Configuration
 }
 
 struct LabeledViewStyleConfiguration {
@@ -414,7 +413,7 @@ struct LabeledViewStyleConfiguration {
 }
 
 struct DefaultLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         HStack(alignment: .firstTextBaseline) {
             configuration.label
             configuration.content
@@ -471,7 +470,7 @@ extension LabeledView where
 /// next `LabeledViewStyle` that was defined, or the `DefaultLabeledViewStyle`
 /// if no other style was set.
 struct PaddedLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         LabeledView(configuration)
             .padding()
     }
@@ -481,7 +480,7 @@ struct PaddedLabeledViewStyle: LabeledViewStyle {
 /// next `LabeledViewStyle` that was defined, or the `DefaultLabeledViewStyle`
 /// if no other style was set.
 struct BorderedLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         LabeledView(configuration)
             .border(Color.red, width: 2)
     }
@@ -490,7 +489,7 @@ struct BorderedLabeledViewStyle: LabeledViewStyle {
 /// This style does not return another `LabeledView`, so there will
 /// be no further styling.
 struct LeadingLabeledViewStyle: LabeledViewStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: LabeledViewStyleConfiguration) -> some View {
         VStack(alignment: .leading) {
             configuration.label
             configuration.content
@@ -533,7 +532,6 @@ struct DoubleLabelStyle: LabeledViewStyle {
 }
 
 protocol PasteboardButtonStyle: ViewStyle where Configuration == PasteboardButtonStyleConfiguration {
-    associatedtype Configuration = Configuration
 }
 
 struct PasteboardButtonStyleConfiguration {
@@ -544,7 +542,7 @@ struct PasteboardButtonStyleConfiguration {
 }
 
 struct DefaultPasteboardButtonStyle: PasteboardButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: PasteboardButtonStyleConfiguration) -> some View {
         configuration.label
     }
 }
@@ -610,7 +608,7 @@ extension PasteboardButton where
 }
 
 struct IconPasteboardButtonStyle: PasteboardButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
+    func makeBody(configuration: PasteboardButtonStyleConfiguration) -> some View {
         Label {
             configuration.label
         } icon: {

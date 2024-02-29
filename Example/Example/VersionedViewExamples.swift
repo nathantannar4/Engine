@@ -7,22 +7,24 @@ import Engine
 
 struct VersionedViewExamples: View {
     var body: some View {
-        VersionText()
+        VStack {
+            VersionText()
 
-        VersionText()
-            .version(.v4)
+            VersionText()
+                .version(.v4)
 
-        VersionedViewWithDynamicProperties()
+            VersionedViewWithDynamicProperties()
 
-        GradientRectangle(color: .red)
-            .frame(height: 32)
+            GradientRectangle(color: .red)
+                .frame(height: 32)
 
-        Button {
+            Button {
 
-        } label: {
-            Text("Underline if #available")
+            } label: {
+                Text("Underline if #available")
+            }
+            .buttonStyle(UnderlineButtonStyle())
         }
-        .buttonStyle(UnderlineButtonStyle())
     }
 }
 
