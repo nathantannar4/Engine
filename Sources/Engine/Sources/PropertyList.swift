@@ -56,6 +56,24 @@ struct PropertyList {
         return nil
     }
 
+    func withUnsafeValuePointer<Value, ReturnType>(
+        key: String,
+        as: Value.Type,
+        do body: (UnsafeMutablePointer<PropertyList.TypedElementLayout<Value>>) -> ReturnType
+    ) -> ReturnType? {
+        var ptr: UnsafeMutablePointer<ElementLayout>? = elements
+        while let p = ptr {
+            let typeName = _typeName(p.pointee.fields.keyType, qualified: false)
+            if typeName == key {
+                return p.pointee.withUnsafeValuePointer(Value.self) { ptr in
+                    body(ptr)
+                }
+            }
+            ptr = p.pointee.fields.after
+        }
+        return nil
+    }
+
     func value<Input, Value>(_ : Input.Type, as: Value.Type) -> Value? {
         withUnsafeValuePointer(Input.self, as: Value.self) { ptr in
             ptr.pointee.value

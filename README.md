@@ -246,10 +246,13 @@ extension StepperView where Label == StepperViewStyleConfiguration.Label {
     }
 }
 
-// 7. Define the component as a `ViewStyledView`. The `body` is optional.
+// 7. Define the component as a `ViewStyledView`.
 struct StepperViewBody: ViewStyledView {
     var configuration: StepperViewStyleConfiguration
 
+    // Implementing `body` is optional and only neccesary if you would
+    // like some default styling or modifiers that would be applied
+    // regardless of the style used
     var body: some View {
         StepperView(configuration)
 			// This styling will apply to every `StepperView` regardless of the style used
@@ -264,9 +267,108 @@ struct StepperViewBody: ViewStyledView {
         DefaultStepperViewStyle()
     }
 }
+
+// 8. Define a default style based on the `StyleContext` (Optional)
+struct AutomaticStepperViewStyle: StepperViewStyle {
+    func makeBody(configuration: StepperViewStyleConfiguration) -> some View {
+        StepperView(configuration)
+            .styledViewStyle(
+                StepperViewBody.self,
+                style: InlineStepperViewStyle(),
+                predicate: .scrollView // Use the inline style when in a ScrollView
+            )
+            .styledViewStyle(
+                StepperViewBody.self,
+                style: DefaultStepperViewStyle() // If no predicate matches, use the default
+            )
+    }
+}
 ```
 
 [Open Examples](https://github.com/nathantannar4/Engine/blob/main/Example/Example/ViewStyleExamples.swift)
+
+### Style Context
+
+```swift
+public protocol StyleContext {
+    /// Alternative style contexts that should also be matched against
+    static var aliases: [StyleContext.Type] { get }
+
+    /// Returns if the style context matches
+    static func evaluate(_ input: StyleContextInputs) -> Bool
+}
+
+/// A modifier that applies the `Modifier` only when the`StyleContext` matches
+/// the current style context of the view.
+@frozen
+public struct StyleContextConditionalModifier<
+    Context: StyleContext,
+    Modifier: ViewModifier
+>: ViewModifier {
+
+    @inlinable
+    public init(predicate: Context, @ViewModifierBuilder modifier: () -> Modifier)
+}
+
+/// A modifier that statically applies the `StyleContext`to the view hierarchy.
+///
+/// See Also:
+///  - ``StyleContext``
+@frozen
+public struct StyleContextModifier<
+    Context: StyleContext
+>: ViewModifier {
+
+    @inlinable
+    public init()
+}
+```
+
+A `StyleContext` can be used to conditionally apply `ViewModifier`. This is done statically, without the use of `AnyView`.
+
+SwiftUI automatically defines a `StyleContext` for views including, but not limited to, `ScrollView` and `List`. But you can also define your own `StyleContext`.
+
+#### Examples
+
+```swift
+struct ContentView: View {
+    var body: some View {
+        ScrollView {
+            Text("Hello, World")
+                .modifier(
+                    StyleContextConditionalModifier(predicate: .none) {
+                        // This modifier will not be applied
+                        BackgroundModifier(color: .red)
+                    }
+                )
+                .modifier(
+                    StyleContextConditionalModifier(predicate: .scrollView) {
+                        // This modifier would be applied
+                        BackgroundModifier(color: .blue)
+                    }
+                )
+        }
+
+        Text("Hello, World")
+            .modifier(
+                StyleContextConditionalModifier(predicate: .none) {
+                    // This modifier would be applied
+                    BackgroundModifier(color: .red)
+                }
+            )
+            .modifier(
+                StyleContextConditionalModifier(predicate: .scrollView) {
+                    // This modifier will not be applied
+                    BackgroundModifier(color: .blue)
+                }
+            )
+    }
+}
+```
+
+A great usecase for `StyleContext` is when paired with custom view styles!
+
+[Open StyleContext.swift](https://github.com/nathantannar4/Engine/blob/main/Sources/Engine/Sources/StyleContext.swift)
 
 ### Shapes
 

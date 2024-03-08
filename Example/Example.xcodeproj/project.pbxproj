@@ -18,6 +18,7 @@
 		385C289F29209E5D00E0A600 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 385C289E29209E5D00E0A600 /* Preview Assets.xcassets */; };
 		38ECF3472926D25400A7973C /* Engine in Frameworks */ = {isa = PBXBuildFile; productRef = 38ECF3462926D25400A7973C /* Engine */; };
 		38ECF34F292848B200A7973C /* UserInterfaceIdiomExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ECF34E292848B200A7973C /* UserInterfaceIdiomExamples.swift */; };
+		38F3B4A92BA566F000374669 /* StyleContextExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F3B4A82BA566F000374669 /* StyleContextExamples.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		385C289E29209E5D00E0A600 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		38ECF3442926D23A00A7973C /* Engine */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Engine; path = ..; sourceTree = "<group>"; };
 		38ECF34E292848B200A7973C /* UserInterfaceIdiomExamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterfaceIdiomExamples.swift; sourceTree = "<group>"; };
+		38F3B4A82BA566F000374669 /* StyleContextExamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleContextExamples.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 				385C289829209E5C00E0A600 /* ContentView.swift */,
 				381B75C72920C8F100049EBB /* VersionedViewExamples.swift */,
 				381B75C92920CC2E00049EBB /* ViewStyleExamples.swift */,
+				38F3B4A82BA566F000374669 /* StyleContextExamples.swift */,
 				381B75CB2920D78900049EBB /* VariadicViewExamples.swift */,
 				381B75CD2920D7F400049EBB /* LayoutThatFitsExamples.swift */,
 				38ECF34E292848B200A7973C /* UserInterfaceIdiomExamples.swift */,
@@ -188,6 +191,7 @@
 				381B75C82920C8F100049EBB /* VersionedViewExamples.swift in Sources */,
 				381B75CA2920CC2E00049EBB /* ViewStyleExamples.swift in Sources */,
 				385C289729209E5C00E0A600 /* ExampleApp.swift in Sources */,
+				38F3B4A92BA566F000374669 /* StyleContextExamples.swift in Sources */,
 				381B75CC2920D78900049EBB /* VariadicViewExamples.swift in Sources */,
 				381B75CE2920D7F400049EBB /* LayoutThatFitsExamples.swift in Sources */,
 			);

@@ -5,7 +5,7 @@
 import SwiftUI
 
 /// A static input key for a view
-public protocol ViewInputKey {
+public protocol ViewInputKey: AnyViewInputKey {
     associatedtype Value
     static var defaultValue: Value { get }
 }
@@ -46,31 +46,31 @@ extension View {
     }
 }
 
-/// A `ViewModifier` that only modifies the static inputs
-public protocol ViewInputsModifier: _GraphInputsModifier, ViewModifier where Body == Never {
-    static func makeInputs(modifier: _GraphValue<Self>, inputs: inout _GraphInputs)
-}
-
-extension ViewInputsModifier {
-    public static func _makeInputs(
-        modifier: _GraphValue<Self>,
-        inputs: inout _GraphInputs
-    ) {
-        makeInputs(modifier: modifier, inputs: &inputs)
-    }
-}
-
 /// A ``ViewInputsModifier`` that modifies the input ``ViewInput/Key`` value to ``ViewInput/value``
 @frozen
-public struct ViewInputModifier<Input: ViewInput>: ViewInputsModifier {
+public struct ViewInputModifier<Input: ViewInput>: ViewModifier {
 
     @inlinable
     public init() { }
 
-    public static func makeInputs(
-        modifier: _GraphValue<Self>,
-        inputs: inout _GraphInputs
-    ) {
-        inputs[Input.Key.self] = Input.value
+    public func body(content: Content) -> some View {
+        UnaryViewAdaptor { // workaround crashes
+            content.modifier(Modifier())
+        }
     }
+
+    private struct Modifier: ViewInputsModifier {
+        static func makeInputs(inputs: inout ViewInputs) {
+            inputs[Input.Key.self] = Input.value
+        }
+    }
+}
+
+/// Do not use directly, use ``ViewInputKey``
+public protocol AnyViewInputKey {
+    static var value: Any.Type { get }
+}
+
+extension ViewInputKey {
+    public static var value: any Any.Type { Value.self }
 }

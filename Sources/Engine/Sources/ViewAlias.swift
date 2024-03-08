@@ -69,7 +69,7 @@ public struct ViewAliasSourceModifier<Alias: ViewAlias, Source: View>: ViewModif
         content.modifier(Modifier(source: source))
     }
 
-    private struct Modifier: ViewInputsModifier {
+    private struct Modifier: GraphInputsModifier {
         var source: Source
 
         public static func makeInputs(

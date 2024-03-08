@@ -5,10 +5,14 @@
 import SwiftUI
 
 /// A ``TupleVisitor`` allows for a tuple to be unwrapped
-/// to visit the concrete type for each index
+/// to visit the concrete type for each index.
+///
+/// > Tip: `stop` will be `false` on the last element visited
+///
 public protocol TupleVisitor {
     mutating func visit<Element>(element: Element, offset: Offset, stop: inout Bool)
 
+    /// The memory offset of `Element`
     typealias Offset = Int
 }
 
@@ -23,7 +27,7 @@ public struct Tuple<Values> {
         return metadata[\.numberOfElements]
     }
 
-    init?(_ values: Values) {
+    public init?(_ values: Values) {
         let descriptor = unsafeBitCast(Values.self, to: UnsafeRawPointer.self)
         guard MetadataKind(ptr: descriptor) == .tuple else {
             return nil
@@ -45,7 +49,9 @@ public struct Tuple<Values> {
         stop: inout Bool
     ) {
         let metadata = Metadata<TupleMetadata>(Values.self)!
-        for element in metadata[\.elements] {
+        let elements = metadata[\.elements]
+        for index in elements.indices {
+            let element = elements[index]
             func project<Element>(_: Element.Type) {
                 withUnsafePointer(to: values) { ptr in
                     UnsafeRawPointer(ptr)
@@ -59,6 +65,7 @@ public struct Tuple<Values> {
                         }
                 }
             }
+            stop = index == elements.count - 1
             _openExistential(element.type, do: project)
             guard !stop else { return }
         }

@@ -62,6 +62,14 @@ final class RuntimeTests: XCTestCase {
             swift_getFieldValue("intValue", Any.self, optionalValue) as? Int,
             3
         )
+
+        struct MyGenericStruct<Wrapped> { }
+        let generics = try XCTUnwrap(swift_getStructGenerics(for: MyGenericStruct<Int>.self))
+        XCTAssertEqual(generics.count, 1)
+        XCTAssertEqual(
+            unsafeBitCast(generics[0], to: UnsafeRawPointer.self),
+            unsafeBitCast(Int.self, to: UnsafeRawPointer.self)
+        )
     }
 
     func testRuntimeClass() throws {
@@ -103,6 +111,45 @@ final class RuntimeTests: XCTestCase {
             swift_getFieldValue("intValue", Any.self, optionalValue) as? Int,
             3
         )
+
+        class MyGenericClass<Wrapped> { }
+        let generics = try XCTUnwrap(swift_getClassGenerics(for: MyGenericClass<Int>.self))
+        XCTAssertEqual(generics.count, 1)
+        XCTAssertEqual(
+            unsafeBitCast(generics[0], to: UnsafeRawPointer.self),
+            unsafeBitCast(Int.self, to: UnsafeRawPointer.self)
+        )
+    }
+
+    func testRuntimeTuple() throws {
+        struct Visitor: TupleVisitor {
+            var int: Int
+            var string: String
+            var double: Double
+
+            mutating func visit<Element>(element: Element, offset: Offset, stop: inout Bool) {
+                if Element.self == Int.self {
+                    XCTAssertEqual(int, element as? Int)
+                    XCTAssertFalse(stop)
+                } else if Element.self == String.self {
+                    XCTAssertEqual(string, element as? String)
+                    XCTAssertFalse(stop)
+                } else if Element.self == Double.self {
+                    XCTAssertEqual(double, element as? Double)
+                    XCTAssert(stop)
+                } else {
+                    XCTFail()
+                }
+            }
+        }
+
+        let tuple = try XCTUnwrap(Tuple((1, "Hello, World", 2.0)))
+        var visitor = Visitor(
+            int: 1,
+            string: "Hello, World",
+            double: 2.0
+        )
+        tuple.visit(visitor: &visitor)
     }
 
     #if os(iOS) || os(tvOS) || os(macOS)

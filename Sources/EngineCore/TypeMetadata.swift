@@ -27,9 +27,7 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
 
     init?(_ type: Any.Type) {
         let ptr = unsafeBitCast(type, to: UnsafeRawPointer.self)
-        guard let kind = MetadataKind(ptr: ptr) else {
-            return nil
-        }
+        let kind = MetadataKind(ptr: ptr) ?? .class
         switch kind {
         case .tuple:
             guard Kind.self == TupleMetadata.self else {
@@ -38,6 +36,11 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
             self.ptr = ptr
         case .struct:
             guard Kind.self == StructMetadata.self else {
+                return nil
+            }
+            self.ptr = ptr
+        case .class:
+            guard Kind.self == ClassMetadata.self else {
                 return nil
             }
             self.ptr = ptr
@@ -53,31 +56,113 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
 }
 
 protocol ContextDescriptor {
+    associatedtype Layout
     var ptr: UnsafeRawPointer { get }
 }
 
 struct ContextDescriptorLayout {
     let flags: ContextDescriptorFlags
-}
-
-struct GenericContext {
-    var ptr: UnsafeRawPointer
-
-    var numParams: Int {
-        Int(ptr.load(as: GenericContextLayout.self).numParams)
-    }
-}
-
-struct GenericContextLayout {
-    let numParams: UInt16
-    let numRequirements: UInt16
-    let numKeyArguments: UInt16
-    let numExtraArguments: UInt16
+    let parent: UInt32
 }
 
 extension ContextDescriptor {
-    var flags: ContextDescriptorFlags {
-        ptr.load(as: ContextDescriptorLayout.self).flags
+    var layout: Layout {
+        ptr.load(as: Layout.self)
+    }
+}
+
+struct TypeDescriptorLayout {
+    let base: ContextDescriptorLayout
+    let name: UInt32
+    let accessor: UInt32
+    let fields: UInt32
+}
+
+struct ClassMetadata: TypeMetadata {
+    struct Layout {
+        let kind: Int
+        let superclass: Any.Type?
+        let reserved: (Int, Int)
+        let rodata: UnsafeRawPointer
+        let flags: UInt32
+        let instanceAddressPoint: UInt32
+        let instanceSize: UInt32
+        let instanceAlignMask: UInt16
+        let runtimeReserved: UInt16
+        let classSize: UInt32
+        let classAddressPoint: UInt32
+        let descriptor: UnsafePointer<Descriptor>
+        let ivarDestroyer: UnsafeRawPointer
+    }
+
+    struct Descriptor: ContextDescriptor {
+        struct Layout {
+            let base: TypeDescriptorLayout
+            let superclass: UInt32
+            let negativeSizeOrResilientBounds: UInt32
+            let positiveSizeOrExtraFlags: UInt32
+            let numImmediateMembers: UInt32
+            let numFields: UInt32
+            let fieldOffsetVectorOffset: UInt32
+        }
+
+        let ptr: UnsafeRawPointer
+
+        var negativeSize: Int {
+            Int(layout.negativeSizeOrResilientBounds)
+        }
+
+        var positiveSize: Int {
+            Int(layout.positiveSizeOrExtraFlags)
+        }
+
+        var numMembers: Int {
+            Int(layout.numImmediateMembers)
+        }
+
+        var genericArgumentOffset: Int {
+            let flags = TypeContextDescriptorFlags(bits: UInt64(layout.base.base.flags.kindSpecificFlags))
+            if flags.classHasResilientSuperclass {
+                fatalError("unimplemented")
+            } else if flags.classAreImmediateMembersNegative {
+                return -negativeSize
+            } else {
+                return positiveSize - numMembers
+            }
+        }
+    }
+
+    let ptr: UnsafeRawPointer
+
+    var descriptor: Descriptor {
+        Descriptor(ptr: ptr.load(as: Layout.self).descriptor)
+    }
+
+    var genericArgumentPtr: UnsafeRawPointer {
+        ptr.offset(of: descriptor.genericArgumentOffset)
+    }
+
+    var genericTypes: [Any.Type]? {
+        guard descriptor.layout.base.base.flags.isGeneric else {
+            return nil
+        }
+
+        let genericContext = TypeGenericContext(
+            ptr: descriptor.ptr + MemoryLayout<Descriptor.Layout>.size
+        ).layout.base
+        let numParams = Int(genericContext.numParams)
+        return Array(unsafeUninitializedCapacity: numParams) {
+            let gap = genericArgumentPtr
+            for i in 0 ..< numParams {
+                let type = gap.load(
+                    fromByteOffset: i * MemoryLayout<Any.Type>.stride,
+                    as: Any.Type.self
+                )
+
+                $0[i] = type
+            }
+            $1 = numParams
+        }
     }
 }
 
@@ -88,6 +173,12 @@ struct StructMetadata: TypeMetadata {
     }
 
     struct Descriptor: ContextDescriptor {
+        struct Layout {
+            let base: TypeDescriptorLayout
+            let numFields: UInt32
+            let fieldOffsetVectorOffset: UInt32
+        }
+
         let ptr: UnsafeRawPointer
     }
 
@@ -102,12 +193,14 @@ struct StructMetadata: TypeMetadata {
     }
 
     var genericTypes: [Any.Type]? {
-        guard descriptor.flags.isGeneric else {
+        guard descriptor.layout.base.base.flags.isGeneric else {
             return nil
         }
 
-        let genericContext = GenericContext(ptr: genericArgumentPtr)
-        let numParams = genericContext.numParams
+        let genericContext = TypeGenericContext(
+            ptr: descriptor.ptr + MemoryLayout<Descriptor.Layout>.size
+        ).layout.base
+        let numParams = Int(genericContext.numParams)
         return Array(unsafeUninitializedCapacity: numParams) {
             let gap = genericArgumentPtr
             for i in 0 ..< numParams {
@@ -180,6 +273,43 @@ struct ContextDescriptorFlags {
 
     var isGeneric: Bool {
         bits & 0x80 != 0
+    }
+
+    var kindSpecificFlags: UInt16 {
+        UInt16((bits >> 0x10) & 0xFFFF)
+    }
+}
+
+struct TypeContextDescriptorFlags {
+    var bits: UInt64
+
+    var classAreImmediateMembersNegative: Bool {
+        bits & 0x1000 != 0
+    }
+
+    var classHasResilientSuperclass: Bool {
+        bits & 0x2000 != 0
+    }
+}
+
+struct GenericContextLayout {
+    let numParams: UInt16
+    let numRequirements: UInt16
+    let numKeyArguments: UInt16
+    let numExtraArguments: UInt16
+}
+
+struct TypeGenericContext {
+    var ptr: UnsafeRawPointer
+
+    struct Layout {
+        let instantiationCache: UInt32
+        let defaultInstantiationPattern: UInt32
+        let base: GenericContextLayout
+    }
+
+    var layout: Layout {
+        ptr.load(as: Layout.self)
     }
 }
 

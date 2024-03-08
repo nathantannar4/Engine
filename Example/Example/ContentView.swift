@@ -28,6 +28,14 @@ struct ContentView: View {
             }
 
             Section {
+                StyleContextExamples()
+            } header: {
+                Text("StyleContext")
+            } footer: {
+                Text("Makes applying modifiers conditionally possible")
+            }
+
+            Section {
                 VariadicViewExamples()
             } header: {
                 Text("VariadicView")

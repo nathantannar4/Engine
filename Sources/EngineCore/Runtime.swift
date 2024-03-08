@@ -65,6 +65,13 @@ public func swift_getStructGenerics(for type: Any.Type) -> [Any.Type]? {
     return metadata[\.genericTypes]
 }
 
+public func swift_getClassGenerics(for type: Any.Type) -> [Any.Type]? {
+    guard let metadata = Metadata<ClassMetadata>(type) else {
+        return nil
+    }
+    return metadata[\.genericTypes]
+}
+
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
     var key: String
     var instance: Any.Type

@@ -203,7 +203,7 @@ public struct ViewStyleModifier<
             .modifier(InputModifier())
     }
 
-    struct InputModifier: ViewInputsModifier {
+    struct InputModifier: GraphInputsModifier {
         static func makeInputs(
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
@@ -234,7 +234,7 @@ public struct DefaultViewStyleModifier<
             .modifier(InputModifier())
     }
 
-    struct InputModifier: ViewInputsModifier {
+    struct InputModifier: GraphInputsModifier {
         static func makeInputs(
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
@@ -259,6 +259,29 @@ extension View {
         style: Style
     ) -> some View where StyledView.Configuration == Style.Configuration {
         modifier(ViewStyleModifier(StyledView.self, style: style))
+    }
+
+    /// Statically applies the `Style` the all descendent `StyledView`
+    /// views in the view hierarchy when the`StyleContext` matches
+    /// the current style context of the view.
+    ///
+    /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
+    /// > Info: For more on how to create custom style context, see ``StyleContext``.
+    @inlinable
+    public func styledViewStyle<
+        StyledView: ViewStyledView,
+        Style: ViewStyle,
+        Context: StyleContext
+    >(
+        _ : StyledView.Type,
+        style: Style,
+        predicate: Context
+    ) -> some View where StyledView.Configuration == Style.Configuration {
+        modifier(
+            StyleContextConditionalModifier(predicate: predicate) {
+                ViewStyleModifier(StyledView.self, style: style)
+            }
+        )
     }
 
     /// Resets the `StyledView` to its default style.
