@@ -8,8 +8,29 @@ import os.log
 
 @frozen
 public struct ViewInputs {
-    
+
+    public struct Options: OptionSet {
+        public var rawValue: UInt32
+
+        public init(rawValue: UInt32) { self.rawValue = rawValue }
+
+        public static func flag(_ index: Int) -> Options {
+            Options(rawValue: 1 << index)
+        }
+
+        public static let isAxisHorizontal = Options(rawValue: 1 << 3)
+    }
+
     public var _graphInputs: _GraphInputs
+
+    public var options: Options {
+        do {
+            let rawValue = try swift_getFieldValue("options", UInt32.self, _graphInputs)
+            return Options(rawValue: rawValue)
+        } catch {
+            return Options(rawValue: 0)
+        }
+    }
 
     init(inputs: _GraphInputs) {
         self._graphInputs = inputs
@@ -66,6 +87,7 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
         #if DEBUG
         let log: String = {
             var message = "\n=== ViewInputs ===\n"
+            dump(inputs.options, to: &message)
             var ptr = inputs._graphInputs.customInputs.elements
             while let p = ptr {
                 dump(p, to: &message)

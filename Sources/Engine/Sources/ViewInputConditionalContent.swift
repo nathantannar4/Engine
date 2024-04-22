@@ -28,6 +28,16 @@ public struct ViewInputConditionalContent<
         self.falseContent = otherwise()
     }
 
+    @inlinable
+    public init(
+        _ : Condition,
+        @ViewBuilder then: () -> TrueContent,
+        @ViewBuilder otherwise: () -> FalseContent
+    ) {
+        self.trueContent = then()
+        self.falseContent = otherwise()
+    }
+
     public var body: Never {
         bodyError()
     }
@@ -63,6 +73,13 @@ public struct ViewInputConditionalContent<
 extension ViewInputConditionalContent where FalseContent == EmptyView {
     public init(
         _ : Condition.Type = Condition.self,
+        @ViewBuilder then: () -> TrueContent
+    ) {
+        self.init(Condition.self, then: then, otherwise: { EmptyView() })
+    }
+
+    public init(
+        _ : Condition,
         @ViewBuilder then: () -> TrueContent
     ) {
         self.init(Condition.self, then: then, otherwise: { EmptyView() })

@@ -28,6 +28,16 @@ public struct ViewInputConditionalModifier<
         self.falseModifier = otherwise()
     }
 
+    @inlinable
+    public init(
+        _ : Condition,
+        @ViewModifierBuilder then: () -> TrueModifier,
+        @ViewModifierBuilder otherwise: () -> FalseModifier
+    ) {
+        self.trueModifier = then()
+        self.falseModifier = otherwise()
+    }
+
     public func body(content: Content) -> Never {
         bodyError()
     }
@@ -66,6 +76,13 @@ public struct ViewInputConditionalModifier<
 extension ViewInputConditionalModifier where FalseModifier == EmptyModifier {
     public init(
         _ : Condition.Type = Condition.self,
+        @ViewModifierBuilder then: () -> TrueModifier
+    ) {
+        self.init(Condition.self, then: then, otherwise: { EmptyModifier() })
+    }
+
+    public init(
+        _ : Condition,
         @ViewModifierBuilder then: () -> TrueModifier
     ) {
         self.init(Condition.self, then: then, otherwise: { EmptyModifier() })

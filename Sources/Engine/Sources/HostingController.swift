@@ -45,6 +45,28 @@ open class HostingController<
         }
     }
 
+    #if os(iOS) || os(tvOS)
+    @available(iOS 16.0, tvOS 16.0, *)
+    public var allowUIKitAnimationsForNextUpdate: Bool {
+        get {
+            guard let view else { return false }
+            let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
+            return result ?? false
+        }
+        set {
+            guard let view else { return }
+            try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
+        }
+    }
+
+    @available(iOS 16.0, tvOS 16.0, *)
+    public var automaticallyAllowUIKitAnimationsForNextUpdate: Bool {
+        get { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate }
+        set { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate = newValue }
+    }
+    private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
+    #endif
+
     public init(content: Content) {
         super.init(rootView: content)
     }
@@ -58,6 +80,15 @@ open class HostingController<
 
     public required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    open override func viewWillLayoutSubviews() {
+        if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
+            UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
+        {
+            allowUIKitAnimationsForNextUpdate = true
+        }
+        super.viewWillLayoutSubviews()
     }
 }
 
