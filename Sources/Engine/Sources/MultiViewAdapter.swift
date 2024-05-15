@@ -66,14 +66,35 @@ public struct MultiViewAdapter<
 
 struct MultiViewAdapter_Previews: PreviewProvider {
     static var previews: some View {
-        MultiViewAdapter {
-            Text("Hello")
-            Text("World")
-        } content: { subviews in
-            ForEachSubview(subviews) { index, subview in
-                subview
-                    .border(Color.red)
+        VStack {
+            MultiViewAdapter {
+                Text("Hello")
+                Text("World")
+            } content: { subviews in
+                ForEachSubview(subviews) { index, subview in
+                    subview
+                        .border(Color.red)
+                }
             }
         }
+        .previewDisplayName("TupleView")
+
+        VStack {
+            MultiViewAdapter {
+                Section {
+                    Text("Content")
+                } header: {
+                    Text("Header")
+                } footer: {
+                    Text("Footer")
+                }
+            } content: { subviews in
+                ForEachSubview(subviews) { index, subview in
+                    subview
+                        .border(Color.red)
+                }
+            }
+        }
+        .previewDisplayName("Section")
     }
 }

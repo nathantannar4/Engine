@@ -41,21 +41,27 @@ private struct SectionSubviewIterator<
     ) {
         var context = context
         context.traits = []
+        var headerContext = context.union(.header)
+        headerContext.id.append(offset: 0)
         visitor.value.visit(
             content: content.parent,
-            context: context.union(.header),
+            context: headerContext,
             stop: &stop
         )
         guard !stop else { return }
+        var contentContext = context
+        contentContext.id.append(offset: 1)
         content.content.visit(
             visitor: visitor,
-            context: context,
+            context: contentContext,
             stop: &stop
         )
         guard !stop else { return }
+        var footerContext = context.union(.footer)
+        footerContext.id.append(offset: 2)
         visitor.value.visit(
             content: content.footer,
-            context: context.union(.footer),
+            context: footerContext,
             stop: &stop
         )
     }
