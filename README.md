@@ -48,7 +48,7 @@ let package = Package(
 
 ### Xcode Cloud / Github Actions / Fastlane / CI
 
-`Engine` includes a Swift macro, which requires user validation to enable or the build will fail. When configuring your CI, pass the flag `-skipMacroValidation` to `xcodebuild` to fix this.
+`EngineMacros` includes a Swift macro, which requires user validation to enable or the build will fail. When configuring your CI, pass the flag `-skipMacroValidation` to `xcodebuild` to fix this.
 
 ## Introduction to Engine
 

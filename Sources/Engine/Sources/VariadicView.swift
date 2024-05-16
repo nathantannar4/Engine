@@ -52,25 +52,12 @@ public struct AnyVariadicView: View, RandomAccessCollection {
 
         @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
         public func tag<T>(as _: T.Type) -> T? {
-            if let typeName = _mangledTypeName(T.self),
-                let conformance = ViewTraitKeyProtocolDescriptor.conformance(
-                of: "s7SwiftUI16TagValueTraitKeyVy\(typeName)G"
-            ) {
-                var visitor = TagTraitVisitor<T>(element: element)
-                conformance.visit(visitor: &visitor)
-                return visitor.tag
-            }
-            return nil
-        }
-
-        private struct TagTraitVisitor<T>: ViewTraitKeyVisitor {
-
-            var element: _VariadicView.Children.Element
-            var tag: T!
-
-            mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
-                let value = unsafeBitCast(element[Key.self], to: Optional<T>.self)
-                tag = value
+            let tag = self[TagValueTrait<T>.self, default: .untagged]
+            switch tag {
+            case .tagged(let value):
+                return value
+            case .untagged:
+                return nil
             }
         }
 
