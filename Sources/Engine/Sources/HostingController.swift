@@ -82,6 +82,7 @@ open class HostingController<
         fatalError("init(coder:) has not been implemented")
     }
 
+    #if os(iOS) || os(tvOS)
     open override func viewWillLayoutSubviews() {
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
             UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
@@ -90,6 +91,7 @@ open class HostingController<
         }
         super.viewWillLayoutSubviews()
     }
+    #endif
 }
 
 #endif // !os(watchOS)
