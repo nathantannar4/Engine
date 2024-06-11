@@ -75,7 +75,7 @@ class AnyShapeStorageBase: @unchecked Sendable {
 }
 
 @usableFromInline
-final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase {
+final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable {
 
     var shape: S
 

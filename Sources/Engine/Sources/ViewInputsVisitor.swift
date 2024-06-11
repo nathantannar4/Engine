@@ -5,7 +5,7 @@
 import SwiftUI
 
 /// A ``ViewInputsVisitor`` allows for the custom view inputs of `_GraphInputs`
-/// to be itterated upon
+/// to be iterated upon
 public protocol ViewInputsVisitor {
 
     func visit<Value>(_ value: Value, key: String, stop: inout Bool)
@@ -22,24 +22,24 @@ extension _GraphInputs {
         var ptr = customInputs.elements
         var stop = false
         while !stop, let p = ptr {
-            let next = p.pointee.fields.after
+            let next = p.after
             defer { ptr = next }
             stop = next == nil
-            let key = _typeName(p.pointee.fields.keyType, qualified: false)
+            let key = _typeName(p.keyType, qualified: false)
             let value: Any.Type
-            if let inputKey = p.pointee.fields.keyType as? AnyViewInputKey.Type {
+            if let inputKey = p.keyType as? AnyViewInputKey.Type {
                 value = inputKey.value
             } else {
-                guard let valueType = swift_getClassGenerics(for: p.pointee.metadata.0)?.first
+                guard let valueType = swift_getClassGenerics(for: p.metadata.0)?.first
                 else {
                     continue
                 }
+                print(p.keyType, p.metadata.0, valueType)
                 value = valueType
             }
             func project<Value>(_: Value.Type) {
-                p.pointee.withUnsafeValuePointer(Value.self) { element in
-                    visitor.visit(element.pointee.value, key: key, stop: &stop)
-                }
+                let value = p.getValue(Value.self)
+                visitor.visit(value, key: key, stop: &stop)
             }
             _openExistential(value, do: project)
         }
@@ -104,5 +104,29 @@ extension ViewInputsVisitorModifier {
     public static func makeInputs(inputs: inout ViewInputs) {
         var visitor = visitor
         inputs.visit(visitor: &visitor)
+    }
+}
+
+// MARK: - Previews
+
+struct ViewInputsVisitor_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            Text("Hello, World")
+                .modifier(VisitorModifier())
+                .buttonStyle(.plain)
+        }
+    }
+
+    struct VisitorModifier: ViewInputsVisitorModifier {
+        static var visitor: Visitor {
+            Visitor()
+        }
+    }
+
+    struct Visitor: ViewInputsVisitor {
+        func visit<Value>(_ value: Value, key: String, stop: inout Bool) {
+            print(key, value)
+        }
     }
 }

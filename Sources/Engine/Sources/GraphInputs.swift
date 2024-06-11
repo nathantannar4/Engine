@@ -72,9 +72,7 @@ extension _GraphInputs {
         key: String,
         _: Value.Type
     ) -> Value? {
-        customInputs.withUnsafeValuePointer(key: key, as: Value.self) { ptr in
-            ptr.pointee.value
-        }
+        customInputs.value(key: key, as: Value.self)
     }
 }
 
@@ -112,7 +110,7 @@ extension PropertyList {
     fileprivate mutating func detach() {
         var ptr = elements
         while let p = ptr {
-            let key = _typeName(ptr!.pointee.fields.keyType, qualified: true)
+            let key = _typeName(ptr!.keyType, qualified: true)
             var isMatch = key.hasSuffix(".MatchedGeometryScope")
             #if !os(macOS)
             let branchKey: String
@@ -126,16 +124,16 @@ extension PropertyList {
             if isMatch {
                 // Reached the {UI/NS}ViewRepresentable
                 #if !os(macOS)
-                if let next = p.pointee.fields.after {
+                if let next = p.after {
                     // Reached the UIViewRepresentable
-                    if _typeName(next.pointee.fields.keyType, qualified: true).hasSuffix(branchKey) {
+                    if _typeName(next.keyType, qualified: true).hasSuffix(branchKey) {
                         ptr = next
                     }
                 }
                 #endif
                 break
             }
-            if let next = p.pointee.fields.after {
+            if let next = p.after {
                 ptr = next
             } else {
                 return
@@ -143,21 +141,21 @@ extension PropertyList {
         }
 
         let tail = ptr!
-        var last = tail.pointee.fields.after
-        tail.pointee.fields.after = nil
-        while let p = last?.pointee.fields.after {
+        var last = tail.after
+        tail.after = nil
+        while let p = last?.after {
             last = p
         }
 
         ptr = elements
-        let offset = tail.pointee.fields.length - (last == nil ? 1 : 2)
+        let offset = tail.length - (last == nil ? 1 : 2)
         while offset > 0, let p = ptr {
-            p.pointee.fields.length -= offset
-            ptr = p.pointee.fields.after
+            p.length -= offset
+            ptr = p.after
         }
         if let last {
-            _ = Unmanaged<AnyObject>.fromOpaque(last).retain() // Prevent dealloc
-            tail.pointee.fields.after = last
+            _ = last.object.retain() // Prevent dealloc
+            tail.after = last
         }
     }
 }

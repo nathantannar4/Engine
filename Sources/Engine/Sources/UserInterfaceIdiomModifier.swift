@@ -12,24 +12,25 @@ import SwiftUI
 /// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
 /// to aide with cross platform compatibility.
 ///
+@MainActor @preconcurrency
 public protocol UserInterfaceIdiomModifier: ViewModifier {
     associatedtype PhoneBody: View = Content
-    @MainActor @ViewBuilder func phoneBody(content: Content) -> PhoneBody
+    @ViewBuilder @MainActor @preconcurrency func phoneBody(content: Content) -> PhoneBody
 
     associatedtype PadBody: View = Content
-    @MainActor @ViewBuilder func padBody(content: Content) -> PadBody
+    @ViewBuilder @MainActor @preconcurrency func padBody(content: Content) -> PadBody
 
     associatedtype MacBody: View = Content
-    @MainActor @ViewBuilder func macBody(content: Content) -> MacBody
+    @ViewBuilder @MainActor @preconcurrency func macBody(content: Content) -> MacBody
 
     associatedtype TvBody: View = Content
-    @MainActor @ViewBuilder func tvBody(content: Content) -> TvBody
+    @ViewBuilder @MainActor @preconcurrency func tvBody(content: Content) -> TvBody
 
     associatedtype WatchBody: View = Content
-    @MainActor @ViewBuilder func watchBody(content: Content) -> WatchBody
+    @ViewBuilder @MainActor @preconcurrency func watchBody(content: Content) -> WatchBody
 
     associatedtype VisionBody: View = Content
-    @MainActor @ViewBuilder func visionBody(content: Content) -> VisionBody
+    @ViewBuilder @MainActor @preconcurrency func visionBody(content: Content) -> VisionBody
 }
 
 extension UserInterfaceIdiomModifier where PhoneBody == Content {

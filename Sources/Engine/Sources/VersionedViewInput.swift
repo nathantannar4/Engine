@@ -33,6 +33,11 @@ public struct VersionInput: Equatable {
     public struct V5: _VersionInput {
         public static let value: VersionInput = .v5
     }
+
+    public static let v6 = VersionInput(rawValue: 6)
+    public struct V6: _VersionInput {
+        public static let value: VersionInput = .v6
+    }
 }
 
 public protocol _VersionInput: ViewInput where Key == VersionInputKey { }
@@ -51,10 +56,15 @@ extension _VersionInput where Self == VersionInput.V4 {
 extension _VersionInput where Self == VersionInput.V5 {
     public static var v5: VersionInput.V5 { .init() }
 }
+extension _VersionInput where Self == VersionInput.V6 {
+    public static var v6: VersionInput.V6 { .init() }
+}
 
 public struct VersionInputKey: ViewInputKey {
     public static var defaultValue: VersionInput {
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+            return .v6
+        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
             return .v5
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
             return .v4

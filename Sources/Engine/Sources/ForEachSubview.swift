@@ -21,7 +21,14 @@ public struct ForEachSubview<
         _ source: VariadicView<Source>,
         @ViewBuilder subview: @escaping (Int, Subview) -> Content
     ) where Subview == AnyVariadicView.Subview {
-        self.source = source.children.map { $0 }
+        self.init(source.children.map { $0 }, subview: subview)
+    }
+
+    public init(
+        _ source: [AnyVariadicView.Subview],
+        @ViewBuilder subview: @escaping (Int, Subview) -> Content
+    ) where Subview == AnyVariadicView.Subview {
+        self.source = source
         self.subview = subview
     }
 

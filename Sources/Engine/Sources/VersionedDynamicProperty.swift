@@ -81,6 +81,11 @@ import SwiftUI
 ///     }
 ///
 public protocol VersionedDynamicProperty: DynamicProperty {
+    associatedtype V6Property: DynamicProperty = V5Property
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    var v6Property: V6Property { get }
+
     associatedtype V5Property: DynamicProperty = V4Property
 
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
@@ -104,6 +109,11 @@ public protocol VersionedDynamicProperty: DynamicProperty {
     associatedtype V1Property: DynamicProperty = EmptyDynamicProperty
 
     var v1Property: V1Property { get }
+}
+
+extension VersionedDynamicProperty where V6Property == V5Property {
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    public var v6Property: V6Property { v5Property }
 }
 
 extension VersionedDynamicProperty where V5Property == V4Property {
@@ -184,7 +194,14 @@ extension VersionedDynamicProperty {
         inputs: inout _GraphInputs
     ) {
         #if !DEBUG
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+            V6Property._makeProperty(
+                in: &buffer,
+                container: container,
+                fieldOffset: fieldOffset,
+                inputs: &inputs
+            )
+        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
             V5Property._makeProperty(
                 in: &buffer,
                 container: container,
@@ -224,6 +241,16 @@ extension VersionedDynamicProperty {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
+        case .v6:
+            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                V6Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+                return
+            }
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
                 V5Property._makeProperty(

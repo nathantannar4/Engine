@@ -48,6 +48,20 @@ public struct TagValueTrait<V>: ViewTraitKey {
     }
 }
 
+public struct IsSectionHeaderTrait: ViewTraitKey {
+    public typealias Value = Bool
+    public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
+        of: "s7SwiftUI23IsSectionHeaderTraitKeyV"
+    )
+}
+
+public struct IsSectionFooterTrait: ViewTraitKey {
+    public typealias Value = Bool
+    public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
+        of: "s7SwiftUI23IsSectionFooterTraitKeyV"
+    )
+}
+
 extension AnyVariadicView.Subview {
     public subscript<K: ViewTraitKey>(
         key: K.Type,
@@ -268,6 +282,63 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
                 outputs = ModifiedContent<Content, _TraitWritingModifier<Key>>._viewListCount(
                     inputs: inputs
                 )
+            }
+        }
+    }
+}
+
+struct ViewTraitKey_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            HStack {
+                ZStack {
+                    Color.red
+                        .frame(height: 100)
+                        .trait(ZIndexTrait.self, 1)
+
+                    Color.blue
+                        .frame(height: 200)
+                }
+
+                ZStack {
+                    Color.red
+                        .frame(height: 100)
+                        .zIndex(1)
+
+                    Color.blue
+                        .frame(height: 200)
+                }
+            }
+            .previewDisplayName("ZIndexTrait")
+
+            HStack {
+                HStack {
+                    Color.blue
+                        .trait(LayoutPriorityTrait.self, 1)
+
+                    Color.red
+                }
+
+                HStack {
+                    Color.blue
+                        .layoutPriority(1)
+
+                    Color.red
+                }
+            }
+            .previewDisplayName("LayoutPriorityTrait")
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                HStack {
+                    VariadicViewAdapter {
+                        Color.blue
+                            .trait(TagValueTrait<String>.self, .tagged("Hello, World"))
+                    } content: { source in
+                        Text(source[0].tag(as: String.self) ?? "nil")
+                    }
+
+                }
+                .previewDisplayName("TagValueTrait")
             }
         }
     }

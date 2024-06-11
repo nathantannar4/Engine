@@ -12,24 +12,25 @@ import SwiftUI
 /// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
 /// to aide with cross platform compatibility.
 ///
+@MainActor @preconcurrency
 public protocol UserInterfaceIdiomContent: View where Body == Never {
     associatedtype PhoneBody: View = EmptyView
-    @MainActor @ViewBuilder var phoneBody: PhoneBody { get }
+    @ViewBuilder @MainActor @preconcurrency var phoneBody: PhoneBody { get }
 
     associatedtype PadBody: View = EmptyView
-    @MainActor @ViewBuilder var padBody: PadBody { get }
+    @ViewBuilder @MainActor @preconcurrency var padBody: PadBody { get }
 
     associatedtype MacBody: View = EmptyView
-    @MainActor @ViewBuilder var macBody: MacBody { get }
+    @ViewBuilder @MainActor @preconcurrency var macBody: MacBody { get }
 
     associatedtype TvBody: View = EmptyView
-    @MainActor @ViewBuilder var tvBody: TvBody { get }
+    @ViewBuilder @MainActor @preconcurrency var tvBody: TvBody { get }
 
     associatedtype WatchBody: View = EmptyView
-    @MainActor @ViewBuilder var watchBody: WatchBody { get }
+    @ViewBuilder @MainActor @preconcurrency var watchBody: WatchBody { get }
 
     associatedtype VisionBody: View = EmptyView
-    @MainActor @ViewBuilder var visionBody: VisionBody { get }
+    @ViewBuilder @MainActor @preconcurrency var visionBody: VisionBody { get }
 }
 
 extension UserInterfaceIdiomContent where PhoneBody == EmptyView {

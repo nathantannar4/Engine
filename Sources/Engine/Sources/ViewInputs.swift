@@ -91,16 +91,15 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
             var ptr = inputs._graphInputs.customInputs.elements
             while let p = ptr {
                 dump(p, to: &message)
-                dump(p.pointee.fields, to: &message)
-                if let valueType = swift_getClassGenerics(for: p.pointee.metadata.0)?.first {
+                dump(p.fields, to: &message)
+                if let valueType = swift_getClassGenerics(for: p.metadata.0)?.first {
                     func project<Value>(_: Value.Type) {
-                        p.pointee.withUnsafeValuePointer(Value.self) { p in
-                            _ = dump(p.pointee.value, to: &message)
-                        }
+                        let value = p.getValue(Value.self)
+                        dump(value, to: &message)
                     }
                     _openExistential(valueType, do: project)
                 }
-                ptr = p.pointee.fields.after
+                ptr = p.after
             }
             return message
         }()

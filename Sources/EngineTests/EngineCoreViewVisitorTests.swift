@@ -62,14 +62,27 @@ final class ViewVisitorTests: XCTestCase {
         XCTAssert(visitor.output)
     }
 
-    func testOpaqueVisit() {
+    func testOpaqueVisit() throws {
+        // SwiftUI v6 wraps in AnyView
+        var isAnyView = false
+        #if DEBUG
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+            isAnyView = true
+        }
+        #endif
         func makeContent() -> some View {
             Text("Hello, World")
         }
         let content = makeContent()
-        var visitor = TestVisitor<Text>()
-        content.visit(visitor: &visitor)
-        XCTAssert(visitor.output)
+        if isAnyView {
+            var visitor = TestVisitor<AnyView>()
+            content.visit(visitor: &visitor)
+            XCTAssert(visitor.output)
+        } else {
+            var visitor = TestVisitor<Text>()
+            content.visit(visitor: &visitor)
+            XCTAssert(visitor.output)
+        }
     }
 
     func testAnyVisit() throws {

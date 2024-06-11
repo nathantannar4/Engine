@@ -100,7 +100,7 @@ class AnyAnimatableDataStorageBase: @unchecked Sendable {
 @usableFromInline
 final class AnyAnimatableDataStorage<
     Vector: VectorArithmetic
->: AnyAnimatableDataStorageBase {
+>: AnyAnimatableDataStorageBase, @unchecked Sendable {
 
     var vector: Vector
 

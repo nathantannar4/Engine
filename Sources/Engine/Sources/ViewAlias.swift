@@ -45,9 +45,10 @@ import SwiftUI
 /// will be resolved to an `EmptyView`. If you would like a different fallback,
 /// you can implement the optional `defaultBody`.
 ///
+@MainActor @preconcurrency
 public protocol ViewAlias: View where Body == Never {
     associatedtype DefaultBody: View = EmptyView
-    @MainActor @ViewBuilder var defaultBody: DefaultBody { get }
+    @ViewBuilder @MainActor @preconcurrency var defaultBody: DefaultBody { get }
 }
 
 /// Statically type-erases a view to be resolved by the ``ViewAlias``.

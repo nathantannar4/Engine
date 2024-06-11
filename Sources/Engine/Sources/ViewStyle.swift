@@ -159,11 +159,12 @@ import SwiftUI
 /// > Note: ``ViewStyle``'s stack when applied to a view, so the order you apply them
 /// does matter.
 ///
+@MainActor @preconcurrency
 public protocol ViewStyle: DynamicProperty {
     associatedtype Configuration
     associatedtype Body: View
 
-    @MainActor @ViewBuilder func makeBody(configuration: Configuration) -> Body
+    @ViewBuilder @MainActor @preconcurrency func makeBody(configuration: Configuration) -> Body
 }
 
 /// A protocol that defines a view that is styled with the related ``ViewStyle``.
@@ -433,7 +434,7 @@ private struct AnyViewStyledView<
     var style: AnyViewStyle
     var configuration: StyledView.Configuration
 
-    @MainActor var content: ViewStyleBody {
+    @MainActor @preconcurrency var content: ViewStyleBody {
         style.body(as: ViewStyleBody.self, configuration: configuration)
     }
 

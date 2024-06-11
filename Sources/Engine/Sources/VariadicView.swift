@@ -4,6 +4,108 @@
 
 import SwiftUI
 
+/// A view that transforms a `Source` view to `Content`
+///
+/// Most views such as `ZStack`, `VStack` and `HStack` are
+/// unary views. This means they would produce a single subview
+/// if transformed by a ``VariadicViewAdapter``. This is contrary
+/// to `ForEach`, `TupleView`, `Section` and `Group` which
+/// would produce multiple subviews. This different in behaviour can be
+/// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
+/// and performance.
+///
+/// With ``VariadicViewAdapter`` an alias to the individual views can
+/// be accessed along with any `_ViewTraitKey`,  the `.tag(...)`
+/// value and `.id(...)`. This can be particularly useful when building
+/// a custom picker, mapping a `Hashable` selection, or bridging to
+/// UIKit/AppKit components.
+///
+@frozen
+public struct VariadicViewAdapter<Source: View, Content: View>: View {
+
+    @usableFromInline
+    var source: Source
+
+    @usableFromInline
+    var content: (VariadicView<Source>) -> Content
+
+    @inlinable
+    public init(
+        source: Source,
+        content: @escaping (VariadicView<Source>) -> Content
+    ) {
+        self.source = source
+        self.content = content
+    }
+
+
+    @inlinable
+    public init(
+        @ViewBuilder source: () -> Source,
+        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content
+    ) {
+        self.init(source: source(), content: content)
+    }
+
+    public var body: some View {
+        _VariadicView.Tree(Root(content: content)) {
+            source
+        }
+    }
+
+    private struct Root: _VariadicView.MultiViewRoot {
+        var content: (VariadicView<Source>) -> Content
+
+        func body(children: _VariadicView.Children) -> some View {
+            content(VariadicView(children))
+        }
+    }
+}
+
+/// A container view with type-erased subviews
+///
+/// A variadic view impacts layout and how a `ViewModifier` is applied,
+/// which can have a direct impact on performance.
+@frozen
+public struct VariadicView<Content: View>: View, RandomAccessCollection {
+
+    public var children: AnyVariadicView
+
+    init(_ children: _VariadicView.Children) {
+        self.children = AnyVariadicView(children)
+    }
+
+    public var body: some View {
+        children
+    }
+
+    // MARK: Collection
+
+    public typealias Element = AnyVariadicView.Element
+    public typealias Iterator = AnyVariadicView.Iterator
+    public typealias Index = AnyVariadicView.Index
+
+    public func makeIterator() -> Iterator {
+        children.makeIterator()
+    }
+
+    public var startIndex: Index {
+        children.startIndex
+    }
+
+    public var endIndex: Index {
+        children.endIndex
+    }
+
+    public subscript(position: Index) -> Element {
+        children[position]
+    }
+
+    public func index(after index: Index) -> Index {
+        children.index(after: index)
+    }
+}
+
 /// A type-erased collection of subviews in a container view.
 @frozen
 public struct AnyVariadicView: View, RandomAccessCollection {
@@ -107,72 +209,31 @@ public struct AnyVariadicView: View, RandomAccessCollection {
     }
 }
 
-/// A container view with type-erased subviews
-///
-/// A variadic view impacts layout and how a `ViewModifier` is applied,
-/// which can have a direct impact on performance.
-@frozen
-public struct VariadicView<Content: View>: View {
-
-    public var children: AnyVariadicView
-
-    init(_ children: _VariadicView.Children) {
-        self.children = AnyVariadicView(children)
-    }
+#if hasAttribute(retroactive)
+extension Slice: @retroactive View where Element == AnyVariadicView.Subview, Index: SignedInteger, Base.Index.Stride: SignedInteger {
 
     public var body: some View {
-        children
-    }
-}
-
-/// A view that transforms a `Source` view to `Content`
-///
-/// Most views such as `ZStack`, `VStack` and `HStack` are
-/// unary views. This means they would produce a single subview
-/// if transformed by a ``VariadicViewAdapter``. This is contrary
-/// to `ForEach`, `TupleView`, `Section` and `Group` which
-/// would produce multiple subviews. This different in behaviour can be
-/// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
-/// and performance.
-///
-/// With ``VariadicViewAdapter`` an alias to the individual views can
-/// be accessed along with any `_ViewTraitKey`,  the `.tag(...)`
-/// value and `.id(...)`. This can be particularly useful when building
-/// a custom picker, mapping a `Hashable` selection, or bridging to
-/// UIKit/AppKit components.
-///
-@frozen
-public struct VariadicViewAdapter<Source: View, Content: View>: View {
-
-    @usableFromInline
-    var source: Source
-
-    @usableFromInline
-    var content: (VariadicView<Source>) -> Content
-
-    @inlinable
-    public init(
-        @ViewBuilder source: () -> Source,
-        @ViewBuilder content: @escaping (VariadicView<Source>) -> Content
-    ) {
-        self.source = source()
-        self.content = content
-    }
-
-    public var body: some View {
-        _VariadicView.Tree(Root(content: content)) {
-            source
+        let subviews = (startIndex..<endIndex).map { index in
+            return base[index]
         }
-    }
-
-    private struct Root: _VariadicView.MultiViewRoot {
-        var content: (VariadicView<Source>) -> Content
-
-        func body(children: _VariadicView.Children) -> some View {
-            content(VariadicView(children))
+        ForEachSubview(subviews) { _, subview in
+            subview
         }
     }
 }
+#else
+extension Slice: View where Element == AnyVariadicView.Subview, Index: SignedInteger, Base.Index.Stride: SignedInteger {
+
+    public var body: some View {
+        let subviews = (startIndex..<endIndex).map { index in
+            return base[index]
+        }
+        ForEachSubview(subviews) { _, subview in
+            subview
+        }
+    }
+}
+#endif
 
 // MARK: - Previews
 
@@ -267,6 +328,39 @@ struct VariadicView_Previews: PreviewProvider {
 
             ZStack {
                 VariadicViewAdapter {
+                    SectionView {
+                        Text("Content")
+                    } header: {
+                        Text("Header")
+                    } footer: {
+                        Text("Footer")
+                    }
+                } content: { source in
+                    HStack {
+                        Text(source.children.count.description)
+
+                        VStack {
+                            let isHeader = source[0][IsSectionHeaderTrait.self, default: false]
+                            HStack {
+                                Text(isHeader.description)
+                                source[0]
+                            }
+
+                            source[1]
+
+                            let isFooter = source[2][IsSectionFooterTrait.self, default: false]
+                            HStack {
+                                Text(isFooter.description)
+                                source[2]
+                            }
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Section")
+
+            ZStack {
+                VariadicViewAdapter {
                     Text("Line 1")
 
                     Group {
@@ -302,6 +396,27 @@ struct VariadicView_Previews: PreviewProvider {
                 }
             }
             .previewDisplayName("Text View")
+
+            ZStack {
+                VariadicViewAdapter {
+                    Text("Line 1")
+                    Text("Line 2")
+                    Text("Line 3")
+                } content: { source in
+                    let views = source[0...]
+                    VStack {
+                        HStack {
+                            views[0]
+                            views[1]
+                        }
+
+                        VStack {
+                            views[2...]
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Slice View")
         }
         .padding()
         .previewLayout(.sizeThatFits)

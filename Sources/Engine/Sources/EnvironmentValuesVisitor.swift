@@ -92,10 +92,10 @@ extension EnvironmentValues {
 
         var ptr = plist.elements
         while let p = ptr {
-            let typeName = _typeName(p.pointee.fields.keyType, qualified: false)
+            let typeName = _typeName(p.keyType, qualified: false)
             if typeName == key {
                 guard
-                    let environmentKey = swift_getStructGenerics(for: p.pointee.fields.keyType)?.first,
+                    let environmentKey = swift_getStructGenerics(for: p.keyType)?.first,
                     let conformance = EnvironmentKeyProtocolDescriptor.conformance(of: environmentKey)
                 else {
                     return nil
@@ -103,7 +103,7 @@ extension EnvironmentValues {
                 EnvironmentKeyLookupCache.shared[key] = conformance
                 return conformance.value(in: self)
             }
-            ptr = p.pointee.fields.after
+            ptr = p.after
         }
         return nil
     }
@@ -113,7 +113,7 @@ extension EnvironmentValues {
     fileprivate var plist: PropertyList {
         guard let plistValue = try? swift_getFieldValue("_plist", Any.self, self)
         else {
-            return PropertyList(elements: nil)
+            return PropertyList(ptr: nil)
         }
         func project<T>(_ value: T) -> PropertyList {
             unsafeBitCast(value, to: PropertyList.self)
@@ -125,18 +125,22 @@ extension EnvironmentValues {
 
 extension ProtocolConformance where P == EnvironmentKeyProtocolDescriptor {
     fileprivate func value<Value>(in environment: EnvironmentValues) -> Value? {
-        var visitor = EnvironmentValuesVisitor(environment: environment)
+        var visitor = EnvironmentValuesVisitor<Value>(environment: environment)
         visit(visitor: &visitor)
-        return visitor.output as? Value
+        return visitor.output
     }
 }
 
-private struct EnvironmentValuesVisitor: EnvironmentKeyVisitor {
+private struct EnvironmentValuesVisitor<Value>: EnvironmentKeyVisitor {
     var environment: EnvironmentValues
-    var output: Any?
+    var output: Value!
 
     mutating func visit<Key: EnvironmentKey>(type: Key.Type) {
-        output = environment[Key.self]
+        if Key.Value.self == Value.self {
+            output = environment[Key.self] as? Value
+        } else if MemoryLayout<Key.Value>.size == MemoryLayout<Value>.size {
+            output = unsafeBitCast(environment[Key.self], to: Value.self)
+        }
     }
 }
 
@@ -180,13 +184,13 @@ public struct _EnvironmentValuesLogModifier: ViewModifier {
                     var message = "\n=== EnvironmentValues ===\n"
                     var ptr = environment.plist.elements
                     while let p = ptr {
-                        let keyType = _typeName(p.pointee.fields.keyType, qualified: false)
+                        let keyType = _typeName(p.keyType, qualified: false)
                         let value = environment.visit(keyType, as: Any.self)
                         message += """
                         \(keyType)
                             ▿ value: \(value ?? "nil")\n
                         """
-                        ptr = p.pointee.fields.after
+                        ptr = p.after
                     }
                     return message
                 }()
