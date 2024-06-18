@@ -22,7 +22,7 @@ import EngineCore
 /// to aide with backwards compatibility.
 ///
 @MainActor @preconcurrency
-public protocol VersionedView: View where Body == Never {
+public protocol VersionedView: PrimitiveView where Body == Never {
     associatedtype V6Body: View = V5Body
 
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
@@ -55,31 +55,31 @@ public protocol VersionedView: View where Body == Never {
 
 extension VersionedView where V6Body == V5Body {
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-    @MainActor public var v6Body: V6Body { v5Body }
+    public var v6Body: V6Body { v5Body }
 }
 
 extension VersionedView where V5Body == V4Body {
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
-    @MainActor public var v5Body: V5Body { v4Body }
+    public var v5Body: V5Body { v4Body }
 }
 
 extension VersionedView where V4Body == V3Body {
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    @MainActor public var v4Body: V4Body { v3Body }
+    public var v4Body: V4Body { v3Body }
 }
 
 extension VersionedView where V3Body == V2Body {
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    @MainActor public var v3Body: V3Body { v2Body }
+    public var v3Body: V3Body { v2Body }
 }
 
 extension VersionedView where V2Body == V1Body {
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    @MainActor public var v2Body: V2Body { v1Body }
+    public var v2Body: V2Body { v1Body }
 }
 
 extension VersionedView where V1Body == EmptyView {
-    @MainActor public var v1Body: V1Body { EmptyView() }
+    public var v1Body: V1Body { EmptyView() }
 }
 
 extension VersionedView where Body == Never{
@@ -93,7 +93,7 @@ extension VersionedView where Body == Never{
     }
     #endif
 
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -144,7 +144,7 @@ extension VersionedView where Body == Never{
         #endif
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -196,7 +196,7 @@ extension VersionedView where Body == Never{
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         #if !DEBUG

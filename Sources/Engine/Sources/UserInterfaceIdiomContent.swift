@@ -13,7 +13,7 @@ import SwiftUI
 /// to aide with cross platform compatibility.
 ///
 @MainActor @preconcurrency
-public protocol UserInterfaceIdiomContent: View where Body == Never {
+public protocol UserInterfaceIdiomContent: PrimitiveView where Body == Never {
     associatedtype PhoneBody: View = EmptyView
     @ViewBuilder @MainActor @preconcurrency var phoneBody: PhoneBody { get }
 
@@ -74,7 +74,7 @@ extension UserInterfaceIdiomContent where Body == Never{
         bodyError()
     }
 
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -100,7 +100,7 @@ extension UserInterfaceIdiomContent where Body == Never{
         #endif
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -127,7 +127,7 @@ extension UserInterfaceIdiomContent where Body == Never{
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         #if os(macOS)

@@ -79,6 +79,12 @@ public struct VariadicView<Content: View>: View, RandomAccessCollection {
         children
     }
 
+    // MARK: Sections
+
+    public var sections: [AnyVariadicSectionView] {
+        children.sections
+    }
+
     // MARK: Collection
 
     public typealias Element = AnyVariadicView.Element
@@ -134,6 +140,13 @@ public struct AnyVariadicView: View, RandomAccessCollection {
             set { element[K.self] = newValue }
         }
 
+        public subscript<K: ViewTraitKey>(
+            key: K.Type,
+            default defaultValue: @autoclosure () -> K.Value
+        ) -> K.Value {
+            self[K.self] ?? defaultValue()
+        }
+
         public subscript<T>(key: String, as _: T.Type) -> T? {
             if let conformance = ViewTraitKeyProtocolDescriptor.conformance(of: key) {
                 var visitor = AnyTraitVisitor<T>(element: element)
@@ -152,6 +165,7 @@ public struct AnyVariadicView: View, RandomAccessCollection {
             }
         }
 
+        /// The tag value of the subview.
         @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
         public func tag<T>(as _: T.Type) -> T? {
             let tag = self[TagValueTrait<T>.self, default: .untagged]
@@ -161,6 +175,26 @@ public struct AnyVariadicView: View, RandomAccessCollection {
             case .untagged:
                 return nil
             }
+        }
+
+        /// The layout priority of the subview.
+        public var priority: Double {
+            self[LayoutPriorityTrait.self, default: 0]
+        }
+
+        /// The z-index of the subview.
+        public var zIndex: Double {
+            self[ZIndexTrait.self, default: 0]
+        }
+
+        /// A flag indicating if the subview is a header
+        public var isHeader: Bool {
+            self[IsSectionHeaderTrait.self, default: false]
+        }
+
+        /// A flag indicating if the subview is a footer
+        public var isFooter: Bool {
+            self[IsSectionFooterTrait.self, default: false]
         }
 
         // MARK: View
@@ -180,6 +214,40 @@ public struct AnyVariadicView: View, RandomAccessCollection {
 
     public var body: some View {
         children
+    }
+
+    // MARK: Sections
+
+    public var sections: [AnyVariadicSectionView] {
+        var sections: [AnyVariadicSectionView] = [
+            AnyVariadicSectionView(id: 0)
+        ]
+        for element in self {
+            if element.isHeader {
+                if sections[sections.endIndex - 1].header.child != nil || !sections[sections.endIndex - 1].content.isEmpty {
+                    sections.append(AnyVariadicSectionView(id: sections.endIndex))
+                }
+                sections[sections.endIndex - 1].id = element.id
+                sections[sections.endIndex - 1].header.child = element
+
+            } else if element.isFooter {
+                if sections[sections.endIndex - 1].footer.child != nil {
+                    sections.append(AnyVariadicSectionView(id: sections.endIndex))
+                }
+                sections[sections.endIndex - 1].footer.child = element
+
+            } else {
+                if sections[sections.endIndex - 1].footer.child != nil {
+                    sections.append(AnyVariadicSectionView(id: sections.endIndex))
+                }
+                if sections[sections.endIndex - 1].header.child == nil && sections[sections.endIndex - 1].content.isEmpty {
+                    sections[sections.endIndex - 1].id = element.id
+                }
+                sections[sections.endIndex - 1].content.children.append(element)
+
+            }
+        }
+        return sections
     }
 
     // MARK: Collection
@@ -234,6 +302,87 @@ extension Slice: View where Element == AnyVariadicView.Subview, Index: SignedInt
     }
 }
 #endif
+
+@frozen
+public struct AnyVariadicSectionView: View, Identifiable {
+
+    public typealias Header = Subview
+    public typealias Footer = Subview
+
+    @frozen
+    public struct Subview: View {
+        var child: AnyVariadicView.Subview?
+
+        public var body: some View {
+            child
+        }
+    }
+
+    @frozen
+    public struct Content: View, RandomAccessCollection {
+        public typealias Subview = AnyVariadicView.Subview
+        var children: [Subview]
+
+        public var body: some View {
+            ForEachSubview(children) { _, subview in
+                subview
+            }
+        }
+
+        // MARK: Collection
+
+        public typealias Element = Subview
+        public typealias Iterator = IndexingIterator<Array<Element>>
+        public typealias Index = Int
+
+        public func makeIterator() -> Iterator {
+            children.makeIterator()
+        }
+
+        public var startIndex: Index {
+            children.startIndex
+        }
+
+        public var endIndex: Index {
+            children.endIndex
+        }
+
+        public subscript(position: Index) -> Element {
+            children[position]
+        }
+
+        public func index(after index: Index) -> Index {
+            children.index(after: index)
+        }
+    }
+
+    public var id: AnyHashable
+    public var header: Header
+    public var content: Content
+    public var footer: Footer
+
+    init(
+        id: AnyHashable,
+        header: AnyVariadicView.Subview? = nil,
+        content: [AnyVariadicView.Subview] = [],
+        footer: AnyVariadicView.Subview? = nil
+    ) {
+        self.id = id
+        self.header = .init(child: header)
+        self.content = .init(children: content)
+        self.footer = .init(child: footer)
+    }
+
+    public var body: some View {
+        SectionView {
+            content
+        } header: {
+            header
+        } footer: {
+            footer
+        }
+    }
+}
 
 // MARK: - Previews
 
@@ -340,7 +489,7 @@ struct VariadicView_Previews: PreviewProvider {
                         Text(source.children.count.description)
 
                         VStack {
-                            let isHeader = source[0][IsSectionHeaderTrait.self, default: false]
+                            let isHeader = source[0].isHeader
                             HStack {
                                 Text(isHeader.description)
                                 source[0]
@@ -348,7 +497,7 @@ struct VariadicView_Previews: PreviewProvider {
 
                             source[1]
 
-                            let isFooter = source[2][IsSectionFooterTrait.self, default: false]
+                            let isFooter = source[2].isFooter
                             HStack {
                                 Text(isFooter.description)
                                 source[2]
@@ -358,6 +507,71 @@ struct VariadicView_Previews: PreviewProvider {
                 }
             }
             .previewDisplayName("Section")
+
+            ZStack {
+                VariadicViewAdapter {
+                    SectionView {
+                        Text("Content 1")
+                    } header: {
+                        Text("Header 1")
+                    } footer: {
+                        Text("Footer 1")
+                    }
+
+                    Text("Content 2a")
+
+                    Text("Content 2b")
+
+                    SectionView {
+                        Text("Content 3")
+                    } header: {
+                        Text("Header 3")
+                    } footer: {
+                        Text("Footer 3")
+                    }
+
+                    SectionView {
+                        Text("Content 4")
+                    }
+
+                    SectionView {
+
+                    } header: {
+                        Text("Header 5")
+                    }
+                } content: { source in
+                    VStack {
+                        ForEach(source.sections) { section in
+                            Section {
+                                HStack {
+                                    Text("\(section.id)")
+
+                                    VStack {
+                                        ForEach(section.content) { child in
+                                            child
+                                        }
+                                    }
+                                }
+                            } header: {
+                                HStack {
+                                    Text("\(section.id)")
+
+                                    section.header
+                                }
+                            } footer: {
+                                HStack {
+                                    Text("\(section.id)")
+
+                                    section.footer
+                                }
+                            }
+
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Multi Section")
 
             ZStack {
                 VariadicViewAdapter {

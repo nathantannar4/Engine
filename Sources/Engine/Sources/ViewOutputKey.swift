@@ -285,19 +285,31 @@ struct ViewOutputKey_Previews: PreviewProvider {
     struct PreviewViewOutputKey: ViewOutputKey { }
 
     static var previews: some View {
-        ViewOutputKeyReader(PreviewViewOutputKey.self) { value in
-            VStack {
-                ViewOutputKeyValueReader(value) { views in
-                    ForEach(views) { view in
-                        view
+        Preview()
+    }
+
+    struct Preview: View {
+        @State var counter = 0
+
+        var body: some View {
+            ViewOutputKeyReader(PreviewViewOutputKey.self) { value in
+                VStack {
+                    ViewOutputKeyValueReader(value) { views in
+                        ForEach(views) { view in
+                            view
+                        }
                     }
                 }
-            }
-            .viewOutput(PreviewViewOutputKey.self) {
-                Text("Hello, World")
-            }
-            .viewOutput(PreviewViewOutputKey.self) {
-                Text("Hello, World")
+                .viewOutput(PreviewViewOutputKey.self) {
+                    Text("Hello, World")
+                }
+                .viewOutput(PreviewViewOutputKey.self) {
+                    Button {
+                        counter += 1
+                    } label: {
+                        Text(counter.description)
+                    }
+                }
             }
         }
     }

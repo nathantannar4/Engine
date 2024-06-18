@@ -46,14 +46,17 @@ import SwiftUI
 /// you can implement the optional `defaultBody`.
 ///
 @MainActor @preconcurrency
-public protocol ViewAlias: View where Body == Never {
+public protocol ViewAlias: PrimitiveView where Body == Never {
     associatedtype DefaultBody: View = EmptyView
     @ViewBuilder @MainActor @preconcurrency var defaultBody: DefaultBody { get }
 }
 
 /// Statically type-erases a view to be resolved by the ``ViewAlias``.
 @frozen
-public struct ViewAliasSourceModifier<Alias: ViewAlias, Source: View>: ViewModifier {
+public struct ViewAliasSourceModifier<
+    Alias: ViewAlias,
+    Source: View
+>: ViewModifier {
 
     @usableFromInline
     var source: Source
@@ -130,7 +133,7 @@ extension ViewAlias {
         bodyError()
     }
 
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -147,7 +150,7 @@ extension ViewAlias {
         return _openExistential(input.type, do: project)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -165,7 +168,7 @@ extension ViewAlias {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         var inputs = inputs

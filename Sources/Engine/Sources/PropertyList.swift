@@ -202,9 +202,9 @@ struct PropertyList {
                         keyType: Input.self,
                         before: nil,
                         after: lastValue,
-                        skip: nil,
+                        skip: lastValue.pointee.fields.skip,
                         length: lastValue.pointee.fields.length + 1,
-                        skipCount: 0,
+                        skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
                         keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
                         id: UniqueID.generate()
                     )

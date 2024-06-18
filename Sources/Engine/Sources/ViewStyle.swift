@@ -171,12 +171,13 @@ public protocol ViewStyle: DynamicProperty {
 ///
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
-public protocol ViewStyledView: View {
+@MainActor @preconcurrency
+public protocol ViewStyledView: PrimitiveView {
     associatedtype Configuration
-    var configuration: Configuration { get }
+    @MainActor @preconcurrency var configuration: Configuration { get }
 
     associatedtype DefaultStyle: ViewStyle where DefaultStyle.Configuration == Configuration
-    static var defaultStyle: DefaultStyle { get }
+    @MainActor @preconcurrency static var defaultStyle: DefaultStyle { get }
 }
 
 /// A modifier that statically applies the `Style` the all descendent `StyledView`
@@ -350,7 +351,7 @@ extension ViewStyledView {
         )
     }
 
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -367,7 +368,7 @@ extension ViewStyledView {
         }
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -385,7 +386,7 @@ extension ViewStyledView {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         if Body.self != Never.self,

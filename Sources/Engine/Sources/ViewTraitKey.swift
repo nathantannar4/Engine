@@ -64,9 +64,8 @@ public struct IsSectionFooterTrait: ViewTraitKey {
 
 extension AnyVariadicView.Subview {
     public subscript<K: ViewTraitKey>(
-        key: K.Type,
-        default defaultValue: @autoclosure () -> K.Value
-    ) -> K.Value {
+        key: K.Type
+    ) -> K.Value? {
         if let conformance = K.conformance {
             var visitor = Visitor<K>(subview: self)
             conformance.visit(visitor: &visitor)
@@ -74,7 +73,7 @@ extension AnyVariadicView.Subview {
                 return value
             }
         }
-        return defaultValue()
+        return nil
     }
 
     private struct Visitor<K: ViewTraitKey>: ViewTraitKeyVisitor {
@@ -93,10 +92,15 @@ extension AnyVariadicView.Subview {
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension Layout.Subviews.Element {
+    
+    /// The z-index of the subview.
+    public var zIndex: Double {
+        self[ZIndexTrait.self, default: 0]
+    }
+
     public subscript<K: ViewTraitKey>(
-        key: K.Type,
-        default defaultValue: @autoclosure () -> K.Value
-    ) -> K.Value {
+        key: K.Type
+    ) -> K.Value? {
         if let conformance = K.conformance {
             var visitor = Visitor<K>(subview: self)
             conformance.visit(visitor: &visitor)
@@ -104,7 +108,14 @@ extension Layout.Subviews.Element {
                 return value
             }
         }
-        return defaultValue()
+        return nil
+    }
+
+    public subscript<K: ViewTraitKey>(
+        key: K.Type,
+        default defaultValue: @autoclosure () -> K.Value
+    ) -> K.Value {
+        return self[K.self] ?? defaultValue()
     }
 
     private struct Visitor<K: ViewTraitKey>: ViewTraitKeyVisitor {

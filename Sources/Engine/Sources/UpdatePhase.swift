@@ -13,9 +13,11 @@ import Combine
 @propertyWrapper
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+@MainActor @preconcurrency
 public struct UpdatePhase: DynamicProperty {
 
     @usableFromInline
+    @MainActor @preconcurrency
     final class Storage: ObservableObject {
         var value: Value
 
@@ -29,20 +31,24 @@ public struct UpdatePhase: DynamicProperty {
     var storage: StateObject<Storage>
 
     @inlinable
+    @MainActor @preconcurrency
     public init() {
         self.storage = StateObject(wrappedValue: Storage(value: Value()))
     }
 
-    public mutating func update() {
-        storage.wrappedValue.value.update()
+    public nonisolated mutating func update() {
+        MainActor.unsafe {
+            storage.wrappedValue.value.update()
+        }
     }
 
+    @MainActor @preconcurrency
     public var wrappedValue: Value {
         storage.wrappedValue.value
     }
 
     @frozen
-    public struct Value: Hashable {
+    public struct Value: Hashable, Sendable {
         @usableFromInline
         var phase: UInt32
 
