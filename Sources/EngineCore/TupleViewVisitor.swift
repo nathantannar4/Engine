@@ -59,6 +59,7 @@ private struct TupleSubviewIteratorElementVisitor<
 
     var visitor: UnsafeMutablePointer<Visitor>
     var context: MultiViewIteratorContext
+    var index = 0
 
     mutating func visit<Element>(
         element: Element,
@@ -67,7 +68,7 @@ private struct TupleSubviewIteratorElementVisitor<
     ) {
         if let conformance = ViewProtocolDescriptor.conformance(of: Element.self) {
             var context = context
-            context.id.append(offset: offset)
+            context.id.append(offset: index)
             var visitor = TupleSubviewIteratorViewVisitor(
                 element: element,
                 visitor: visitor,
@@ -76,6 +77,7 @@ private struct TupleSubviewIteratorElementVisitor<
             conformance.visit(visitor: &visitor)
             stop = visitor.stop
         }
+        index += 1
     }
 }
 
@@ -91,6 +93,8 @@ private struct TupleSubviewIteratorViewVisitor<
 
     mutating func visit<Content: View>(type: Content.Type) {
         let content = unsafeBitCast(element, to: Content.self)
+        var context = context
+        context.id.append(Content.self)
         content.visit(visitor: visitor, context: context, stop: &stop)
     }
 }

@@ -6,46 +6,38 @@ import XCTest
 import SwiftUI
 @testable import EngineCore
 
-private struct TestVisitor: MultiViewVisitor {
-    var outputs: [(Any.Type, Context)] = []
-
-    mutating func visit<Content: View>(content: Content, context: Context, stop: inout Bool) {
-        outputs.append((Content.self, context))
-    }
-}
-
 final class MultiViewVisitorTests: XCTestCase {
 
     fileprivate func expectation<Content: View>(
+        max: Int = .max,
         @ViewBuilder content: () -> Content,
         visit: ([(type: Any.Type, context: TestVisitor.Context)]) -> Void
     ) {
         let content = content()
-        var visitor = TestVisitor()
+        var visitor = TestVisitor(max: max)
         content.visit(visitor: &visitor)
         visit(visitor.outputs)
     }
 
-    func expectation<Element, Content: View>(
-        _ type: Element.Type,
-        @ViewBuilder content: () -> Content
+    fileprivate func expectation<Element, Content: View>(
+        _ type: Element.Type = Any.self,
+        count: Int = 1,
+        max: Int = .max,
+        @ViewBuilder content: () -> Content,
+        validation: (TestVisitor.Context, Int) -> Void = { _, _ in }
     ) {
-        expectation(content: content) { outputs in
-            XCTAssertEqual(outputs.count, 1)
-            XCTAssertEqual(
-                unsafeBitCast(outputs[0].type, to: UnsafeRawPointer.self),
-                unsafeBitCast(type, to: UnsafeRawPointer.self),
-                "\(outputs[0].type) is not equal to \(type)"
-            )
-        }
-    }
-
-    func expectation<Content: View>(
-        count: Int,
-        @ViewBuilder content: () -> Content
-    ) {
-        expectation(content: content) { outputs in
+        expectation(max: max, content: content) { outputs in
             XCTAssertEqual(outputs.count, count)
+            for (index, output) in outputs.enumerated() {
+                if type != Any.self {
+                    XCTAssertEqual(
+                        unsafeBitCast(output.type, to: UnsafeRawPointer.self),
+                        unsafeBitCast(type, to: UnsafeRawPointer.self),
+                        "\(output.type) is not equal to \(type)"
+                    )
+                }
+                validation(output.context, index)
+            }
         }
     }
 
@@ -55,27 +47,35 @@ final class MultiViewVisitorTests: XCTestCase {
     }
 
     func testAnyView() {
-        expectation(count: 1) {
+        expectation(Text.self) {
             AnyView(Text("Hello, World"))
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(AnyView.self).appending(Text.self))
         }
-        expectation(count: 2) {
-            TupleView((Text("Hello"), Text("World")))
+        expectation(Text.self, count: 2) {
+            AnyView(TupleView((Text("Hello"), Text("World"))))
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(AnyView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
     }
 
     func testGroup() {
-        expectation(count: 1) {
+        expectation(Text.self) {
             Group {
                 Text("Hello, World")
             }
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(Group<Text>.self).appending(Text.self))
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             Group {
                 Text("Hello")
                 Text("World")
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(Group<TupleView<(Text, Text)>>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
-        expectation(count: 1) {
+        expectation(VStack<TupleView<(Text, Text)>>.self) {
             Group {
                 VStack {
                     Text("Hello")
@@ -83,26 +83,40 @@ final class MultiViewVisitorTests: XCTestCase {
                 }
             }
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             Group {
                 Group {
                     Text("Hello")
                     Text("World")
                 }
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(Group<Group<TupleView<(Text, Text)>>>.self).appending(Group<TupleView<(Text, Text)>>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
     }
 
     func testTupleView() {
-        expectation(count: 1) {
+        expectation(Text.self) {
             TupleView(Text("Hello, World"))
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(TupleView<Text>.self).appending(Text.self))
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             TupleView((EmptyView(), TupleView((Text("Hello"), Text("World")))))
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(TupleView<(EmptyView, TupleView<(Text, Text)>)>.self).appending(offset: 1).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
-        expectation(count: 1) {
+        expectation(VStack<TupleView<(Text, Text)>>.self) {
             VStack {
                 TupleView((Text("Hello"), Text("World")))
+            }
+        }
+        expectation(count: 3) {
+            Text("Line 1")
+            Text("Line 2")
+                .padding()
+            VStack {
+                Text("Line 3")
             }
         }
     }
@@ -115,9 +129,41 @@ final class MultiViewVisitorTests: XCTestCase {
             EmptyView()
                 .modifier(EmptyModifier())
         }
+        expectation(count: 0) {
+            EmptyView()
+                .padding()
+        }
+        let flag = false
+        expectation(count: 0) {
+            if flag {
+                Text("Hello, World")
+            }
+        }
+        expectation(count: 0) {
+            AnyView(EmptyView())
+        }
+        struct CustomEmptyView: View {
+            var body: some View {
+                EmptyView()
+            }
+        }
+        expectation(count: 0) {
+            CustomEmptyView()
+        }
     }
 
     func testSection() {
+        expectation(count: 3) {
+            Section {
+                Text("Content")
+            } header: {
+                Text("Header")
+            } footer: {
+                Text("Footer")
+            }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(Section<Text, Text, Text>.self).appending(offset: index).appending(Text.self))
+        }
         expectation(count: 3) {
             Section {
                 Text("Content")
@@ -144,24 +190,39 @@ final class MultiViewVisitorTests: XCTestCase {
     func testForEach() {
         struct Item: Identifiable {
             var id: String
+            static var allItems: [Item] = [
+                Item(id: "one"), Item(id: "two"), Item(id: "three")
+            ]
         }
-        expectation(count: 3) {
-            ForEach([Item(id: "one"), Item(id: "two"), Item(id: "three")]) { item in
+        expectation(Text.self, count: 3) {
+            ForEach(Item.allItems) { item in
                 Text(item.id)
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(ForEach<Array<Item>, String, Text>.self).appending(offset: Item.allItems[index].id).appending(Text.self))
         }
-        expectation(count: 3) {
+        expectation(Text.self, count: 3) {
             ForEach(0...2, id: \.self) { index in
                 Text(index.description)
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(ForEach<ClosedRange<Int>, Int, Text>.self).appending(offset: index).appending(Text.self))
         }
-        expectation(count: 4) {
+        expectation(Text.self, count: 4) {
             Text("Hello, World")
             ForEach(0...2, id: \.self) { index in
                 Text(index.description)
             }
+        } validation: { ctx, index in
+            let id = ViewTypeIdentifier(TupleView<(Text, ForEach<ClosedRange<Int>, Int, Text>)>.self).appending(offset: min(index, 1))
+            switch index {
+            case 0:
+                XCTAssertEqual(ctx.id, id.appending(Text.self))
+            default:
+                XCTAssertEqual(ctx.id, id.appending(ForEach<ClosedRange<Int>, Int, Text>.self).appending(offset: index - 1).appending(Text.self))
+            }
         }
-        expectation(count: 9) {
+        expectation(Text.self, count: 9) {
             ForEach(0...2, id: \.self) { _ in
                 ForEach(0...2, id: \.self) { index in
                     Text(index.description)
@@ -178,16 +239,55 @@ final class MultiViewVisitorTests: XCTestCase {
             }
         }
         flag = true
-        expectation(count: 1) {
+        expectation(Text.self) {
             if flag {
                 Text("Hello, World")
             }
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(Optional<Text>.self).appending(Text.self))
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             if flag {
                 Text("Hello")
                 Text("World")
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(Optional<TupleView<(Text, Text)>>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+        }
+    }
+
+    func testAvailable() {
+        expectation(Text.self) {
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                Text("Hello, World")
+            }
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(Optional<AnyView>.self).appending(AnyView.self).appending(Text.self))
+        }
+    }
+
+    func testConditionalContent() {
+        var flag = false
+        expectation(Text.self, count: 2) {
+            if flag {
+                Text("Hello, World")
+            } else {
+                Text("Hello")
+                Text("World")
+            }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(_ConditionalContent<Text, TupleView<(Text, Text)>>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+        }
+        flag = true
+        expectation(Text.self) {
+            if flag {
+                Text("Hello, World")
+            } else {
+                Text("Hello")
+                Text("World")
+            }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(_ConditionalContent<Text, TupleView<(Text, Text)>>.self).appending(Text.self))
         }
     }
 
@@ -200,6 +300,8 @@ final class MultiViewVisitorTests: XCTestCase {
         expectation(count: 1) {
             Text("Hello, World")
                 .modifier(EmptyModifier())
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(ModifiedContent<Text, EmptyModifier>.self))
         }
         expectation(count: 1) {
             Text("Hello, World")
@@ -212,6 +314,8 @@ final class MultiViewVisitorTests: XCTestCase {
                 Text("World")
             }
             .modifier(EmptyModifier())
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(ModifiedContent<Group<TupleView<(Text, Text)>>, EmptyModifier>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
         expectation(count: 2) {
             Group {
@@ -243,11 +347,13 @@ final class MultiViewVisitorTests: XCTestCase {
             }
             .modifier(EmptyModifier())
         }
-        expectation(ModifiedContent<Text, EmptyModifier>.self) {
-            ForEach(0..<1, id: \.self) { _ in
+        expectation(ModifiedContent<Text, EmptyModifier>.self, count: 3) {
+            ForEach(0..<3, id: \.self) { _ in
                 Text("Hello, World")
             }
             .modifier(EmptyModifier())
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(ModifiedContent<ForEach<Range<Int>, Int, Text>, EmptyModifier>.self).appending(offset: index).appending(Text.self))
         }
         expectation(ModifiedContent<Text, EmptyModifier>.self) {
             TupleView(Text("Hello, World"))
@@ -294,128 +400,113 @@ final class MultiViewVisitorTests: XCTestCase {
                 Text("World")
             }
         }
-        expectation(count: 1) {
+        expectation(CustomView.self) {
             CustomView()
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(CustomView.self))
         }
-        expectation(count: 1) {
+        expectation(CustomView.self) {
             Group {
                 CustomView()
             }
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(Group<CustomView>.self).appending(CustomView.self))
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             CustomMultiView()
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
-        expectation(count: 2) {
+        expectation(Text.self, count: 2) {
             Group {
                 CustomMultiView()
             }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+        }
+    }
+
+    #if os(iOS) || os(macOS)
+    func testRepresentable() {
+        #if os(macOS)
+        struct CustomRepresentable: NSViewRepresentable {
+            func makeNSView(context: Context) -> NSView { NSView() }
+            func updateNSView(_ nsView: NSView, context: Context) { }
+        }
+        #else
+        struct CustomRepresentable: UIViewRepresentable {
+            func makeUIView(context: Context) -> UIView { UIView() }
+            func updateUIView(_ uiView: UIView, context: Context) { }
+        }
+        #endif
+        expectation(CustomRepresentable.self) {
+            CustomRepresentable()
+        }
+    }
+    #endif
+
+    func testPrimitiveView() {
+        struct PrimitiveView: View {
+            var body: Never { fatalError() }
+        }
+        struct PrimitiveMultiView<Content: View>: View, MultiView {
+            @ViewBuilder var content: Content
+            var body: Never { fatalError() }
+            func makeSubviewIterator() -> some MultiViewIterator {
+                content.makeSubviewIterator()
+            }
+        }
+        expectation(PrimitiveView.self) {
+            PrimitiveView()
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(PrimitiveView.self))
+        }
+        expectation(Text.self) {
+            PrimitiveMultiView {
+                Text("Hello, World")
+            }
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(PrimitiveMultiView<Text>.self))
+        }
+        expectation(Text.self, count: 2) {
+            PrimitiveMultiView {
+                Group {
+                    Text("Hello")
+                    Text("World")
+                }
+            }
+        } validation: { ctx, index in
+            XCTAssertEqual(ctx.id, .init(PrimitiveMultiView<Group<TupleView<(Text, Text)>>>.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
     }
 
     func testStop() {
-        struct IsEmptyVisitor: MultiViewVisitor {
-            var isEmpty = true
-
-            mutating func visit<Content: View>(
-                content: Content,
-                context: Context,
-                stop: inout Bool
-            ) {
-                XCTAssertTrue(isEmpty, "visit did not stop")
-                isEmpty = false
-                stop = true
-            }
-        }
-
-        func expectation<Content: View>(
-            isEmpty: Bool,
-            @ViewBuilder content: () -> Content
-        ) {
-            let content = content()
-            var visitor = IsEmptyVisitor()
-            content.visit(visitor: &visitor)
-            XCTAssertEqual(visitor.isEmpty, isEmpty)
-        }
-
-        expectation(isEmpty: true) {
-            EmptyView()
-        }
-
-        expectation(isEmpty: true) {
-            EmptyView()
-                .padding()
-        }
-
-        expectation(isEmpty: false) {
+        expectation(count: 1, max: 1) {
             Text("Hello, World")
         }
-
-        var flag = false
-        expectation(isEmpty: true) {
-            if flag {
-                Text("Hello, World")
-            }
+        expectation(count: 1, max: 1) {
+            Text("Line 1")
+            Text("Line 2")
         }
-
-        flag = true
-        expectation(isEmpty: false) {
-            if flag {
-                Text("Hello, World")
-            }
-        }
-
-        expectation(isEmpty: true) {
-            AnyView(EmptyView())
-        }
-
-        expectation(isEmpty: false) {
-            AnyView(Text("Hello, World"))
-        }
-
-        expectation(isEmpty: false) {
-            Text("Hello")
-            Text("World")
-        }
-
-        expectation(isEmpty: false) {
+        expectation(count: 1, max: 1) {
             Group {
-                Text("Hello")
-                Text("World")
+                Text("Line 1")
+                Text("Line 2")
             }
         }
+    }
+}
 
-        expectation(isEmpty: false) {
-            Section {
-                Text("Hello, World")
-            } header: {
-                Text("Header")
-            } footer: {
-                Text("Footer")
-            }
-        }
+private struct TestVisitor: MultiViewVisitor {
+    var outputs: [(Any.Type, Context)] = []
+    var max: Int = .max
 
-        expectation(isEmpty: false) {
-            ForEach(0...2, id: \.self) { index in
-                Text(index.description)
-            }
-        }
-
-        struct CustomEmptyView: View {
-            var body: some View {
-                EmptyView()
-            }
-        }
-        expectation(isEmpty: true) {
-            CustomEmptyView()
-        }
-
-        struct CustomView: View {
-            var body: some View {
-                Text("Hello, World")
-            }
-        }
-        expectation(isEmpty: false) {
-            CustomView()
-        }
+    mutating func visit<Content: View>(
+        content: Content,
+        context: Context,
+        stop: inout Bool
+    ) {
+        outputs.append((Content.self, context))
+        stop = outputs.count >= max
     }
 }

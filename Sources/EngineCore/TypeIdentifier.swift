@@ -12,6 +12,6 @@ public struct TypeIdentifier: Hashable, CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        _typeName(unsafeBitCast(metadata, to: Any.Type.self), qualified: true)
+        _typeName(unsafeBitCast(metadata, to: Any.Type.self), qualified: false)
     }
 }

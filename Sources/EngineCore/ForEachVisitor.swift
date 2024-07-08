@@ -28,8 +28,7 @@ private struct ForEachSubviewIterator<
         stop: inout Bool
     ) {
         let offset: (Data.Index) -> AnyHashable
-        if let idGenerator = try? swift_getFieldValue("idGenerator", Any.self, self),
-           let keyPath = Mirror(reflecting: idGenerator).children.first?.value as? KeyPath<Data.Element, ID>
+        if let keyPath = Mirror(reflecting: content).descendant("idGenerator", "keyPath") as? KeyPath<Data.Element, ID>
         {
             offset = { index in
                 content.data[index][keyPath: keyPath]
@@ -49,6 +48,7 @@ private struct ForEachSubviewIterator<
             let element = content.content(content.data[index])
             var context = context
             context.id.append(offset: offset(index))
+            context.id.append(Content.self)
             element.visit(
                 visitor: visitor,
                 context: context,

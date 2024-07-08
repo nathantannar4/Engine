@@ -40,6 +40,33 @@ extension ViewVisitor {
     public func visit<Content: View>(type: Content.Type) { }
 }
 
+extension View {
+
+    public func visit<
+        Visitor: ViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>
+    ) {
+        #if os(iOS) || os(tvOS)
+        if let conformance = UIViewRepresentableProtocolDescriptor.conformance(of: Self.self) {
+            conformance.visit(visitor: visitor)
+        } else if let conformance = UIViewControllerRepresentableProtocolDescriptor.conformance(of: Self.self) {
+            conformance.visit(visitor: visitor)
+        } else {
+            visitor.pointee.visit(type: Self.self)
+        }
+        #elseif os(macOS)
+        if let conformance = NSViewRepresentableProtocolDescriptor.conformance(of: Self.self) {
+            conformance.visit(visitor: visitor)
+        } else if let conformance = NSViewControllerRepresentableProtocolDescriptor.conformance(of: Self.self) {
+            conformance.visit(visitor: visitor)
+        } else {
+            visitor.pointee.visit(type: Self.self)
+        }
+        #endif
+    }
+}
+
 private struct ViewVisitorContext {
     var visitor: UnsafeMutableRawPointer
     var type: ViewVisitor.Type

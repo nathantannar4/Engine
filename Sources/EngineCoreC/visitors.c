@@ -83,22 +83,30 @@ void c_visit_View(void *_Nonnull visitor, const void *_Nonnull metadata, const v
     {
         _swift_visit_UIViewRepresentable(visitor, metadata, metadata, conformance);
     }
-    if (descriptor == _UIViewControllerRepresentableProtocolDescriptor())
+    else if (descriptor == _UIViewControllerRepresentableProtocolDescriptor())
     {
         _swift_visit_UIViewControllerRepresentable(visitor, metadata, metadata, conformance);
     }
-#endif
-#if TARGET_OS_OSX
+    else
+    {
+        _swift_visit_View(visitor, metadata, metadata, conformance);
+    }
+#elif TARGET_OS_OSX
     if (descriptor == _NSViewRepresentableProtocolDescriptor())
     {
         _swift_visit_NSViewRepresentable(visitor, metadata, metadata, conformance);
     }
-    if (descriptor == _NSViewControllerRepresentableProtocolDescriptor())
+    else if (descriptor == _NSViewControllerRepresentableProtocolDescriptor())
     {
         _swift_visit_NSViewControllerRepresentable(visitor, metadata, metadata, conformance);
     }
-#endif
+    else
+    {
+        _swift_visit_View(visitor, metadata, metadata, conformance);
+    }
+#else
     _swift_visit_View(visitor, metadata, metadata, conformance);
+#endif
 }
 
 void c_visit_ViewModifier(void *_Nonnull visitor, const void *_Nonnull metadata, const void *_Nonnull conformance)

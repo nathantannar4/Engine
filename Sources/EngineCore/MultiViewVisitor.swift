@@ -15,27 +15,7 @@ public protocol MultiViewVisitor {
 @frozen
 public struct MultiViewElementContext {
 
-    public struct ID: Hashable {
-
-        private indirect enum Storage: Hashable {
-            case root(TypeIdentifier)
-            case subview(Storage, TypeIdentifier)
-            case offset(Storage, AnyHashable)
-        }
-        private var storage: Storage
-
-        init<Content: View>(_: Content.Type) {
-            self.storage = .root(TypeIdentifier(Content.self))
-        }
-
-        mutating func append<Content: View>(_: Content.Type) {
-            storage = .subview(storage, TypeIdentifier(Content.self))
-        }
-
-        mutating func append<Offset: Hashable>(offset: Offset) {
-            storage = .offset(storage, AnyHashable(offset))
-        }
-    }
+    public typealias ID = ViewTypeIdentifier
 
     public struct Traits: OptionSet {
         public var rawValue: UInt8
@@ -92,14 +72,20 @@ public protocol MultiViewIterator {
 
 public struct MultiViewIteratorContext {
 
-    var traits: MultiViewElementContext.Traits
-    var modifier: Any?
-    var id: MultiViewElementContext.ID
+    public var id: MultiViewElementContext.ID
+    public var traits: MultiViewElementContext.Traits
+    public var modifier: Any?
 
-    public init<Content: View>(_: Content.Type = Content.self) {
+    init(id: MultiViewElementContext.ID) {
+        self.id = id
         self.traits = []
         self.modifier = nil
+    }
+
+    public init<Content: View>(_: Content.Type = Content.self) {
         self.id = .init(Content.self)
+        self.traits = []
+        self.modifier = nil
     }
 
     public func union(_ traits: MultiViewElementContext.Traits) -> Self {
@@ -128,6 +114,56 @@ public struct MultiViewIteratorContext {
     }
 }
 
+extension View {
+
+    @_disfavoredOverload
+    @inline(__always)
+    public func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>
+    ) {
+        var stop = false
+        visit(visitor: visitor, stop: &stop)
+    }
+
+    @_disfavoredOverload
+    @inline(__always)
+    public func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>,
+        stop: inout Bool
+    ) {
+        visit(visitor: visitor, context: MultiViewIteratorContext(Self.self), stop: &stop)
+    }
+
+    @_disfavoredOverload
+    public func visit<
+        Visitor: MultiViewVisitor
+    >(
+        visitor: UnsafeMutablePointer<Visitor>,
+        context: MultiViewIteratorContext,
+        stop: inout Bool
+    ) {
+        if let conformance = MultiViewProtocolDescriptor.conformance(of: Self.self) {
+            conformance.visit(
+                content: self,
+                visitor: visitor,
+                context: context,
+                stop: &stop
+            )
+        } else {
+            var iterator = makeSubviewIterator()
+            iterator.visit(
+                visitor: visitor,
+                context: context,
+                stop: &stop
+            )
+        }
+    }
+}
+
 extension MultiView {
 
     /// Unwraps the type to be visited by the `Visitor`
@@ -149,7 +185,7 @@ extension MultiView {
         visitor: UnsafeMutablePointer<Visitor>,
         stop: inout Bool
     ) {
-        visit(visitor: visitor, context: .init(Self.self), stop: &stop)
+        visit(visitor: visitor, context: MultiViewIteratorContext(Self.self), stop: &stop)
     }
 
     @inlinable
@@ -228,8 +264,6 @@ extension MultiViewVisitor {
         context: MultiViewIteratorContext,
         stop: inout Bool
     ) {
-        var context = context
-        context.id.append(Content.self)
         if let modifier = context.modifier {
             stop = withUnsafeMutablePointer(to: &self) { ptr in
                 func project<Modifier>(_ modifier: Modifier) -> Bool {
@@ -246,7 +280,7 @@ extension MultiViewVisitor {
                 return _openExistential(modifier, do: project)
             }
         } else {
-            visit(content: content, context: .init(context: context), stop: &stop)
+            visit(content: content, context: MultiViewElementContext(context: context), stop: &stop)
         }
     }
 }

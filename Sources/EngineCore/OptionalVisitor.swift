@@ -29,6 +29,8 @@ private struct OptionalSubviewIterator<
             // Do nothing
             break
         case .some(let element):
+            var context = context
+            context.id.append(Wrapped.self)
             element.visit(visitor: visitor, context: context, stop: &stop)
         }
     }

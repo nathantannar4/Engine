@@ -83,6 +83,8 @@ private struct AnyViewStorageVisitor<
 
     mutating func visit<Content: View>(type: Content.Type) {
         let content = unsafeBitCast(value, to: Content.self)
+        var context = context
+        context.id.append(Content.self)
         content.visit(visitor: visitor, context: context, stop: &stop)
     }
 }
