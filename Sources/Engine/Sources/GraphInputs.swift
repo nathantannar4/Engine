@@ -109,9 +109,13 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
 extension PropertyList {
     fileprivate mutating func detach() {
         var ptr = elements
+        var hasMatchedGeometryScope = false
         while let p = ptr {
-            let key = _typeName(ptr!.keyType, qualified: true)
+            let key = _typeName(p.keyType, qualified: true)
             var isMatch = key.hasSuffix(".MatchedGeometryScope")
+            if isMatch {
+                hasMatchedGeometryScope = true
+            }
             #if !os(macOS)
             let branchKey: String
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
@@ -144,11 +148,17 @@ extension PropertyList {
         var last = tail.after
         tail.after = nil
         while let p = last?.after {
+            if !hasMatchedGeometryScope {
+                let key = _typeName(p.keyType, qualified: true)
+                if key.hasSuffix(".MatchedGeometryScope") {
+                    break
+                }
+            }
             last = p
         }
 
         ptr = elements
-        let offset = tail.length - (last == nil ? 1 : 2)
+        let offset = tail.length - ((last?.length ?? 0) + 1)
         while offset > 0, let p = ptr {
             p.length -= offset
             ptr = p.after

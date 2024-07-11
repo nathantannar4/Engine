@@ -118,6 +118,18 @@ final class MultiViewVisitorTests: XCTestCase {
             VStack {
                 Text("Line 3")
             }
+        } validation: { ctx, index in
+            let base = ViewTypeIdentifier(TupleView<(Text, ModifiedContent<Text, _PaddingLayout>, VStack<Text>)>.self).appending(offset: index)
+            switch index {
+            case 0:
+                XCTAssertEqual(ctx.id, base.appending(Text.self))
+            case 1:
+                XCTAssertEqual(ctx.id, base.appending(ModifiedContent<Text, _PaddingLayout>.self))
+            case 2:
+                XCTAssertEqual(ctx.id, base.appending(VStack<Text>.self))
+            default:
+                XCTFail()
+            }
         }
     }
 
