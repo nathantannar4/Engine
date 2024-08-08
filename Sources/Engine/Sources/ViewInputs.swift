@@ -24,11 +24,16 @@ public struct ViewInputs {
     public var _graphInputs: _GraphInputs
 
     public var options: Options {
-        do {
-            let rawValue = try swift_getFieldValue("options", UInt32.self, _graphInputs)
-            return Options(rawValue: rawValue)
-        } catch {
-            return Options(rawValue: 0)
+        get {
+            do {
+                let rawValue = try swift_getFieldValue("options", UInt32.self, _graphInputs)
+                return Options(rawValue: rawValue)
+            } catch {
+                return Options(rawValue: 0)
+            }
+        }
+        set {
+            try? swift_setFieldValue("options", newValue.rawValue, &_graphInputs)
         }
     }
 

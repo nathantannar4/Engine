@@ -54,7 +54,16 @@ open class HostingView<
         }
     }
 
-    public var disablesSafeArea: Bool = false
+    public var disablesSafeArea: Bool = false {
+        didSet {
+            guard oldValue != disablesSafeArea else { return }
+            #if os(iOS) || os(tvOS)
+            setNeedsLayout()
+            #elseif os(macOS)
+            needsLayout = true
+            #endif
+        }
+    }
 
     #if os(iOS) || os(tvOS)
     @available(iOS 16.0, tvOS 16.0, *)
@@ -131,11 +140,21 @@ open class HostingView<
         return result
     }
     #else
-    public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard let result = super.hitTest(point, with: event), result != self else {
-            return nil
+    private var hitTestTimestamp: TimeInterval = 0
+    open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let result = super.hitTest(point, with: event)
+        if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
+            defer { hitTestTimestamp = event?.timestamp ?? 0 }
+            if result == self, event?.timestamp != hitTestTimestamp {
+                return nil
+            }
+            return result
+        } else {
+            if result == self {
+                return nil
+            }
+            return result
         }
-        return result
     }
     #endif
 }
