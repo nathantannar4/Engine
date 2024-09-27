@@ -4,6 +4,16 @@
 
 import Foundation
 
+@inline(__always)
+public func isOpaqueViewAnyView() -> Bool {
+    // SwiftUI v6 wraps in AnyView
+    #if DEBUG && canImport(SwiftUICore)
+    return true
+    #else
+    return false
+    #endif
+}
+
 public struct MetadataField {
     public let key: String
     public let type: Any.Type

@@ -90,25 +90,21 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
 
     public static func makeInputs(inputs: inout ViewInputs) {
         #if DEBUG
-        let log: String = {
-            var message = "\n=== ViewInputs ===\n"
-            dump(inputs.options, to: &message)
-            var ptr = inputs._graphInputs.customInputs.elements
-            while let p = ptr {
-                dump(p, to: &message)
-                dump(p.fields, to: &message)
-                if let valueType = swift_getClassGenerics(for: p.metadata.0)?.first {
-                    func project<Value>(_: Value.Type) {
-                        let value = p.getValue(Value.self)
-                        dump(value, to: &message)
-                    }
-                    _openExistential(valueType, do: project)
-                }
-                ptr = p.after
+        var message = ""
+        dump(inputs.options, to: &message)
+        os_log(.debug, "%@", message)
+        var ptr = inputs._graphInputs.customInputs.elements
+        while let p = ptr {
+            message = ""
+            dump(p, to: &message)
+            dump(p.fields, to: &message)
+            if let valueType = swift_getClassGenerics(for: p.metadata.0)?.first {
+                dump(valueType, to: &message)
             }
-            return message
-        }()
-        os_log(.debug, "%@", log)
+            ptr = p.after
+
+            os_log(.debug, "%@", message)
+        }
         #endif
     }
 }

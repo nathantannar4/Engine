@@ -73,6 +73,13 @@ struct PropertyList {
             }
         }
 
+        var id: Int {
+            switch self {
+            case .v1(let ptr): ptr.pointee.fields.id
+            case .v6(let ptr): ptr.pointee.fields.id
+            }
+        }
+
         var keyType: Any.Type {
             switch self {
             case .v1(let ptr): ptr.pointee.fields.keyType
@@ -105,6 +112,49 @@ struct PropertyList {
                     } else {
                         ptr.pointee.fields.after = nil
                     }
+                }
+            }
+        }
+
+        var skip: ElementPointer? {
+            get {
+                switch self {
+                case .v1:
+                    return nil
+                case .v6(let ptr):
+                    guard let skip = ptr.pointee.fields.skip else { return nil }
+                    return .v6(skip)
+                }
+            }
+            nonmutating set {
+                switch self {
+                case .v1:
+                    break
+                case .v6(let ptr):
+                    if case .v6(let ptr) = newValue {
+                        ptr.pointee.fields.skip = ptr
+                    } else {
+                        ptr.pointee.fields.skip = nil
+                    }
+                }
+            }
+        }
+
+        var skipCount: UInt32 {
+            get {
+                switch self {
+                case .v1:
+                    return 0
+                case .v6(let ptr):
+                    return ptr.pointee.fields.skipCount
+                }
+            }
+            nonmutating set {
+                switch self {
+                case .v1:
+                    break
+                case .v6(let ptr):
+                    ptr.pointee.fields.skipCount = newValue
                 }
             }
         }

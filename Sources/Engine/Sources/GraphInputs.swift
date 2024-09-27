@@ -108,13 +108,15 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
 
 extension PropertyList {
     fileprivate mutating func detach() {
+
         var ptr = elements
-        var hasMatchedGeometryScope = false
+        var hasRoot = false
+        let rootInputSuffix = ".BodyInput<SwiftUI._ViewModifier_Content<SwiftUI.RootModifier>>"
         while let p = ptr {
             let key = _typeName(p.keyType, qualified: true)
-            var isMatch = key.hasSuffix(".MatchedGeometryScope")
+            var isMatch = key.hasSuffix(rootInputSuffix)
             if isMatch {
-                hasMatchedGeometryScope = true
+                hasRoot = true
             }
             #if !os(macOS)
             let branchKey: String
@@ -147,10 +149,13 @@ extension PropertyList {
         let tail = ptr!
         var last = tail.after
         tail.after = nil
+        tail.skip = nil
+        tail.skipCount = 1
         while let p = last?.after {
-            if !hasMatchedGeometryScope {
-                let key = _typeName(p.keyType, qualified: true)
-                if key.hasSuffix(".MatchedGeometryScope") {
+            if !hasRoot, let after = p.after {
+                let key = _typeName(after.keyType, qualified: true)
+                let isMatch = key.hasSuffix(rootInputSuffix) || key.hasSuffix(".ViewListOptionsInput")
+                if isMatch {
                     break
                 }
             }
@@ -161,6 +166,10 @@ extension PropertyList {
         let offset = tail.length - ((last?.length ?? 0) + 1)
         while offset > 0, let p = ptr {
             p.length -= offset
+            if let skip = p.skip, skip.length >= p.length {
+                p.skip = nil
+                p.skipCount = 1
+            }
             ptr = p.after
         }
         if let last {
