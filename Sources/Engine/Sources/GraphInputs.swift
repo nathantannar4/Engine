@@ -149,8 +149,7 @@ extension PropertyList {
         let tail = ptr!
         var last = tail.after
         tail.after = nil
-        tail.skip = nil
-        tail.skipCount = 1
+
         while let p = last?.after {
             if !hasRoot, let after = p.after {
                 let key = _typeName(after.keyType, qualified: true)
@@ -165,16 +164,22 @@ extension PropertyList {
         ptr = elements
         let offset = tail.length - ((last?.length ?? 0) + 1)
         while offset > 0, let p = ptr {
+            if let skip = p.skip, last?.length ?? 0 < skip.length, skip.length < tail.length {
+                p.skip = last
+                p.skipCount = p.length - (last?.length ?? 0)
+            }
             p.length -= offset
-            if let skip = p.skip, skip.length >= p.length {
-                p.skip = nil
-                p.skipCount = 1
+            if p.skip == nil {
+                p.skipCount = p.length
             }
             ptr = p.after
         }
+
         if let last {
             _ = last.object.retain() // Prevent dealloc
             tail.after = last
+            tail.skip = last.skip
+            tail.skipCount = last.skipCount + 1
         }
     }
 }

@@ -131,8 +131,8 @@ struct PropertyList {
                 case .v1:
                     break
                 case .v6(let ptr):
-                    if case .v6(let ptr) = newValue {
-                        ptr.pointee.fields.skip = ptr
+                    if case .v6(let newValue) = newValue {
+                        ptr.pointee.fields.skip = newValue
                     } else {
                         ptr.pointee.fields.skip = nil
                     }
