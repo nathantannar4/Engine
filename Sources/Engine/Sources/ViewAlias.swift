@@ -70,7 +70,9 @@ public struct ViewAliasSourceModifier<
     }
 
     public func body(content: Content) -> some View {
-        content.modifier(Modifier(source: source))
+        UnaryViewAdaptor {
+            content.modifier(Modifier(source: source))
+        }
     }
 
     private struct Modifier: GraphInputsModifier {
@@ -236,6 +238,11 @@ struct ViewAlias_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ZStack {
+                PreviewAlias()
+            }
+            .previewDisplayName("DefaultBody")
+
+            ZStack {
                 VStack {
                     PreviewAlias()
 
@@ -248,21 +255,88 @@ struct ViewAlias_Previews: PreviewProvider {
             .previewDisplayName("Text")
 
             ZStack {
-                VStack {
-                    PreviewAlias()
-                }
-                .viewAlias(PreviewAlias.self) {
-                    ForEach(0...2, id: \.self) { index in
-                        Text(index.description)
+                HStack {
+                    VStack {
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        ForEach(0...2, id: \.self) { index in
+                            Text(index.description)
+                        }
+                    }
+
+                    VStack {
+                        ForEach(0...2, id: \.self) { index in
+                            PreviewAlias()
+                        }
+                        .viewAlias(PreviewAlias.self) {
+                            Text("Hello, World")
+                        }
                     }
                 }
             }
             .previewDisplayName("ForEach")
 
+
             ZStack {
-                PreviewAlias()
+                ConditionalView(if: true) {
+                    ZStack {
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
+                }
             }
-            .previewDisplayName("DefaultBody")
+            .previewDisplayName("ConditionalContent")
+
+            ZStack {
+                AnyView(PreviewAlias())
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
+            }
+            .previewDisplayName("AnyView")
+
+            ZStack {
+                ScrollView {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
+            }
+            .previewDisplayName("ScrollView")
+
+            #if os(iOS)
+            ZStack {
+                HostingViewBridge {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
+            }
+            .previewDisplayName("HostingViewBridge")
+            #endif
         }
     }
+
+    #if os(iOS)
+    struct HostingViewBridge<Content: View>: UIViewControllerRepresentable {
+        @ViewBuilder var content: Content
+
+        func makeUIViewController(
+            context: Context
+        ) -> HostingController<Content> {
+            HostingController(content: content)
+        }
+
+        func updateUIViewController(
+            _ uiViewController: HostingController<Content>,
+            context: Context
+        ) {
+        }
+    }
+    #endif
 }

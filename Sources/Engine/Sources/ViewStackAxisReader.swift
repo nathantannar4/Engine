@@ -104,7 +104,7 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
                 }
             }
 
-            if #available(iOS 16.0, macOS 13.0, *) {
+            if #available(iOS 16.0, tvOS 16.0, macOS 13.0, watchOS 9.0, *) {
                 Grid(verticalSpacing: 8) {
                     CustomDivider()
 
