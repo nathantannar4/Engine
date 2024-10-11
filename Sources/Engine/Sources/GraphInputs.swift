@@ -153,7 +153,7 @@ extension PropertyList {
         while let p = last?.after {
             if !hasRoot, let after = p.after {
                 let key = _typeName(after.keyType, qualified: true)
-                let isMatch = key.hasSuffix(rootInputSuffix) || key.hasSuffix(".ViewListOptionsInput")
+                let isMatch = key.hasSuffix(rootInputSuffix) || key.hasSuffix(".ViewListOptionsInput") || key.hasSuffix(".AccessibilityRelationshipScope")
                 if isMatch {
                     break
                 }
