@@ -10,7 +10,7 @@ public struct StaticConditionalContent<
     Condition: StaticCondition,
     TrueContent: View,
     FalseContent: View
->: View {
+>: PrimitiveView {
 
     @usableFromInline
     var content: ConditionalContent<TrueContent, FalseContent>
@@ -42,11 +42,7 @@ public struct StaticConditionalContent<
         }
     }
 
-    public var body: Never {
-        bodyError()
-    }
-
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -55,7 +51,7 @@ public struct StaticConditionalContent<
             : FalseContent._makeView(view: view[\.falseContent], inputs: inputs)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -65,7 +61,7 @@ public struct StaticConditionalContent<
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         Condition.value

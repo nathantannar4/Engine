@@ -26,6 +26,12 @@ final class MultiViewVisitorTests: XCTestCase {
         @ViewBuilder content: () -> Content,
         validation: (TestVisitor.Context, Int) -> Void = { _, _ in }
     ) {
+        if count > 1, Content.Body.self == Never.self {
+            func project<T>(_ type: T.Type) {
+                XCTAssertNotNil(MultiViewProtocolDescriptor.conformance(of: type))
+            }
+            _openExistential(Content.self as Any.Type, do: project)
+        }
         expectation(max: max, content: content) { outputs in
             XCTAssertEqual(outputs.count, count)
             for (index, output) in outputs.enumerated() {
@@ -395,6 +401,33 @@ final class MultiViewVisitorTests: XCTestCase {
                 TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
             )
         }
+        expectation {
+            Section {
+                Text("Hello, World")
+            } header: {
+                Text("Header")
+            } footer: {
+                Text("Footer")
+            }
+            .modifier(EmptyModifier())
+        } visit: { outputs in
+            XCTAssertEqual(outputs.count, 3)
+            XCTAssert(outputs[0].context.traits.contains(.header))
+            XCTAssertEqual(
+                unsafeBitCast(outputs[0].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+            XCTAssert(outputs[1].context.traits.isEmpty)
+            XCTAssertEqual(
+                unsafeBitCast(outputs[1].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+            XCTAssert(outputs[2].context.traits.contains(.footer))
+            XCTAssertEqual(
+                unsafeBitCast(outputs[2].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+        }
     }
 
     func testCustomView() {
@@ -427,22 +460,14 @@ final class MultiViewVisitorTests: XCTestCase {
         expectation(Text.self, count: 2) {
             CustomMultiView()
         } validation: { ctx, index in
-            if isOpaqueViewAnyView() {
-                XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(AnyView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
-            } else {
-                XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
-            }
+            XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
         expectation(Text.self, count: 2) {
             Group {
                 CustomMultiView()
             }
         } validation: { ctx, index in
-            if isOpaqueViewAnyView() {
-                XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(AnyView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
-            } else {
-                XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
-            }
+            XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
         }
     }
 

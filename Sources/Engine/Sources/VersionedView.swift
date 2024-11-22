@@ -22,7 +22,7 @@ import EngineCore
 /// to aide with backwards compatibility.
 ///
 @MainActor @preconcurrency
-public protocol VersionedView: PrimitiveView where Body == Never {
+public protocol VersionedView: PrimitiveView {
     associatedtype V6Body: View = V5Body
 
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
@@ -82,10 +82,7 @@ extension VersionedView where V1Body == EmptyView {
     public var v1Body: V1Body { EmptyView() }
 }
 
-extension VersionedView where Body == Never{
-    public var body: Never {
-        bodyError()
-    }
+extension VersionedView {
 
     #if DEBUG
     var unsupported: UnsupportedVersionView {

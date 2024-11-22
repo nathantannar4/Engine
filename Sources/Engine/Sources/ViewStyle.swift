@@ -333,12 +333,6 @@ private struct ViewStyleContext<ID: ViewStyledView>: ViewInputKey {
     static var defaultValue: Any.Type? { nil }
 }
 
-extension ViewStyledView where Body == Never {
-    public var body: Never {
-        bodyError()
-    }
-}
-
 extension ViewStyledView {
     private var content: ViewStyledViewBody<Self> {
         ViewStyledViewBody(configuration: configuration)
@@ -431,7 +425,7 @@ private struct ViewStyledViewBody<StyledView: ViewStyledView>: View {
 private struct AnyViewStyledView<
     StyledView: ViewStyledView,
     ViewStyleBody: View
->: View {
+>: PrimitiveView {
     var style: AnyViewStyle
     var configuration: StyledView.Configuration
 
@@ -439,11 +433,7 @@ private struct AnyViewStyledView<
         style.body(as: ViewStyleBody.self, configuration: configuration)
     }
 
-    var body: Never {
-        bodyError()
-    }
-
-    static func _makeView(
+    static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -467,7 +457,7 @@ private struct AnyViewStyledView<
         return _openExistential(type, do: project)
     }
 
-    static func _makeViewList(
+    static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -492,7 +482,7 @@ private struct AnyViewStyledView<
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    static func _viewListCount(
+    static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         var inputs = inputs

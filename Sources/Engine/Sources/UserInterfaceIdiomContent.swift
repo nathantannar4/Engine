@@ -13,7 +13,7 @@ import SwiftUI
 /// to aide with cross platform compatibility.
 ///
 @MainActor @preconcurrency
-public protocol UserInterfaceIdiomContent: PrimitiveView where Body == Never {
+public protocol UserInterfaceIdiomContent: PrimitiveView {
     associatedtype PhoneBody: View = EmptyView
     @ViewBuilder @MainActor @preconcurrency var phoneBody: PhoneBody { get }
 
@@ -69,10 +69,7 @@ extension UserInterfaceIdiomContent where VisionBody == EmptyView {
     }
 }
 
-extension UserInterfaceIdiomContent where Body == Never{
-    public var body: Never {
-        bodyError()
-    }
+extension UserInterfaceIdiomContent {
 
     public static func makeView(
         view: _GraphValue<Self>,

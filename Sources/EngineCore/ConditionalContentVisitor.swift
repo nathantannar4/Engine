@@ -14,6 +14,18 @@ extension _ConditionalContent: MultiView where TrueContent: View, FalseContent: 
         case trueContent(TrueContent)
         case falseContent(FalseContent)
     }
+
+    static func makeView(
+        condition: Bool,
+        @ViewBuilder trueContent: () -> TrueContent,
+        @ViewBuilder falseContent: () -> FalseContent
+    ) -> _ConditionalContent<TrueContent, FalseContent> {
+        if condition {
+            return ViewBuilder.buildEither(first: trueContent())
+        } else {
+            return ViewBuilder.buildEither(second: falseContent())
+        }
+    }
 }
 
 private struct ConditionalContentSubviewIterator<

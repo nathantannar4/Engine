@@ -67,6 +67,18 @@ open class HostingView<
 
     #if os(iOS) || os(tvOS)
     @available(iOS 16.0, tvOS 16.0, *)
+    public var allowUIKitAnimations: Int32 {
+        get {
+            let result = try? swift_getFieldValue("allowUIKitAnimations", Int32.self, self)
+            return result ?? 0
+        }
+        set {
+            try? swift_setFieldValue("allowUIKitAnimations", newValue, self)
+        }
+    }
+
+    @available(iOS, introduced: 16.0, obsoleted: 18.1)
+    @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     public var allowUIKitAnimationsForNextUpdate: Bool {
         get {
             let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
@@ -126,7 +138,11 @@ open class HostingView<
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate, 
             UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false
         {
-            allowUIKitAnimationsForNextUpdate = true
+            if #available(iOS 18.1, tvOS 18.1, *) {
+                allowUIKitAnimations += 1
+            } else {
+                allowUIKitAnimationsForNextUpdate = true
+            }
         }
         super.layoutSubviews()
     }

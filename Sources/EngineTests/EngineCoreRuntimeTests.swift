@@ -159,10 +159,16 @@ final class RuntimeTests: XCTestCase {
         #else
         let host = NSHostingView(rootView: EmptyView())
         #endif
-        _ = try swift_getFieldValue("propertiesNeedingUpdate", UInt16.self, host)
+        print(swift_getFields(host).map(\.field.key))
+        if #available(iOS 16.0, tvOS 16.0, *) { } else {
+            _ = try swift_getFieldValue("propertiesNeedingUpdate", UInt16.self, host)
+        }
         _ = try swift_getFieldValue("_rootView", EmptyView.self, host)
         #if os(iOS) || os(tvOS)
-        _ = try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, host)
+        _ = try swift_getFieldValue("allowUIKitAnimations", Int32.self, host)
+        if #available(iOS 18.1, tvOS 18.1, *) { } else {
+            _ = try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, host)
+        }
         #endif
     }
     #endif

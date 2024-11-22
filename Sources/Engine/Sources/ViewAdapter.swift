@@ -6,7 +6,7 @@ import SwiftUI
 
 /// A wrapper for `@ViewBuilder`
 @frozen
-public struct ViewAdapter<Content: View>: View {
+public struct ViewAdapter<Content: View>: PrimitiveView {
 
     @usableFromInline
     var content: Content
@@ -16,18 +16,14 @@ public struct ViewAdapter<Content: View>: View {
         self.content = content()
     }
 
-    public var body: Never {
-        bodyError()
-    }
-
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         Content._makeView(view: view[\.content], inputs: inputs)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -35,7 +31,7 @@ public struct ViewAdapter<Content: View>: View {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         Content._viewListCount(inputs: inputs)

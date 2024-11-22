@@ -22,7 +22,7 @@ import SwiftUI
 ///  - ``ViewAlias``
 ///
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-public protocol ViewOutputAlias: View where Body == Never {
+public protocol ViewOutputAlias: PrimitiveView {
     associatedtype Content: View = AnyView
     associatedtype DefaultBody: View = EmptyView
     @MainActor @ViewBuilder var defaultBody: DefaultBody { get }
@@ -135,15 +135,12 @@ extension ViewOutputAlias where DefaultBody == EmptyView {
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension ViewOutputAlias {
-    public var body: Body {
-        bodyError()
-    }
 
     private var content: ViewOutputAliasKey<Self> {
         ViewOutputAliasKey(alias: self)
     }
 
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -153,7 +150,7 @@ extension ViewOutputAlias {
         )
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -164,7 +161,7 @@ extension ViewOutputAlias {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         ViewOutputAliasKey<Self>._viewListCount(

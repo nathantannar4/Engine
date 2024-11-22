@@ -131,10 +131,6 @@ extension ViewAlias where DefaultBody == EmptyView {
 }
 
 extension ViewAlias {
-    public var body: Never {
-        bodyError()
-    }
-
     public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs

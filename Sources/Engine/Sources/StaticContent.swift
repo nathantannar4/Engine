@@ -11,7 +11,7 @@ import EngineCore
 /// > Warning: The ``TypeDescriptor/descriptor`` should match the type
 ///  returned by `content`
 @frozen
-public struct StaticContent<Descriptor: TypeDescriptor>: View {
+public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
 
     @usableFromInline
     var content: Any
@@ -24,11 +24,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: View {
         self.content = content()
     }
 
-    public var body: Never {
-        bodyError()
-    }
-
-    public static func _makeView(
+    public static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -42,7 +38,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: View {
         return _openExistential(type, do: project)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -57,7 +53,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: View {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         func project<T>(_ type: T.Type) -> Int? {

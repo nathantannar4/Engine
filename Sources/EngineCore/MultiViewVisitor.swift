@@ -232,7 +232,8 @@ extension ProtocolConformance where P == MultiViewProtocolDescriptor {
 /// The ``TypeDescriptor`` for the ``MultiView`` protocol
 public struct MultiViewProtocolDescriptor: TypeDescriptor {
     public static var descriptor: UnsafeRawPointer {
-        _MultiViewProtocolDescriptor()
+        registerKnownMultiViewConformancesIfNeeded()
+        return _MultiViewProtocolDescriptor()
     }
 }
 
@@ -316,4 +317,23 @@ private struct MultiViewIteratorContextModifierVisitor<M, N: ViewModifier>: View
         let existing = unsafeBitCast(existing, to: Modifier.self)
         output = inserting.concat(existing)
     }
+}
+
+var didRegisterKnownMultiViewConformances = false
+func registerKnownMultiViewConformancesIfNeeded() {
+    guard !didRegisterKnownMultiViewConformances else { return }
+    didRegisterKnownMultiViewConformances = true
+
+    // Issue where `tuist` projects don't seem to link protocol conformances on launch
+    // Invoking the protocol method on each seems to fix this.
+    // https://github.com/nathantannar4/Engine/issues/15#issuecomment-2486209977
+    _ = AnyView(EmptyView()).makeSubviewIterator()
+    _ = _ConditionalContent.makeView(condition: true, trueContent: { EmptyView() }, falseContent: { EmptyView() }).makeSubviewIterator()
+    _ = EmptyView().makeSubviewIterator()
+    _ = ForEach(0..<1) { _ in EmptyView() }.makeSubviewIterator()
+    _ = Group {}.makeSubviewIterator()
+    _ = ModifiedContent(content: EmptyView(), modifier: EmptyModifier()).makeSubviewIterator()
+    _ = Optional(EmptyView())?.makeSubviewIterator()
+    _ = Section {}.makeSubviewIterator()
+    _ = TupleView(EmptyView()).makeSubviewIterator()
 }

@@ -178,11 +178,9 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
         }
     }
 
-    private struct BodyModifier: View {
+    private struct BodyModifier: PrimitiveView {
         var content: Content
         var value: Trait.Value
-
-        var body: Never { bodyError() }
 
         private struct TraitVisitor: ViewTraitKeyVisitor {
             var content: Content
@@ -212,7 +210,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             return visitor.output!
         }
 
-        static func _makeView(
+        static func makeView(
             view: _GraphValue<Self>,
             inputs: _ViewInputs
         ) -> _ViewOutputs {
@@ -225,7 +223,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             return visitor.outputs
         }
 
-        static func _makeViewList(
+        static func makeViewList(
             view: _GraphValue<Self>,
             inputs: _ViewListInputs
         ) -> _ViewListOutputs {
@@ -239,7 +237,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
         }
 
         @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-        static func _viewListCount(
+        static func viewListCount(
             inputs: _ViewListCountInputs
         ) -> Int? {
             let conformance = Trait.conformance!
