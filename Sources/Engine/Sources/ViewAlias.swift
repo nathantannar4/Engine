@@ -46,7 +46,7 @@ import SwiftUI
 /// you can implement the optional `defaultBody`.
 ///
 @MainActor @preconcurrency
-public protocol ViewAlias: PrimitiveView where Body == Never {
+public protocol ViewAlias: PrimitiveView {
     associatedtype DefaultBody: View = EmptyView
     @ViewBuilder @MainActor @preconcurrency var defaultBody: DefaultBody { get }
 }

@@ -98,7 +98,7 @@ public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "St
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.
 @MainActor @preconcurrency
-public protocol StyledView: PrimitiveView, DynamicProperty {
+public protocol StyledView: _PrimitiveView, DynamicProperty {
     associatedtype _Body: View
     @ViewBuilder @MainActor @preconcurrency var _body: _Body { get }
 }

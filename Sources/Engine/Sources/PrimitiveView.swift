@@ -5,7 +5,7 @@
 import SwiftUI
 
 @MainActor @preconcurrency
-public protocol PrimitiveView: View where Body == Never {
+public protocol _PrimitiveView: View {
 
     @MainActor @preconcurrency static func makeView(
         view: _GraphValue<Self>,
@@ -23,7 +23,11 @@ public protocol PrimitiveView: View where Body == Never {
     ) -> Int?
 }
 
-extension PrimitiveView where Body == Never {
+@MainActor @preconcurrency
+public protocol PrimitiveView: _PrimitiveView where Body == Never {
+}
+
+extension PrimitiveView {
 
     public var body: Never {
         bodyError()
