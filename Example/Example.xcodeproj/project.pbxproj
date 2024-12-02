@@ -19,6 +19,7 @@
 		38ECF3472926D25400A7973C /* Engine in Frameworks */ = {isa = PBXBuildFile; productRef = 38ECF3462926D25400A7973C /* Engine */; };
 		38ECF34F292848B200A7973C /* UserInterfaceIdiomExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38ECF34E292848B200A7973C /* UserInterfaceIdiomExamples.swift */; };
 		38F3B4A92BA566F000374669 /* StyleContextExamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F3B4A82BA566F000374669 /* StyleContextExamples.swift */; };
+		38F8DFAA2CFE2BB400705B02 /* EngineMacros in Frameworks */ = {isa = PBXBuildFile; productRef = 38F8DFA92CFE2BB400705B02 /* EngineMacros */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				38ECF3472926D25400A7973C /* Engine in Frameworks */,
+				38F8DFAA2CFE2BB400705B02 /* EngineMacros in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -128,6 +130,7 @@
 			name = Example;
 			packageProductDependencies = (
 				38ECF3462926D25400A7973C /* Engine */,
+				38F8DFA92CFE2BB400705B02 /* EngineMacros */,
 			);
 			productName = Example;
 			productReference = 385C289329209E5C00E0A600 /* Example.app */;
@@ -430,6 +433,10 @@
 		38ECF3462926D25400A7973C /* Engine */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Engine;
+		};
+		38F8DFA92CFE2BB400705B02 /* EngineMacros */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EngineMacros;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

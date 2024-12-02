@@ -176,6 +176,12 @@ struct ViewStyleExamples: View {
                     } content: {
                         Text("Label")
                     }
+
+                    _LabeledView {
+                        Text("Content")
+                    } content: {
+                        Text("Label")
+                    }
                     .modifier(_LabeledViewStyleModifier(_BorderedLabeledViewStyle()))
                     #endif
                 }
