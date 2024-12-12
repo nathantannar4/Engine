@@ -17,6 +17,7 @@ final class MyMacroTests: XCTestCase {
             var label: Label
             var content: Content
             var identifier: String
+            var traits: Array<Int>
             @Binding var isEnabled: Bool
 
             var body: some View {
@@ -33,6 +34,7 @@ final class MyMacroTests: XCTestCase {
             var label: Label
             var content: Content
             var identifier: String
+            var traits: Array<Int>
             @Binding var isEnabled: Bool
 
             var body: some View {
@@ -47,6 +49,7 @@ final class MyMacroTests: XCTestCase {
                 LabelViewBody(
                     configuration: LabelViewConfiguration(
                         identifier: identifier,
+                        traits: traits,
                         isEnabled: $isEnabled
                     )
                 )
@@ -62,11 +65,13 @@ final class MyMacroTests: XCTestCase {
                 @ViewBuilder label: () -> Label,
                 @ViewBuilder content: () -> Content,
                 identifier: String,
+                traits: Array<Int>,
                 isEnabled: Binding<Bool>
             ) {
                 self.label = label()
                 self.content = content()
                 self.identifier = identifier
+                self.traits = traits
                 self._isEnabled = isEnabled
             }
 
@@ -76,6 +81,7 @@ final class MyMacroTests: XCTestCase {
                 self.label = configuration.label
                 self.content = configuration.content
                 self.identifier = configuration.identifier
+                self.traits = configuration.traits
                 self._isEnabled = configuration.isEnabled
             }
         }
@@ -92,6 +98,7 @@ final class MyMacroTests: XCTestCase {
                 .init()
             }
             var identifier: String
+            var traits: Array<Int>
             var isEnabled: Binding<Bool>
         }
 

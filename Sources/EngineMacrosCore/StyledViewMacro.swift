@@ -370,7 +370,7 @@ extension VariableDeclSyntax {
     var type: (text: String, isWrapper: Bool)? {
         guard
             let binding = bindings.first,
-            let typeAnnotation = binding.typeAnnotation?.as(TypeAnnotationSyntax.self),
+            let typeAnnotation = binding.typeAnnotation,
             let type = typeAnnotation.type.as(IdentifierTypeSyntax.self)
         else {
             return nil
@@ -393,7 +393,7 @@ extension IdentifierTypeSyntax {
         var text = name.text
         if let genericArgumentClause {
             let generics = genericArgumentClause.arguments
-                .compactMap { $0.as(GenericArgumentSyntax.self)?.argument }
+                .compactMap { $0.argument }
                 .compactMap { $0.as(IdentifierTypeSyntax.self) }
                 .map { $0.text }
             text += "<\(generics.joined(separator: ", "))>"
