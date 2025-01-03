@@ -41,31 +41,71 @@ private struct SectionSubviewIterator<
     ) {
         var context = context
         context.traits = []
-        var headerContext = context.union(.header)
-        headerContext.id.append(offset: 0)
-        headerContext.id.append(Parent.self)
-        visitor.value.visit(
-            content: content.parent,
-            context: headerContext,
-            stop: &stop
-        )
+
+        do {
+            var headerContext = context.union(.header)
+            headerContext.id.append(offset: 0)
+            headerContext.id.append(Parent.self)
+
+            var isEmptyVisitor = MultiViewIsEmptyVisitor()
+            content.parent.visit(visitor: &isEmptyVisitor)
+
+            if isEmptyVisitor.isEmpty == false {
+                visitor.value.visit(
+                    content: content.parent,
+                    context: headerContext,
+                    stop: &stop
+                )
+            }
+        }
+
         guard !stop else { return }
-        var contentContext = context
-        contentContext.id.append(offset: 1)
-        contentContext.id.append(Content.self)
-        content.content.visit(
-            visitor: visitor,
-            context: contentContext,
-            stop: &stop
-        )
+
+        do {
+            var contentContext = context
+            contentContext.id.append(offset: 1)
+            contentContext.id.append(Content.self)
+            content.content.visit(
+                visitor: visitor,
+                context: contentContext,
+                stop: &stop
+            )
+        }
+
         guard !stop else { return }
-        var footerContext = context.union(.footer)
-        footerContext.id.append(offset: 2)
-        footerContext.id.append(Footer.self)
-        visitor.value.visit(
-            content: content.footer,
-            context: footerContext,
-            stop: &stop
-        )
+
+        do {
+            var footerContext = context.union(.footer)
+            footerContext.id.append(offset: 2)
+            footerContext.id.append(Footer.self)
+
+            var isEmptyVisitor = MultiViewIsEmptyVisitor()
+            content.footer.visit(visitor: &isEmptyVisitor)
+
+            if isEmptyVisitor.isEmpty == false {
+                visitor.value.visit(
+                    content: content.footer,
+                    context: footerContext,
+                    stop: &stop
+                )
+            }
+        }
+    }
+}
+
+private struct MultiViewIsEmptyVisitor: MultiViewVisitor {
+
+    public private(set) var isEmpty: Bool = true
+
+    @inlinable
+    public init() { }
+
+    public mutating func visit<Content: View>(
+        content: Content,
+        context: Context,
+        stop: inout Bool
+    ) {
+        isEmpty = false
+        stop = true
     }
 }

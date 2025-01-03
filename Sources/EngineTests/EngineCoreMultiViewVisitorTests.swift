@@ -203,6 +203,21 @@ final class MultiViewVisitorTests: XCTestCase {
                 Text("Footer")
             }
         }
+        expectation(count: 2) {
+            Section {
+                Text("Hello")
+                Text("World")
+            }
+        }
+        expectation(count: 0) {
+            Section {
+                EmptyView()
+            } header: {
+                EmptyView()
+            } footer: {
+                EmptyView()
+            }
+        }
     }
 
     func testForEach() {
