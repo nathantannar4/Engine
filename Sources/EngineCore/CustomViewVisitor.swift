@@ -17,7 +17,13 @@ private struct CustomViewIterator<
         context: Context,
         stop: inout Bool
     ) {
-        if let conformance = MultiViewProtocolDescriptor.conformance(of: Content.self) {
+        if context.traits.contains(.header) || context.traits.contains(.footer) {
+            visitor.value.visit(
+                content: content,
+                context: context,
+                stop: &stop
+            )
+        } else if let conformance = MultiViewProtocolDescriptor.conformance(of: Content.self) {
             conformance.visit(
                 content: content,
                 visitor: visitor,

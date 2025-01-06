@@ -193,6 +193,34 @@ final class MultiViewVisitorTests: XCTestCase {
                 Text("Subfooter")
             }
         }
+        expectation(count: 3) {
+            Section {
+                Text("Content")
+            } header: {
+                Group {
+                    Text("Header")
+                    Text("Subheader")
+                }
+            } footer: {
+                Group {
+                    Text("Footer")
+                    Text("Subfooter")
+                }
+            }
+        }
+        expectation(count: 3) {
+            Section {
+                Text("Content")
+            } header: {
+                ForEach(0...2, id: \.self) { i in
+                    Text("Header \(i)")
+                }
+            } footer: {
+                ForEach(0...2, id: \.self) { i in
+                    Text("Footer \(i)")
+                }
+            }
+        }
         expectation(count: 4) {
             Section {
                 Text("Hello")
@@ -201,6 +229,53 @@ final class MultiViewVisitorTests: XCTestCase {
                 Text("Header")
             } footer: {
                 Text("Footer")
+            }
+        }
+        expectation(count: 1) {
+            Section {
+                Text("Hello World")
+            }
+        }
+        expectation(count: 0) {
+            Section {
+                EmptyView()
+            }
+        }
+        struct CustomHeader: View {
+            var body: some View {
+                Group {
+                    Text("Header")
+                    Text("Subheader")
+                }
+            }
+        }
+        struct CustomFooter: View {
+            var body: some View {
+                Group {
+                    Text("Footer")
+                    Text("Subfooter")
+                }
+            }
+        }
+        expectation(count: 3) {
+            Section {
+                Text("Content")
+            } header: {
+                CustomHeader()
+            } footer: {
+                CustomFooter()
+            }
+        } validation: { ctx, index in
+            let base = ViewTypeIdentifier(Section<CustomHeader, Text, CustomFooter>.self).appending(offset: index)
+            switch index {
+            case 0:
+                XCTAssertEqual(ctx.id, base.appending(CustomHeader.self))
+            case 1:
+                XCTAssertEqual(ctx.id, base.appending(Text.self))
+            case 2:
+                XCTAssertEqual(ctx.id, base.appending(CustomFooter.self))
+            default:
+                XCTFail()
             }
         }
     }
@@ -426,6 +501,54 @@ final class MultiViewVisitorTests: XCTestCase {
             XCTAssertEqual(
                 unsafeBitCast(outputs[2].type, to: UnsafeRawPointer.self),
                 TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+        }
+        expectation {
+            Section {
+                Text("Hello, World")
+                    .modifier(EmptyModifier())
+            }
+        } visit: { outputs in
+            XCTAssertEqual(outputs.count, 1)
+            XCTAssert(outputs[0].context.traits.isEmpty)
+            XCTAssertEqual(
+                unsafeBitCast(outputs[0].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+        }
+        expectation {
+            Section {
+                Text("Hello, World")
+                    .modifier(EmptyModifier())
+            } header: {
+                Group {
+                    Text("Header")
+                    Text("Subheader")
+                }
+                .modifier(EmptyModifier())
+            } footer: {
+                Group {
+                    Text("Footer")
+                    Text("Subfooter")
+                }
+                .modifier(EmptyModifier())
+            }
+        } visit: { outputs in
+            XCTAssertEqual(outputs.count, 3)
+            XCTAssert(outputs[0].context.traits.contains(.header))
+            XCTAssertEqual(
+                unsafeBitCast(outputs[0].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Group<TupleView<(Text, Text)>>, EmptyModifier>.self).metadata
+            )
+            XCTAssert(outputs[1].context.traits.isEmpty)
+            XCTAssertEqual(
+                unsafeBitCast(outputs[1].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Text, EmptyModifier>.self).metadata
+            )
+            XCTAssert(outputs[2].context.traits.contains(.footer))
+            XCTAssertEqual(
+                unsafeBitCast(outputs[2].type, to: UnsafeRawPointer.self),
+                TypeIdentifier(ModifiedContent<Group<TupleView<(Text, Text)>>, EmptyModifier>.self).metadata
             )
         }
     }

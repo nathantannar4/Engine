@@ -14,15 +14,10 @@ private struct TupleSubviewIterator<
     Content
 >: MultiViewIterator {
 
-    enum Storage {
-        case content(Content)
-        case tuple(Tuple<Content>)
-    }
-
-    var storage: Storage
+    var content: Content
 
     init(content: Content) {
-        self.storage = Tuple(content).map { .tuple($0) } ?? .content(content)
+        self.content = content
     }
 
     func visit<
@@ -32,23 +27,33 @@ private struct TupleSubviewIterator<
         context: Context,
         stop: inout Bool
     ) {
-        switch storage {
-        case .content(let content):
-            if let conformance = ViewProtocolDescriptor.conformance(of: Content.self) {
+        if context.traits.contains(.header) || context.traits.contains(.footer) {
+            visitor.value.visit(
+                content: TupleView(content),
+                context: context,
+                stop: &stop
+            )
+        } else {
+            if let tuple = Tuple(content) {
+                var vistor = TupleSubviewIteratorElementVisitor(
+                    visitor: visitor,
+                    context: context
+                )
+                tuple.visit(visitor: &vistor, stop: &stop)
+            } else if let conformance = ViewProtocolDescriptor.conformance(of: Content.self) {
                 var visitor = TupleSubviewIteratorViewVisitor(
                     element: content,
                     visitor: visitor,
                     context: context
                 )
                 conformance.visit(visitor: &visitor)
+            } else {
+                visitor.value.visit(
+                    content: TupleView(content),
+                    context: context,
+                    stop: &stop
+                )
             }
-
-        case .tuple(let tuple):
-            var vistor = TupleSubviewIteratorElementVisitor(
-                visitor: visitor,
-                context: context
-            )
-            tuple.visit(visitor: &vistor, stop: &stop)
         }
     }
 }

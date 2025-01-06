@@ -28,8 +28,20 @@ private struct GroupSubviewIterator<
         context: Context,
         stop: inout Bool
     ) {
-        var context = context
-        context.id.append(Content.self)
-        content.content.visit(visitor: visitor, context: context, stop: &stop)
+        if context.traits.contains(.header) || context.traits.contains(.footer) {
+            visitor.value.visit(
+                content: content,
+                context: context,
+                stop: &stop
+            )
+        } else {
+            var context = context
+            context.id.append(Content.self)
+            content.content.visit(
+                visitor: visitor,
+                context: context,
+                stop: &stop
+            )
+        }
     }
 }

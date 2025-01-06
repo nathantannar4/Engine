@@ -44,28 +44,16 @@ private struct SectionSubviewIterator<
         var headerContext = context.union(.header)
         headerContext.id.append(offset: 0)
         headerContext.id.append(Parent.self)
-        visitor.value.visit(
-            content: content.parent,
-            context: headerContext,
-            stop: &stop
-        )
+        content.parent.visit(visitor: visitor, context: headerContext, stop: &stop)
         guard !stop else { return }
         var contentContext = context
         contentContext.id.append(offset: 1)
         contentContext.id.append(Content.self)
-        content.content.visit(
-            visitor: visitor,
-            context: contentContext,
-            stop: &stop
-        )
+        content.content.visit(visitor: visitor, context: contentContext, stop: &stop)
         guard !stop else { return }
         var footerContext = context.union(.footer)
         footerContext.id.append(offset: 2)
         footerContext.id.append(Footer.self)
-        visitor.value.visit(
-            content: content.footer,
-            context: footerContext,
-            stop: &stop
-        )
+        content.footer.visit(visitor: visitor, context: footerContext, stop: &stop)
     }
 }
