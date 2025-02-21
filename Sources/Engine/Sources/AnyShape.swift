@@ -8,6 +8,7 @@ import SwiftUI
 @available(macOS, deprecated: 13.0, message: "Use the builtin SwiftUI.AnyShape")
 @available(tvOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
 @available(watchOS, deprecated: 9.0, message: "Use the builtin SwiftUI.AnyShape")
+@available(visionOS, deprecated: 1.1, message: "Use the builtin SwiftUI.AnyShape")
 @frozen
 public struct AnyShape: Shape {
 
@@ -18,6 +19,7 @@ public struct AnyShape: Shape {
     @available(macOS, deprecated: 13.0, renamed: "init(_:)")
     @available(tvOS, deprecated: 16.0, renamed: "init(_:)")
     @available(watchOS, deprecated: 9.0, renamed: "init(_:)")
+    @available(visionOS, deprecated: 1.1, renamed: "init(_:)")
     @inlinable
     public init<S: Shape>(shape: S) {
         storage = AnyShapeStorage(shape)
@@ -116,7 +118,7 @@ final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable 
 
 // MARK: - Previews
 
-@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)
 struct AnyShape_Previews: PreviewProvider {
     static var previews: some View {
         Preview()
