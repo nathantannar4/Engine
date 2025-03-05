@@ -240,17 +240,29 @@ extension VersionedView {
 
 // MARK: - Previews
 
-struct PreviewVersionedView: VersionedView {
-    var v6Body: some View { Text("V6") }
-    var v5Body: some View { Text("V5") }
-    var v4Body: some View { Text("V4") }
-    var v3Body: some View { Text("V3") }
-    var v2Body: some View { Text("V2") }
-    var v1Body: some View { Text("V1") }
-}
-
 struct VersionedView_Previews: PreviewProvider {
+    struct PreviewVersionedView: VersionedView {
+        var v6Body: some View { Text("V6") }
+        var v5Body: some View { Text("V5") }
+        var v4Body: some View { Text("V4") }
+        var v3Body: some View { Text("V3") }
+        var v2Body: some View { Text("V2") }
+        var v1Body: some View { Text("V1") }
+    }
+
     static var previews: some View {
-        PreviewVersionedView()
+        VStack {
+            PreviewVersionedView()
+        }
+        .padding()
+        .previewDisplayName("Text")
+
+        VStack {
+            ForEach([1, 2, 3], id: \.self) { _ in
+                PreviewVersionedView()
+            }
+        }
+        .padding()
+        .previewDisplayName("ViewThatFits")
     }
 }

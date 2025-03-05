@@ -29,12 +29,16 @@ extension PrimitiveView where Body == Never {
         bodyError()
     }
 
+    private var modifier: UnaryViewModifier { .init() } // workaround crashes
+
     public nonisolated static func _makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         MainActor.unsafe {
-            makeView(view: view, inputs: inputs)
+            UnaryViewModifier._makeView(modifier: view[\.modifier], inputs: inputs) { _, inputs in
+                makeView(view: view, inputs: inputs)
+            }
         }
     }
 
@@ -43,7 +47,9 @@ extension PrimitiveView where Body == Never {
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         MainActor.unsafe {
-            makeViewList(view: view, inputs: inputs)
+            UnaryViewModifier._makeViewList(modifier: view[\.modifier], inputs: inputs) { _, inputs in
+                makeViewList(view: view, inputs: inputs)
+            }
         }
     }
 
@@ -52,7 +58,9 @@ extension PrimitiveView where Body == Never {
         inputs: _ViewListCountInputs
     ) -> Int? {
         MainActor.unsafe {
-            viewListCount(inputs: inputs)
+            UnaryViewModifier._viewListCount(inputs: inputs) { inputs in
+                viewListCount(inputs: inputs)
+            }
         }
     }
 }
