@@ -46,7 +46,7 @@ open class HostingController<
     }
 
     #if os(iOS) || os(tvOS)
-    @available(iOS 16.0, tvOS 16.0, *)
+    @available(iOS 18.1, tvOS 18.1, *)
     public var allowUIKitAnimations: Int32 {
         get {
             guard let view else { return 0 }
@@ -55,7 +55,11 @@ open class HostingController<
         }
         set {
             guard let view else { return }
-            try? swift_setFieldValue("allowUIKitAnimations", newValue, view)
+            do {
+                try swift_setFieldValue("allowUIKitAnimations", newValue, view)
+            } catch {
+                print("Failed to set `allowUIKitAnimations`, this is unexpected please file an issue =")
+            }
         }
     }
 
@@ -63,13 +67,21 @@ open class HostingController<
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     public var allowUIKitAnimationsForNextUpdate: Bool {
         get {
-            guard let view else { return false }
-            let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
-            return result ?? false
+            if #available(iOS 18.1, tvOS 18.1, *) {
+                return allowUIKitAnimations > 0
+            } else {
+                guard let view else { return false }
+                let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
+                return result ?? false
+            }
         }
         set {
-            guard let view else { return }
-            try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
+            if #available(iOS 18.1, tvOS 18.1, *) {
+                allowUIKitAnimations += 1
+            } else {
+                guard let view else { return }
+                try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
+            }
         }
     }
 

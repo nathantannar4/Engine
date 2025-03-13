@@ -62,3 +62,32 @@ public struct UpdatePhase: DynamicProperty {
         }
     }
 }
+
+// MARK: - Previews
+
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+struct UpdatePhase_Previews: PreviewProvider {
+    static var previews: some View {
+        Preview()
+    }
+
+    struct Preview: View {
+        @State var value = 0
+        @UpdatePhase var phase
+
+        var body: some View {
+            VStack {
+                Button {
+                    value += 1
+                } label: {
+                    Text("Increment")
+                }
+                .onChange(of: phase) { _ in
+                    print("View Updated")
+                }
+
+                Text(value.description)
+            }
+        }
+    }
+}

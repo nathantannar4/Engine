@@ -10,6 +10,11 @@ public struct ShapeAdapter<S: Shape>: Shape {
     @usableFromInline
     var shape: S
 
+    public var animatableData: S.AnimatableData {
+        get { shape.animatableData }
+        set { shape.animatableData = newValue }
+    }
+
     @inlinable
     public init(@ShapeBuilder shape: () -> S) {
         self.shape = shape()
@@ -60,6 +65,12 @@ struct ShapeAdapter_Previews: PreviewProvider {
 
                 ShapeAdapter {
                     RoundedRectangle(cornerRadius: 12)
+                }
+                .fill(Color.red)
+
+
+                ShapeAdapter {
+                    RoundedRectangle(cornerRadius: isCircle ? 25 : 0)
                 }
                 .fill(Color.red)
 
