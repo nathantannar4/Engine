@@ -30,9 +30,9 @@ extension AttributedString {
     #endif
 }
 
-#if os(macOS) || os(iOS) || os(visionOS)
+#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
 
-@available(iOS 15.0, macOS 12.0, macCatalyst 15.0, *)
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, macCatalyst 15.0, *)
 extension AttributedString {
 
     public init<Content: View>(
@@ -47,7 +47,7 @@ extension AttributedString {
     }()
 }
 
-@available(iOS 15.0, macOS 12.0, macCatalyst 15.0, *)
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, macCatalyst 15.0, *)
 private class HostingTextAttachment<Content: View>: NSTextAttachment, @unchecked Sendable {
 
     let content: Content
@@ -93,7 +93,7 @@ private class HostingTextAttachment<Content: View>: NSTextAttachment, @unchecked
     #endif
 }
 
-@available(iOS 15.0, macOS 12.0, *)
+@available(iOS 15.0, tvOS 15.0, macOS 12.0, *)
 private class HostingTextAttachmentViewProvider<Content: View>: NSTextAttachmentViewProvider {
 
     let attachment: HostingTextAttachment<Content>
