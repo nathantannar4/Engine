@@ -113,10 +113,14 @@ open class HostingController<
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
             UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
         {
-            if #available(iOS 18.1, tvOS 18.1, *) {
-                allowUIKitAnimations += 1
+            if children.count > 0 {
+                prepareForUIKitAnimations()
             } else {
-                allowUIKitAnimationsForNextUpdate = true
+                if #available(iOS 18.1, tvOS 18.1, *) {
+                    allowUIKitAnimations += 1
+                } else {
+                    allowUIKitAnimationsForNextUpdate = true
+                }
             }
         }
         super.viewWillLayoutSubviews()
@@ -124,4 +128,30 @@ open class HostingController<
     #endif
 }
 
+#if os(iOS) || os(tvOS)
+protocol _UIHostingViewType { }
+extension _UIHostingView: _UIHostingViewType { }
+
+extension UIViewController {
+    func prepareForUIKitAnimations() {
+        guard let view else { return }
+        if view is _UIHostingViewType {
+            do {
+                if #available(iOS 18.1, tvOS 18.1, *) {
+                    var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, view)
+                    allowUIKitAnimations += 1
+                    try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, view)
+                } else {
+                    try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, view)
+                }
+            } catch {
+                print("Failed to allow UIKit animations, this is unexpected please file an issue =")
+            }
+        }
+        for child in children {
+            child.prepareForUIKitAnimations()
+        }
+    }
+}
+#endif
 #endif // !os(watchOS)
