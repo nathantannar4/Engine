@@ -8,19 +8,16 @@ import SwiftUI
 @resultBuilder
 public struct ShapeBuilder {
 
-    @_alwaysEmitIntoClient
-    public static func buildBlock() -> EmptyShape {
-        EmptyShape()
+    public static func buildBlock() -> Rectangle {
+        Rectangle()
     }
 
-    @_alwaysEmitIntoClient
     public static func buildBlock<S: Shape>(
         _ shape: S
     ) -> S {
         shape
     }
 
-    @_alwaysEmitIntoClient
     public static func buildEither<
         TrueShape,
         FalseShape
@@ -30,7 +27,6 @@ public struct ShapeBuilder {
         .init(first)
     }
 
-    @_alwaysEmitIntoClient
     public static func buildEither<
         TrueShape,
         FalseShape
@@ -40,7 +36,21 @@ public struct ShapeBuilder {
         .init(second)
     }
 
-    @_alwaysEmitIntoClient
+    public static func buildOptional<
+        S: Shape
+    >(
+        _ shape: S?
+    ) -> ConditionalShape<S, Rectangle> {
+        shape.map { .init($0) } ?? .init(Rectangle())
+    }
+
+    @_disfavoredOverload
+    public static func buildLimitedAvailability<S: Shape>(
+        _ shape: S
+    ) -> Engine.AnyShape {
+        .init(shape: shape)
+    }
+
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public static func buildLimitedAvailability<S: Shape>(
         _ shape: S

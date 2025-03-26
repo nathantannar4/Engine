@@ -91,6 +91,13 @@ struct ShapeAdapter_Previews: PreviewProvider {
                             Rectangle()
                         }
                     }
+
+                Color.red
+                    .clipShape {
+                        if isCircle {
+                            Circle()
+                        }
+                    }
             }
             .padding()
             .onTapGesture {
