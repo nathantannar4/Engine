@@ -1,7 +1,7 @@
 //
 // Copyright (c) Nathan Tannar
 //
-
+#if !os(watchOS)
 import SwiftUI
 
 /// A view that flashes a debug overlay to indicate when a view update occurred
@@ -141,3 +141,4 @@ struct ViewUpdateDebugView_Previews: PreviewProvider {
         }
     }
 }
+#endif
