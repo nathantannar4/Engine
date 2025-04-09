@@ -2,6 +2,9 @@
 // Copyright (c) Nathan Tannar
 //
 
+
+#if !os(watchOS)
+
 import SwiftUI
 
 @inline(__always)
@@ -30,3 +33,5 @@ extension Optional where Wrapped == Transaction {
         }
     }
 }
+
+#endif
