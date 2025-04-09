@@ -7,7 +7,7 @@ import SwiftUI
 /// A view that flashes a debug overlay to indicate when a view update occurred
 ///
 /// > Note: DEBUG builds only
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 @frozen
 public struct ViewUpdateDebugView<Content: View>: View {
 
@@ -34,7 +34,7 @@ public struct ViewUpdateDebugView<Content: View>: View {
     }
 }
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 extension View {
 
     /// A view that flashes a debug overlay to indicate when a view update occurred
@@ -49,7 +49,7 @@ extension View {
     }
 }
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 @frozen
 public struct ViewUpdateOverlayModifier<Overlay: View>: ViewModifier {
 
@@ -96,7 +96,7 @@ public struct ViewUpdateOverlayModifier<Overlay: View>: ViewModifier {
 
 // MARK: - Previews
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 struct ViewUpdateDebugView_Previews: PreviewProvider {
     static var previews: some View {
         Preview()
