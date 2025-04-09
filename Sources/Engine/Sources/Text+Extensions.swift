@@ -191,7 +191,13 @@ extension Text {
             guard let image = Mirror(reflecting: storage).descendant("image") as? Image else {
                 fallthrough
             }
+            
+            #if os(watchOS)
             var attributedString = AttributedString(stringLiteral: " ")
+            #endif
+            var attributedString = AttributedString.attachment
+            #endif
+            
             #if os(iOS) || os(tvOS) || os(visionOS)
             if let image = image.toUIImage() {
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *),
