@@ -194,7 +194,7 @@ extension Text {
             
             #if os(watchOS)
             var attributedString = AttributedString(stringLiteral: " ")
-            #endif
+            #else
             var attributedString = AttributedString.attachment
             #endif
             
