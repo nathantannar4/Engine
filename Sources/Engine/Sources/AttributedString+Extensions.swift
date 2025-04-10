@@ -30,22 +30,24 @@ extension AttributedString {
     #endif
 }
 
-#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
-
-@available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, *)
+@available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *)
 extension AttributedString {
 
+    #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
     public init<Content: View>(
         attachment: Content
     ) {
         self = .attachment
         self.attachment = HostingTextAttachment(content: attachment)
     }
+    #endif
 
     static let attachment: AttributedString = {
         AttributedString("\(Character(UnicodeScalar(NSTextAttachment.character)!))")
     }()
 }
+
+#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
 
 @available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, *)
 private class HostingTextAttachment<Content: View>: NSTextAttachment, @unchecked Sendable {

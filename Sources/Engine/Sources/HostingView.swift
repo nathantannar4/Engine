@@ -85,7 +85,11 @@ open class HostingView<
             return result ?? false
         }
         set {
-            try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
+            if #available(iOS 18.1, tvOS 18.1, *) {
+                allowUIKitAnimations += 1
+            } else {
+                try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
+            }
         }
     }
 

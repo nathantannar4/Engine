@@ -5,12 +5,15 @@
 import SwiftUI
 
 @inline(__always)
+@available(watchOS, unavailable)
 public func withCATransaction(
     _ completion: @escaping () -> Void
 ) {
+    #if !os(watchOS)
     CATransaction.begin()
     CATransaction.setCompletionBlock(completion)
     CATransaction.commit()
+    #endif
 }
 
 extension Transaction {

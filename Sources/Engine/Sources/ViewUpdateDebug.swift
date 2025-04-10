@@ -86,9 +86,15 @@ public struct ViewUpdateOverlayModifier<Overlay: View>: ViewModifier {
                     lastPhase = phase
                 }
                 .onChange(of: phase) { newValue in
+                    #if os(watchOS)
+                    RunLoop.main.schedule {
+                        lastPhase = newValue
+                    }
+                    #else
                     withCATransaction {
                         lastPhase = newValue
                     }
+                    #endif
                 }
             )
     }

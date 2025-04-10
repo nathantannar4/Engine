@@ -194,7 +194,7 @@ extension Text {
             var attributedString = AttributedString.attachment
             #if os(iOS) || os(tvOS) || os(visionOS)
             if let image = image.toUIImage() {
-                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, *),
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let baselineOffset = environment.baselineOffset,
                     baselineOffset != 0
                 {
