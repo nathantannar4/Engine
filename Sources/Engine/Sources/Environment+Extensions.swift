@@ -99,7 +99,7 @@ extension EnvironmentValues {
     }
     #endif
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     /// The value for the ``.textContentType(_)`` modifier
     @available(iOS 13.0, tvOS 13.0, *)
     @available(macOS, unavailable)

@@ -6,9 +6,9 @@ import Foundation
 
 @inline(__always)
 public func isOpaqueViewAnyView() -> Bool {
-    // SwiftUI v6 wraps in AnyView
     #if DEBUG && canImport(SwiftUICore)
-    return true
+    // Default build flag SWIFT_ENABLE_OPAQUE_TYPE_ERASURE via SDK check
+    return c_swift_isOpaqueTypeErasureEnabled();
     #else
     return false
     #endif
@@ -80,6 +80,14 @@ public func swift_getClassGenerics(for type: Any.Type) -> [Any.Type]? {
         return nil
     }
     return metadata[\.genericTypes]
+}
+
+public func swift_getIsClassType(_ type: Any.Type) -> Bool {
+    return c_swift_isClassType(type)
+}
+
+public func swift_getIsClassType(_ instance: Any) -> Bool {
+    return c_swift_isClassType(type(of: instance))
 }
 
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
@@ -235,7 +243,7 @@ private func withUnsafeInstancePointer<InstanceType, Result>(
     _ instance: InstanceType,
     _ body: (UnsafeRawPointer) throws -> Result
 ) throws -> Result {
-    if swift_isClassType(InstanceType.self) {
+    if c_swift_isClassType(InstanceType.self) {
         return try withUnsafePointer(to: instance) {
             try $0.withMemoryRebound(to: UnsafeRawPointer.self, capacity: 1) {
                 try body($0.pointee)
@@ -253,7 +261,7 @@ private func withUnsafeMutableInstancePointer<InstanceType, Result>(
     _ instance: inout InstanceType,
     _ body: (UnsafeMutableRawPointer) throws -> Result
 ) throws -> Result {
-    if swift_isClassType(InstanceType.self) {
+    if c_swift_isClassType(InstanceType.self) {
         return try withUnsafeMutablePointer(to: &instance) {
             try $0.withMemoryRebound(to: UnsafeMutableRawPointer.self, capacity: 1) {
                 try body($0.pointee)
@@ -288,8 +296,8 @@ private struct FieldReflectionMetadata {
     let isVar: Bool = false
 }
 
-@_silgen_name("swift_isClassType")
-private func swift_isClassType(_: Any.Type) -> Bool
+@_silgen_name("c_swift_isClassType")
+private func c_swift_isClassType(_: Any.Type) -> Bool
 
 @_silgen_name("swift_reflectionMirror_recursiveCount")
 private func swift_reflectionMirror_recursiveCount(_: Any.Type) -> Int
@@ -303,3 +311,7 @@ private func swift_reflectionMirror_recursiveChildMetadata(
 
 @_silgen_name("swift_reflectionMirror_recursiveChildOffset")
 private func swift_reflectionMirror_recursiveChildOffset(_: Any.Type, index: Int) -> Int
+
+
+@_silgen_name("c_swift_isOpaqueTypeErasureEnabled")
+private func c_swift_isOpaqueTypeErasureEnabled() -> Bool

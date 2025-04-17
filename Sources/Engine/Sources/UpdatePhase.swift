@@ -82,9 +82,15 @@ struct UpdatePhase_Previews: PreviewProvider {
                 } label: {
                     Text("Increment")
                 }
+                #if os(visionOS)
+                .onChange(of: phase) { _, _ in
+                    print("View Updated")
+                }
+                #else
                 .onChange(of: phase) { _ in
                     print("View Updated")
                 }
+                #endif
 
                 Text(value.description)
             }

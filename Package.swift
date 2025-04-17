@@ -51,7 +51,10 @@ let package = Package(
             ]
         ),
         .target(
-            name: "EngineCoreC"
+            name: "EngineCoreC",
+            linkerSettings: [
+                .unsafeFlags(["-lswiftCore"])
+            ]
         ),
         .target(
             name: "EngineMacros",

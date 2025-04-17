@@ -13,8 +13,27 @@ final class RuntimeTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    func testConformsToProtocol() {
+        struct MyView: View {
+            var body: some View {
+                EmptyView()
+            }
+        }
+        XCTAssertNotNil(ViewProtocolDescriptor.conformance(of: MyView.self))
+    }
+
+    func testIsClassType() {
+        struct MyStruct { }
+        XCTAssertFalse(swift_getIsClassType(MyStruct.self))
+        XCTAssertFalse(swift_getIsClassType(MyStruct()))
+
+        class MyClass { }
+        XCTAssert(swift_getIsClassType(MyClass.self))
+        XCTAssert(swift_getIsClassType(MyClass()))
+    }
+
     func testRuntimeStruct() throws {
-        class MyStruct {
+        struct MyStruct {
             var intValue: Int
             private var structValue: MyInternalStruct
 
@@ -56,8 +75,8 @@ final class RuntimeTests: XCTestCase {
         )
         try swift_setFieldValue("structValue", privateValue, &value)
 
-        let optionalValue: MyStruct? = value
-        try swift_setFieldValue("intValue", 3, optionalValue)
+        var optionalValue: MyStruct? = value
+        try swift_setFieldValue("intValue", 3, &optionalValue)
         try XCTAssertEqual(
             swift_getFieldValue("intValue", Any.self, optionalValue) as? Int,
             3
@@ -152,9 +171,9 @@ final class RuntimeTests: XCTestCase {
         tuple.visit(visitor: &visitor)
     }
 
-    #if os(iOS) || os(tvOS) || os(macOS)
+    #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
     func testHostingView() throws {
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         let host = _UIHostingView(rootView: EmptyView())
         #else
         let host = NSHostingView(rootView: EmptyView())
@@ -164,7 +183,7 @@ final class RuntimeTests: XCTestCase {
             _ = try swift_getFieldValue("propertiesNeedingUpdate", UInt16.self, host)
         }
         _ = try swift_getFieldValue("_rootView", EmptyView.self, host)
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         _ = try swift_getFieldValue("allowUIKitAnimations", Int32.self, host)
         if #available(iOS 18.1, tvOS 18.1, *) { } else {
             _ = try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, host)

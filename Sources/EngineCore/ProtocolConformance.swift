@@ -14,7 +14,7 @@ public struct ProtocolConformance<P: TypeDescriptor> {
     public init?(_ type: Any.Type) {
         let metadata = unsafeBitCast(type, to: UnsafeRawPointer.self)
         let desc = P.descriptor
-        guard let conformance = swift_conformsToProtocol(metadata, desc) else {
+        guard let conformance = c_swift_conformsToProtocol(metadata, desc) else {
             return nil
         }
         self.metadata = metadata
@@ -40,8 +40,8 @@ extension TypeDescriptor {
     }
 }
 
-@_silgen_name("swift_conformsToProtocol")
-func swift_conformsToProtocol(
+@_silgen_name("c_swift_conformsToProtocol")
+func c_swift_conformsToProtocol(
     _ type: UnsafeRawPointer,
     _ descriptor: UnsafeRawPointer
 ) -> UnsafeRawPointer?

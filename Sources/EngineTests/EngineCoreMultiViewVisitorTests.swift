@@ -583,14 +583,22 @@ final class MultiViewVisitorTests: XCTestCase {
         expectation(Text.self, count: 2) {
             CustomMultiView()
         } validation: { ctx, index in
-            XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+            if isOpaqueViewAnyView() {
+                XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+            } else {
+                XCTAssertEqual(ctx.id, .init(CustomMultiView.self).appending(offset: index).appending(Text.self))
+            }
         }
         expectation(Text.self, count: 2) {
             Group {
                 CustomMultiView()
             }
         } validation: { ctx, index in
-            XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+            if isOpaqueViewAnyView() {
+                XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(TupleView<(Text, Text)>.self).appending(offset: index).appending(Text.self))
+            } else {
+                XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(offset: index).appending(Text.self))
+            }
         }
     }
 

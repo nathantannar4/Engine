@@ -57,7 +57,7 @@ open class HostingView<
     public var disablesSafeArea: Bool = false {
         didSet {
             guard oldValue != disablesSafeArea else { return }
-            #if os(iOS) || os(tvOS)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             setNeedsLayout()
             #elseif os(macOS)
             needsLayout = true
@@ -65,7 +65,7 @@ open class HostingView<
         }
     }
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     @available(iOS 16.0, tvOS 16.0, *)
     public var allowUIKitAnimations: Int32 {
         get {
@@ -137,7 +137,7 @@ open class HostingView<
         fatalError("init(rootView:) has not been implemented")
     }
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     open override func layoutSubviews() {
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate, 
             UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false

@@ -27,7 +27,7 @@ open class HostingController<
             if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
                 return safeAreaRegions.isEmpty
             } else {
-                #if os(iOS) || os(tvOS)
+                #if os(iOS) || os(tvOS) || os(visionOS)
                 return _disableSafeArea
                 #else
                 return false
@@ -38,15 +38,15 @@ open class HostingController<
             if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
                 safeAreaRegions = newValue ? [] : .all
             } else {
-                #if os(iOS) || os(tvOS)
+                #if os(iOS) || os(tvOS) || os(visionOS)
                 _disableSafeArea = newValue
                 #endif
             }
         }
     }
 
-    #if os(iOS) || os(tvOS)
-    @available(iOS 18.1, tvOS 18.1, *)
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    @available(iOS 18.1, tvOS 18.1, visionOS 2.1, *)
     public var allowUIKitAnimations: Int32 {
         get {
             guard let view else { return 0 }
@@ -67,7 +67,7 @@ open class HostingController<
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     public var allowUIKitAnimationsForNextUpdate: Bool {
         get {
-            if #available(iOS 18.1, tvOS 18.1, *) {
+            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
                 return allowUIKitAnimations > 0
             } else {
                 guard let view else { return false }
@@ -76,7 +76,7 @@ open class HostingController<
             }
         }
         set {
-            if #available(iOS 18.1, tvOS 18.1, *) {
+            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
                 allowUIKitAnimations += 1
             } else {
                 guard let view else { return }
@@ -108,7 +108,7 @@ open class HostingController<
         fatalError("init(coder:) has not been implemented")
     }
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     open override func viewWillLayoutSubviews() {
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
             UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
@@ -116,7 +116,7 @@ open class HostingController<
             if children.count > 0 {
                 prepareForUIKitAnimations()
             } else {
-                if #available(iOS 18.1, tvOS 18.1, *) {
+                if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
                     allowUIKitAnimations += 1
                 } else {
                     allowUIKitAnimationsForNextUpdate = true
@@ -128,7 +128,7 @@ open class HostingController<
     #endif
 }
 
-#if os(iOS) || os(tvOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 protocol _UIHostingViewType { }
 extension _UIHostingView: _UIHostingViewType { }
 

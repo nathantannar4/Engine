@@ -9,7 +9,7 @@ import SwiftUI
 public protocol ViewVisitor {
     mutating func visit<Content: View>(type: Content.Type)
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     @available(iOS 13.0, tvOS 13.0, *)
     @available(macOS, unavailable)
     @available(watchOS, unavailable)
@@ -47,7 +47,7 @@ extension View {
     >(
         visitor: UnsafeMutablePointer<Visitor>
     ) {
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         if let conformance = UIViewRepresentableProtocolDescriptor.conformance(of: Self.self) {
             conformance.visit(visitor: visitor)
         } else if let conformance = UIViewControllerRepresentableProtocolDescriptor.conformance(of: Self.self) {
@@ -63,6 +63,8 @@ extension View {
         } else {
             visitor.pointee.visit(type: Self.self)
         }
+        #else
+        visitor.pointee.visit(type: Self.self)
         #endif
     }
 }
@@ -120,7 +122,7 @@ public func _swift_visit_View<Content: View>(
     _openExistential(c.value.type, do: project)
 }
 
-#if os(iOS) || os(tvOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 
 /// The ``TypeDescriptor`` for the `UIViewRepresentable` protocol
 public struct UIViewRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor {

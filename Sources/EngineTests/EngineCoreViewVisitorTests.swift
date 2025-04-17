@@ -59,9 +59,9 @@ final class ViewVisitorTests: XCTestCase {
         XCTAssert(visitor.output)
     }
 
-    #if os(iOS) || os(tvOS) || os(macOS)
+    #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
     func testViewRepresentableVisit() {
-        #if os(iOS) || os(tvOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         struct ViewRepresentable: UIViewRepresentable {
             func makeUIView(context: Context) -> UIView { UIView() }
             func updateUIView(_ uiView: UIView, context: Context) { }
@@ -97,11 +97,10 @@ private struct TestRepresentableVisitor<ExpectedContent: View>: ViewVisitor {
     var output: Bool!
 
     mutating func visit<Content: View>(type: Content.Type) {
-        XCTAssertNil(output)
-        output = ExpectedContent.self == Content.self
+        XCTFail()
     }
 
-    #if os(iOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS)
     @available(iOS 13.0, tvOS 13.0, *)
     @available(macOS, unavailable)
     @available(watchOS, unavailable)
@@ -117,9 +116,7 @@ private struct TestRepresentableVisitor<ExpectedContent: View>: ViewVisitor {
         XCTAssertNil(output)
         output = ExpectedContent.self == Content.self
     }
-    #endif
-
-    #if os(macOS)
+    #elseif os(macOS)
     @available(macOS 10.15, *)
     @available(iOS, unavailable)
     @available(tvOS, unavailable)
