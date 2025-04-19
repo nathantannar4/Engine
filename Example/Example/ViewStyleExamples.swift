@@ -309,6 +309,7 @@ struct InlineStepperViewStyle: StepperViewStyle {
                 Image(systemName: "plus.circle.fill")
             }
         }
+		.buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAdjustableAction { direction in
             switch direction {
