@@ -22,26 +22,22 @@ open class HostingController<
         set { rootView = newValue }
     }
 
+    @available(macOS 13.3, iOS 13.0, tvOS 13.0, *)
     public var disablesSafeArea: Bool {
         get {
-            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
-                return safeAreaRegions.isEmpty
-            } else {
-                #if os(iOS) || os(tvOS) || os(visionOS)
-                return _disableSafeArea
-                #else
-                return false
-                #endif
-            }
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            return _disableSafeArea
+            #else
+            return safeAreaRegions.isEmpty
+            #endif
         }
         set {
-            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
+            if #available(iOS 16.4, tvOS 16.4, *) {
                 safeAreaRegions = newValue ? [] : .all
-            } else {
-                #if os(iOS) || os(tvOS) || os(visionOS)
-                _disableSafeArea = newValue
-                #endif
             }
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            _disableSafeArea = newValue
+            #endif
         }
     }
 
