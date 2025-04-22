@@ -136,45 +136,45 @@ bool c_swift_isClassType(const void *_Nonnull metadata)
 bool c_swift_isOpaqueTypeErasureEnabled()
 {
     #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED)
-    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_18_4
+    #if defined(__IPHONE_18_4) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_18_4
     return false;
-    #elif __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_18_0
+    #elif defined(__IPHONE_18_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_18_0
     return true;
     #else
     return false;
     #endif
 
     #elif defined(__WATCH_OS_VERSION_MAX_ALLOWED)
-    #if __WATCH_OS_VERSION_MAX_ALLOWED >= __WATCHOS_11_4
+    #if defined(__WATCHOS_11_4) && __WATCH_OS_VERSION_MAX_ALLOWED >= __WATCHOS_11_4
     return false;
-    #elif __WATCH_OS_VERSION_MAX_ALLOWED >= __WATCHOS_11_0
+    #elif defined(__WATCHOS_11_0) && __WATCH_OS_VERSION_MAX_ALLOWED >= __WATCHOS_11_0
     return true;
     #else
     return false;
     #endif
 
     #elif defined(__TV_OS_VERSION_MAX_ALLOWED)
-    #if __TV_OS_VERSION_MAX_ALLOWED >= __TVOS_18_4
+    #if defined(__TVOS_18_4) && __TV_OS_VERSION_MAX_ALLOWED >= __TVOS_18_4
     return false;
-    #elif __TV_OS_VERSION_MAX_ALLOWED >= __TVOS_18_0
+    #elif defined(__TVOS_18_0) && __TV_OS_VERSION_MAX_ALLOWED >= __TVOS_18_0
     return true;
     #else
     return false;
     #endif
 
     #elif defined(__VISION_OS_VERSION_MAX_ALLOWED)
-    #if __VISION_OS_VERSION_MAX_ALLOWED >= __VISIONOS_2_4
+    #if defined(__VISIONOS_2_4) && __VISION_OS_VERSION_MAX_ALLOWED >= __VISIONOS_2_4
     return false;
-    #elif __VISION_OS_VERSION_MAX_ALLOWED >= __VISIONOS_2_0
+    #elif defined(__VISIONOS_2_0) __VISION_OS_VERSION_MAX_ALLOWED >= __VISIONOS_2_0
     return true;
     #else
     return false;
     #endif
 
     #elif defined(__MAC_OS_X_VERSION_MAX_ALLOWED)
-    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_4
+    #if defined(__MAC_15_4) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_4
     return false;
-    #elif __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_0
+    #elif defined(__MAC_15_0) && __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_15_0
     return true;
     #else
     return false;

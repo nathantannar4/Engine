@@ -6,13 +6,13 @@ import SwiftUI
 
 extension Group where Content: View {
 
-    @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviewsOf: ...) init")
-    @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(subviewsOf: ...) init")
-    @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviewsOf: ...) init")
-    @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(subviewsOf: ...) init")
-    @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(subviewsOf: ...) init")
+    @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviews: ...) init")
+    @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(subviews: ...) init")
+    @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviews: ...) init")
+    @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(subviews: ...) init")
+    @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(subviews: ...) init")
     public init<V: View, Result: View>(
-        subviews view: V,
+        subviewsOf view: V,
         @ViewBuilder transform: @escaping (AnyVariadicView) -> Result
     ) where Content == VariadicViewAdapter<V, Result> {
         self.init {
@@ -22,13 +22,13 @@ extension Group where Content: View {
         }
     }
 
-    @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sectionsOf: ...) init")
-    @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(sectionsOf: ...) init")
-    @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sectionsOf: ...) init")
-    @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(sectionsOf: ...) init")
-    @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(sectionsOf: ...) init")
+    @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sections: ...) init")
+    @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(sections: ...) init")
+    @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sections: ...) init")
+    @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(sections: ...) init")
+    @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(sections: ...) init")
     public init<V: View, Result: View>(
-        sections view: V,
+        sectionsOf view: V,
         @ViewBuilder transform: @escaping ([AnyVariadicSectionView]) -> Result
     ) where Content == VariadicViewAdapter<V, Result> {
         self.init {
@@ -45,31 +45,74 @@ extension Group where Content: View {
 struct Group_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            Group(subviews: Content()) { source in
-                VStack {
-                    HStack {
-                        source[0]
-                        source[1]
-                    }
+            HStack {
+                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                    Group(subviews: Content()) { source in
+                        VStack {
+                            HStack {
+                                source[0]
+                                source[1]
+                            }
 
-                    source[2...]
+                            source[2...]
+                                .border(Color.red)
+                        }
+                    }
+                }
+
+                Group(subviewsOf: Content()) { source in
+                    VStack {
+                        HStack {
+                            source[0]
+                            source[1]
+                        }
+
+                        source[2...]
+                            .border(Color.red)
+                    }
                 }
             }
             .previewDisplayName("subviewsOf")
 
-            Group(sections: Content()) { sections in
-                ForEach(sections) { section in
-                    VStack {
-                        HStack {
-                            Text("Header: ")
-                            section.header
+            HStack {
+                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                    Group(sections: Content()) { sections in
+                        ForEach(sections) { section in
+                            VStack {
+                                HStack {
+                                    Text("Header: ")
+                                    section.header
+                                }
+                                .border(Color.red)
+
+                                section.content
+
+                                HStack {
+                                    Text("Footer: ")
+                                    section.footer
+                                }
+                                .border(Color.red)
+                            }
                         }
+                    }
+                }
 
-                        section.content
+                Group(sectionsOf: Content()) { sections in
+                    ForEach(sections) { section in
+                        VStack {
+                            HStack {
+                                Text("Header: ")
+                                section.header
+                            }
+                            .border(Color.red)
 
-                        HStack {
-                            Text("Footer: ")
-                            section.footer
+                            section.content
+
+                            HStack {
+                                Text("Footer: ")
+                                section.footer
+                            }
+                            .border(Color.red)
                         }
                     }
                 }

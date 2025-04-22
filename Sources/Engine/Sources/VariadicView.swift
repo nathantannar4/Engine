@@ -67,7 +67,7 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
 /// A variadic view impacts layout and how a `ViewModifier` is applied,
 /// which can have a direct impact on performance.
 @frozen
-public struct VariadicView<Content: View>: View, RandomAccessCollection {
+public struct VariadicView<Content: View>: View, RandomAccessCollection, Sequence {
 
     public var children: AnyVariadicView
 
@@ -85,15 +85,22 @@ public struct VariadicView<Content: View>: View, RandomAccessCollection {
         children.sections
     }
 
-    // MARK: Collection
+    // MARK: Sequence
 
-    public typealias Element = AnyVariadicView.Element
     public typealias Iterator = AnyVariadicView.Iterator
-    public typealias Index = AnyVariadicView.Index
 
     public func makeIterator() -> Iterator {
         children.makeIterator()
     }
+
+    public var underestimatedCount: Int {
+        children.underestimatedCount
+    }
+
+    // MARK: RandomAccessCollection
+
+    public typealias Element = AnyVariadicView.Element
+    public typealias Index = AnyVariadicView.Index
 
     public var startIndex: Index {
         children.startIndex
@@ -114,7 +121,7 @@ public struct VariadicView<Content: View>: View, RandomAccessCollection {
 
 /// A type-erased collection of subviews in a container view.
 @frozen
-public struct AnyVariadicView: View, RandomAccessCollection {
+public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
 
     /// A type-erased subview of a container view.
     @frozen
@@ -175,11 +182,6 @@ public struct AnyVariadicView: View, RandomAccessCollection {
             case .untagged:
                 return nil
             }
-        }
-
-        /// The layout priority of the subview.
-        public var priority: Double {
-            self[LayoutPriorityTrait.self, default: 0]
         }
 
         /// The z-index of the subview.
@@ -250,15 +252,22 @@ public struct AnyVariadicView: View, RandomAccessCollection {
         return sections
     }
 
-    // MARK: Collection
+    // MARK: Sequence
 
-    public typealias Element = Subview
     public typealias Iterator = IndexingIterator<Array<Element>>
-    public typealias Index = Int
 
     public func makeIterator() -> Iterator {
         children.map { Subview($0) }.makeIterator()
     }
+
+    public var underestimatedCount: Int {
+        children.underestimatedCount
+    }
+
+    // MARK: RandomAccessCollection
+
+    public typealias Element = Subview
+    public typealias Index = Int
 
     public var startIndex: Index {
         children.startIndex
@@ -319,7 +328,7 @@ public struct AnyVariadicSectionView: View, Identifiable {
     }
 
     @frozen
-    public struct Content: View, RandomAccessCollection {
+    public struct Content: View, RandomAccessCollection, Sequence {
         public typealias Subview = AnyVariadicView.Subview
         var children: [Subview]
 
@@ -329,15 +338,22 @@ public struct AnyVariadicSectionView: View, Identifiable {
             }
         }
 
-        // MARK: Collection
+        // MARK: Sequence
 
-        public typealias Element = Subview
         public typealias Iterator = IndexingIterator<Array<Element>>
-        public typealias Index = Int
 
         public func makeIterator() -> Iterator {
             children.makeIterator()
         }
+
+        public var underestimatedCount: Int {
+            children.underestimatedCount
+        }
+
+        // MARK: RandomAccessCollection
+
+        public typealias Element = Subview
+        public typealias Index = Int
 
         public var startIndex: Index {
             children.startIndex
@@ -485,23 +501,21 @@ struct VariadicView_Previews: PreviewProvider {
                         Text("Footer")
                     }
                 } content: { source in
-                    HStack {
-                        Text(source.children.count.description)
-
+                    ForEach(source.sections) { section in
                         VStack {
-                            let isHeader = source[0].isHeader
                             HStack {
-                                Text(isHeader.description)
-                                source[0]
+                                Text("Header: ")
+                                section.header
                             }
+                            .border(Color.red)
 
-                            source[1]
+                            section.content
 
-                            let isFooter = source[2].isFooter
                             HStack {
-                                Text(isFooter.description)
-                                source[2]
+                                Text("Footer: ")
+                                section.footer
                             }
+                            .border(Color.red)
                         }
                     }
                 }

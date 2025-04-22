@@ -35,7 +35,7 @@ extension ViewOutputKey where Value == ViewOutputList<Content> {
 /// A list of views sourced by a ``ViewOutputKey``
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-public struct ViewOutputList<Content: View>: View, RandomAccessCollection {
+public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Sequence {
 
     @frozen
     public struct Subview: View, Identifiable {
@@ -72,15 +72,22 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection {
         }
     }
 
-    // MARK: Collection
+    // MARK: Sequence
 
-    public typealias Element = Subview
     public typealias Iterator = IndexingIterator<Array<Element>>
-    public typealias Index = Int
 
     public func makeIterator() -> Iterator {
         elements.makeIterator()
     }
+
+    public var underestimatedCount: Int {
+        elements.underestimatedCount
+    }
+
+    // MARK: RandomAccessCollection
+
+    public typealias Element = Subview
+    public typealias Index = Int
 
     public var startIndex: Index {
         elements.startIndex

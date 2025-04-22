@@ -23,14 +23,14 @@ public protocol ViewTraitKey {
 public struct ZIndexTrait: ViewTraitKey {
     public typealias Value = Double
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
-        of: "s7SwiftUI14ZIndexTraitKeyV"
+        of: "7SwiftUI14ZIndexTraitKeyV"
     )
 }
 
 public struct LayoutPriorityTrait: ViewTraitKey {
     public typealias Value = Double
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
-        of: "s7SwiftUI22LayoutPriorityTraitKeyV"
+        of: "7SwiftUI22LayoutPriorityTraitKeyV"
     )
 }
 
@@ -43,7 +43,7 @@ public struct TagValueTrait<V>: ViewTraitKey {
     public static var conformance: ProtocolConformance<ViewTraitKeyProtocolDescriptor>? {
         guard let typeName = _mangledTypeName(V.self) else { return nil }
         return ViewTraitKeyProtocolDescriptor.conformance(
-            of: "s7SwiftUI16TagValueTraitKeyVy\(typeName)G"
+            of: "7SwiftUI16TagValueTraitKeyVy\(typeName)G"
         )
     }
 }
@@ -51,14 +51,14 @@ public struct TagValueTrait<V>: ViewTraitKey {
 public struct IsSectionHeaderTrait: ViewTraitKey {
     public typealias Value = Bool
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
-        of: "s7SwiftUI23IsSectionHeaderTraitKeyV"
+        of: "7SwiftUI23IsSectionHeaderTraitKeyV"
     )
 }
 
 public struct IsSectionFooterTrait: ViewTraitKey {
     public typealias Value = Bool
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
-        of: "s7SwiftUI23IsSectionFooterTraitKeyV"
+        of: "7SwiftUI23IsSectionFooterTraitKeyV"
     )
 }
 

@@ -90,6 +90,11 @@ public func swift_getIsClassType(_ instance: Any) -> Bool {
     return c_swift_isClassType(type(of: instance))
 }
 
+public func swift_getMangledTypeName(of type: Any.Type) -> String? {
+    guard let namePtr = swift_getMangledTypeName(type) else { return nil }
+    return String(cString: namePtr)
+}
+
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
     var key: String
     var instance: Any.Type
@@ -312,6 +317,8 @@ private func swift_reflectionMirror_recursiveChildMetadata(
 @_silgen_name("swift_reflectionMirror_recursiveChildOffset")
 private func swift_reflectionMirror_recursiveChildOffset(_: Any.Type, index: Int) -> Int
 
+@_silgen_name("swift_getMangledTypeName")
+private func swift_getMangledTypeName(_ type: Any.Type) -> UnsafePointer<CChar>?
 
 @_silgen_name("c_swift_isOpaqueTypeErasureEnabled")
 private func c_swift_isOpaqueTypeErasureEnabled() -> Bool

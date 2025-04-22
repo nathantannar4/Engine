@@ -1,0 +1,13 @@
+version: 1
+builder:
+  configs:
+    - documentation_targets: [Engine, EngineCore, EngineMacros]
+      platform: macos
+    - documentation_targets: [Engine, EngineCore, EngineMacros]
+      platform: ios
+    - documentation_targets: [Engine, EngineCore, EngineMacros]
+      platform: tvos
+    - documentation_targets: [Engine, EngineCore, EngineMacros]
+      platform: watchos
+    - documentation_targets: [Engine, EngineCore, EngineMacros]
+      platform: visionos

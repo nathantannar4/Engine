@@ -50,6 +50,10 @@ let package = Package(
 
 `EngineMacros` includes a Swift macro, which requires user validation to enable or the build will fail. When configuring your CI, pass the flag `-skipMacroValidation` to `xcodebuild` to fix this.
 
+## Documentation
+
+Detailed documentation is available [here](https://swiftpackageindex.com/nathantannar4/Engine/main/documentation/engine).
+
 ## Introduction to Engine
 
 For some sample code to get started with `Engine`, build and run the included "Example" project.
