@@ -11,7 +11,9 @@ import EngineCore
 /// > Warning: The ``TypeDescriptor/descriptor`` should match the type
 ///  returned by `modifier`
 @frozen
-public struct StaticModifier<Descriptor: TypeDescriptor>: ViewModifier {
+public struct StaticModifier<
+    Descriptor: TypeDescriptor
+>: PrimitiveViewModifier {
 
     @usableFromInline
     var modifier: Any
@@ -24,11 +26,7 @@ public struct StaticModifier<Descriptor: TypeDescriptor>: ViewModifier {
         self.modifier = modifier()
     }
 
-    public func body(content: Content) -> Never {
-        bodyError()
-    }
-
-    public static func _makeView(
+    public static func makeView(
         modifier: _GraphValue<Self>,
         inputs: _ViewInputs,
         body: @escaping (_Graph, _ViewInputs) -> _ViewOutputs
@@ -43,7 +41,7 @@ public struct StaticModifier<Descriptor: TypeDescriptor>: ViewModifier {
         return _openExistential(type, do: project)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         modifier: _GraphValue<Self>,
         inputs: _ViewListInputs,
         body: @escaping (_Graph, _ViewListInputs) -> _ViewListOutputs
@@ -59,7 +57,7 @@ public struct StaticModifier<Descriptor: TypeDescriptor>: ViewModifier {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs,
         body: (_ViewListCountInputs) -> Int?
     ) -> Int? {

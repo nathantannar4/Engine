@@ -203,6 +203,7 @@ public struct ViewStyleModifier<
                 value[StyledView.self].append(AnyViewStyle(style))
             }
             .modifier(InputModifier())
+            .modifier(UnaryViewModifier())
     }
 
     struct InputModifier: GraphInputsModifier {
@@ -234,6 +235,7 @@ public struct DefaultViewStyleModifier<
                 value[StyledView.self].removeAll()
             }
             .modifier(InputModifier())
+            .modifier(UnaryViewModifier())
     }
 
     struct InputModifier: GraphInputsModifier {

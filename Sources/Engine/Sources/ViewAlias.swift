@@ -70,9 +70,9 @@ public struct ViewAliasSourceModifier<
     }
 
     public func body(content: Content) -> some View {
-        UnaryViewAdaptor { // workaround crashes
-            content.modifier(Modifier(source: source))
-        }
+        content
+            .modifier(Modifier(source: source))
+            .modifier(UnaryViewModifier())
     }
 
     private struct Modifier: GraphInputsModifier {

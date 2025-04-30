@@ -10,7 +10,7 @@ public struct StaticConditionalModifier<
     Condition: StaticCondition,
     TrueModifier: ViewModifier,
     FalseModifier: ViewModifier
->: ViewModifier {
+>: PrimitiveViewModifier {
 
     @frozen
     @usableFromInline
@@ -49,11 +49,7 @@ public struct StaticConditionalModifier<
         }
     }
 
-    public func body(content: Content) -> Never {
-        bodyError()
-    }
-
-    public static func _makeView(
+    public static func makeView(
         modifier: _GraphValue<Self>,
         inputs: _ViewInputs,
         body: @escaping (_Graph, _ViewInputs) -> _ViewOutputs
@@ -63,7 +59,7 @@ public struct StaticConditionalModifier<
             : FalseModifier._makeView(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
 
-    public static func _makeViewList(
+    public static func makeViewList(
         modifier: _GraphValue<Self>,
         inputs: _ViewListInputs,
         body: @escaping (_Graph, _ViewListInputs) -> _ViewListOutputs
@@ -74,7 +70,7 @@ public struct StaticConditionalModifier<
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public static func viewListCount(
         inputs: _ViewListCountInputs,
         body: (_ViewListCountInputs) -> Int?
     ) -> Int? {

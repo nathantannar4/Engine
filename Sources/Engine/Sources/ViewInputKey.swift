@@ -54,9 +54,9 @@ public struct ViewInputModifier<Input: ViewInput>: ViewModifier {
     public init() { }
 
     public func body(content: Content) -> some View {
-        UnaryViewAdaptor { // workaround crashes
-            content.modifier(Modifier())
-        }
+        content
+            .modifier(Modifier())
+            .modifier(UnaryViewModifier())
     }
 
     private struct Modifier: ViewInputsModifier {
