@@ -98,31 +98,37 @@ public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "St
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.
 @MainActor @preconcurrency
-public protocol StyledView: PrimitiveView, DynamicProperty {
+public protocol StyledView: View, DynamicProperty {
     associatedtype _Body: View
     @ViewBuilder @MainActor @preconcurrency var _body: _Body { get }
 }
 
 extension StyledView {
-    public static func makeView(
+    public nonisolated static func _makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        _Body._makeView(view: view[\._body], inputs: inputs)
+        MainActor.unsafe {
+            _Body._makeView(view: view[\._body], inputs: inputs)
+        }
     }
 
-    public static func makeViewList(
+    public nonisolated static func _makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        _Body._makeViewList(view: view[\._body], inputs: inputs)
+        MainActor.unsafe {
+            _Body._makeViewList(view: view[\._body], inputs: inputs)
+        }
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        _Body._viewListCount(inputs: inputs)
+        MainActor.unsafe {
+            _Body._viewListCount(inputs: inputs)
+        }
     }
 }
 

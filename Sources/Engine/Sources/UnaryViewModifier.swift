@@ -11,6 +11,10 @@ import SwiftUI
 ///
 @frozen
 public struct UnaryViewModifier: ViewModifier {
+
+    @inlinable
+    public init() { }
+
     public func body(content: Content) -> some View {
         UnaryViewAdaptor {
             content

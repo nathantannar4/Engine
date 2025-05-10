@@ -112,6 +112,11 @@ extension PropertyList {
         var ptr = elements
         var hasRoot = false
         let rootInputSuffix = ".BodyInput<SwiftUI._ViewModifier_Content<SwiftUI.RootModifier>>"
+        #if !os(macOS)
+        // This seems to be the last key before the incorrectly reused inputs
+        let branchKey: String = ".FocusedItemInputKey"
+        let containerKey = "SwiftUI.UIKitHostContainerFocusItemInput"
+        #endif
         while let p = ptr {
             let key = _typeName(p.keyType, qualified: true)
             var isMatch = key.hasSuffix(rootInputSuffix)
@@ -119,12 +124,6 @@ extension PropertyList {
                 hasRoot = true
             }
             #if !os(macOS)
-            let branchKey: String
-            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                branchKey = "SwiftUI.UIKitHostContainerFocusItemInput"
-            } else {
-                branchKey = ".ImplicitRootType"
-            }
             isMatch = isMatch || key.hasSuffix(branchKey)
             #endif
             if isMatch {
@@ -132,7 +131,7 @@ extension PropertyList {
                 #if !os(macOS)
                 if let next = p.after {
                     // Reached the UIViewRepresentable
-                    if _typeName(next.keyType, qualified: true).hasSuffix(branchKey) {
+                    if _typeName(next.keyType, qualified: true).hasSuffix(containerKey) {
                         ptr = next
                     }
                 }

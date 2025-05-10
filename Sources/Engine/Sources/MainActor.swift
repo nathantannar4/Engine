@@ -5,7 +5,7 @@
 import Foundation
 
 extension MainActor {
-    static func unsafe<T>(_ body: @MainActor () throws -> T) rethrows -> T {
+    public static func unsafe<T>(_ body: @MainActor () throws -> T) rethrows -> T {
         #if swift(>=5.9)
         return try MainActor.assumeIsolated {
             try body()
