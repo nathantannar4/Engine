@@ -38,6 +38,10 @@ public func swift_getFields<InstanceType>(_ instance: InstanceType) -> [(field: 
     return fields
 }
 
+public func swift_getFieldType(_ key: String, _ instance: Any) throws -> Any.Type {
+    try swift_getField(key, instance).type
+}
+
 public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType) throws -> Value {
     try getFieldValue(key, value, instance)
 }
