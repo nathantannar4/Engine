@@ -98,9 +98,7 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
             message = ""
             dump(p, to: &message)
             dump(p.fields, to: &message)
-            if let valueType = swift_getClassGenerics(for: p.metadata.0)?.first {
-                dump(valueType, to: &message)
-            }
+            dump(p.value, to: &message)
             ptr = p.after
 
             os_log(.debug, "%@", message)

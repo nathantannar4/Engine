@@ -9,7 +9,7 @@ let testMacros: [String: Macro.Type] = [
     "StyledView": StyledViewMacro.self,
 ]
 
-final class MyMacroTests: XCTestCase {
+final class MacroTests: XCTestCase {
     func testMacro() throws {
         let sourceInput = """
         @StyledView
@@ -17,8 +17,12 @@ final class MyMacroTests: XCTestCase {
             var label: Label
             var content: Content
             var identifier: String
+            var value: String?
             var traits: Array<Int>
+            var action: () -> Void
+            var completion: ((Bool) -> Void)?
             @Binding var isEnabled: Bool
+            var selection: Binding<Int>?
 
             var body: some View {
                 HStack {
@@ -34,8 +38,12 @@ final class MyMacroTests: XCTestCase {
             var label: Label
             var content: Content
             var identifier: String
+            var value: String?
             var traits: Array<Int>
+            var action: () -> Void
+            var completion: ((Bool) -> Void)?
             @Binding var isEnabled: Bool
+            var selection: Binding<Int>?
 
             var body: some View {
                 HStack {
@@ -49,8 +57,12 @@ final class MyMacroTests: XCTestCase {
                 LabelViewBody(
                     configuration: LabelViewConfiguration(
                         identifier: identifier,
+                        value: value,
                         traits: traits,
-                        isEnabled: $isEnabled
+                        action: action,
+                        completion: completion,
+                        isEnabled: $isEnabled,
+                        selection: selection
                     )
                 )
                 .viewAlias(LabelViewConfiguration.Label.self) {
@@ -62,17 +74,25 @@ final class MyMacroTests: XCTestCase {
             }
 
             init(
-                @ViewBuilder label: () -> Label,
-                @ViewBuilder content: () -> Content,
                 identifier: String,
+                value: String? = nil,
                 traits: Array<Int>,
-                isEnabled: Binding<Bool>
+                isEnabled: Binding<Bool>,
+                selection: Binding<Int>? = nil,
+                action: @escaping () -> Void,
+                completion: ((Bool) -> Void)? = nil,
+                @ViewBuilder label: () -> Label,
+                @ViewBuilder content: () -> Content
             ) {
                 self.label = label()
                 self.content = content()
                 self.identifier = identifier
+                self.value = value
                 self.traits = traits
+                self.action = action
+                self.completion = completion
                 self._isEnabled = isEnabled
+                self.selection = selection
             }
 
             init(
@@ -81,8 +101,12 @@ final class MyMacroTests: XCTestCase {
                 self.label = configuration.label
                 self.content = configuration.content
                 self.identifier = configuration.identifier
+                self.value = configuration.value
                 self.traits = configuration.traits
-                self._isEnabled = configuration.isEnabled
+                self.action = configuration.action
+                self.completion = configuration.completion
+                self._isEnabled = configuration.$isEnabled
+                self.selection = configuration.selection
             }
         }
 
@@ -98,8 +122,12 @@ final class MyMacroTests: XCTestCase {
                 .init()
             }
             var identifier: String
+            var value: String?
             var traits: Array<Int>
-            var isEnabled: Binding<Bool>
+            var action: () -> Void
+            var completion: ((Bool) -> Void)?
+            @Binding var isEnabled: Bool
+            var selection: Binding<Int>?
         }
 
         protocol LabelViewStyle: ViewStyle where Configuration == LabelViewConfiguration {

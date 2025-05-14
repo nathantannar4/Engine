@@ -202,49 +202,23 @@ public struct ViewStyleModifier<
             .transformEnvironment(\.viewStyles) { value in
                 value[StyledView.self].append(AnyViewStyle(style))
             }
-            .modifier(InputModifier())
-            .modifier(UnaryViewModifier())
+            .modifier(ViewStyleWritingModifier<Style>())
     }
 
-    struct InputModifier: GraphInputsModifier {
-        static func makeInputs(
-            modifier: _GraphValue<Self>,
-            inputs: inout _GraphInputs
-        ) {
-            inputs[ViewStyleInput<StyledView>.self].append(Style.Body.self)
+    struct ViewStyleWritingModifier<S: ViewStyle>: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .modifier(InputModifier())
+                .modifier(UnaryViewModifier())
         }
-    }
-}
 
-/// A modifier that resets the `StyledView` to its default style.
-///
-/// > Note: This is different than setting the default style as any previously applied styles
-/// would still be preserved.
-///
-@frozen
-public struct DefaultViewStyleModifier<
-    StyledView: ViewStyledView
->: ViewModifier {
-
-    @inlinable
-    public init() { }
-
-    public func body(content: Content) -> some View {
-        content
-            .transformEnvironment(\.viewStyles) { value in
-                value[StyledView.self].removeAll()
+        struct InputModifier: GraphInputsModifier {
+            static func makeInputs(
+                modifier: _GraphValue<Self>,
+                inputs: inout _GraphInputs
+            ) {
+                inputs[ViewStyleInput<StyledView>.self].append(S.Body.self)
             }
-            .modifier(InputModifier())
-            .modifier(UnaryViewModifier())
-    }
-
-    struct InputModifier: GraphInputsModifier {
-        static func makeInputs(
-            modifier: _GraphValue<Self>,
-            inputs: inout _GraphInputs
-        ) {
-            inputs[ViewStyleInput<StyledView>.self].removeAll()
-            inputs[ViewStyleContext<StyledView>.self] = nil
         }
     }
 }
@@ -286,20 +260,6 @@ extension View {
                 ViewStyleModifier(StyledView.self, style: style)
             }
         )
-    }
-
-    /// Resets the `StyledView` to its default style.
-    ///
-    /// > Note: This is different than setting the default style as any previously applied styles
-    /// would still be preserved.
-    ///
-    @inlinable
-    public func defaultViewStyle<
-        StyledView: ViewStyledView
-    >(
-        _ : StyledView.Type
-    ) -> some View {
-        modifier(DefaultViewStyleModifier<StyledView>())
     }
 }
 

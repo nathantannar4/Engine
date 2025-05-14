@@ -390,7 +390,7 @@ public struct AnyVariadicSectionView: View, Identifiable {
     }
 
     public var body: some View {
-        SectionView {
+        Section {
             content
         } header: {
             header
@@ -493,12 +493,16 @@ struct VariadicView_Previews: PreviewProvider {
 
             ZStack {
                 VariadicViewAdapter {
-                    SectionView {
+                    Section {
                         Text("Content")
                     } header: {
-                        Text("Header")
+                        SectionHeader {
+                            Text("Header")
+                        }
                     } footer: {
-                        Text("Footer")
+                        SectionFooter {
+                            Text("Footer")
+                        }
                     }
                 } content: { source in
                     ForEach(source.sections) { section in
@@ -524,34 +528,44 @@ struct VariadicView_Previews: PreviewProvider {
 
             ZStack {
                 VariadicViewAdapter {
-                    SectionView {
+                    Section {
                         Text("Content 1")
                     } header: {
-                        Text("Header 1")
+                        SectionHeader {
+                            Text("Header 1")
+                        }
                     } footer: {
-                        Text("Footer 1")
+                        SectionFooter {
+                            Text("Footer 1")
+                        }
                     }
 
                     Text("Content 2a")
 
                     Text("Content 2b")
 
-                    SectionView {
+                    Section {
                         Text("Content 3")
                     } header: {
-                        Text("Header 3")
+                        SectionHeader {
+                            Text("Header 3")
+                        }
                     } footer: {
-                        Text("Footer 3")
+                        SectionFooter {
+                            Text("Footer 3")
+                        }
                     }
 
-                    SectionView {
+                    Section {
                         Text("Content 4")
                     }
 
-                    SectionView {
+                    Section {
 
                     } header: {
-                        Text("Header 5")
+                        SectionHeader {
+                            Text("Header 5")
+                        }
                     }
                 } content: { source in
                     VStack {

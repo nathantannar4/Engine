@@ -163,8 +163,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
 
     private struct Property {
         var name: String
-        var type: String
-        var isWrapper: Bool
+        var field: SyntaxField
     }
     private static func getProperties(
         members: MemberBlockItemListSyntax
@@ -172,16 +171,16 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         members.compactMap { member -> Property? in
             guard 
                 let variable = member.decl.as(VariableDeclSyntax.self),
+                variable.bindings.count == 1,
                 let binding = variable.bindings.first,
-                let pattern = binding.pattern.as(IdentifierPatternSyntax.self),
-                let type = variable.type
+                let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
+                let field = variable.field
             else {
                 return nil
             }
             return Property(
-                name: pattern.identifier.text,
-                type: type.text,
-                isWrapper: type.isWrapper
+                name: identifier.identifier.text,
+                field: field
             )
         }
     }
@@ -192,18 +191,25 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         subviews: Set<String>,
         properties: [Property]
     ) -> String {
-        let initArgs = properties.map { property in
-            if subviews.contains(property.type) {
-                return "@ViewBuilder \(property.name): () -> \(property.type)"
-            } else {
-                return "\(property.name): \(property.type)"
+        let initArgs = properties
+            .sorted { lhs, rhs in
+                return !lhs.field.isFunction && rhs.field.isFunction
             }
-        }
+            .sorted { lhs, rhs in
+                return !subviews.contains(lhs.field.type) && subviews.contains(rhs.field.type)
+            }
+            .map { property in
+                if subviews.contains(property.field.type) {
+                    return "@ViewBuilder \(property.name): () -> \(property.field.type)"
+                } else {
+                    return "\(property.name): \(property.field.isFunction && !property.field.isOptional ? "@escaping " : "")\(property.field.attributedType)\(property.field.isOptional ? " = nil" : "")"
+                }
+            }
         let initProperties = properties.map { property in
-            if subviews.contains(property.type) {
+            if subviews.contains(property.field.type) {
                 return "self.\(property.name) = \(property.name)()"
             } else {
-                return "self.\(property.isWrapper ? "_" : "")\(property.name) = \(property.name)"
+                return "self.\(property.field.attributes.isEmpty ? "" : "_")\(property.name) = \(property.name)"
             }
         }
         return """
@@ -222,13 +228,13 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         properties: [Property]
     ) -> String {
         let initProperties = properties.map { property in
-            "self.\(property.isWrapper ? "_" : "")\(property.name) = configuration.\(property.name)"
+            "self.\(property.field.attributes.isEmpty ? "" : "_")\(property.name) = configuration.\(property.field.attributes.isEmpty ? "" : "$")\(property.name)"
         }
         let whereClause = properties.compactMap { property -> String? in
-            guard subviews.contains(property.type) else {
+            guard subviews.contains(property.field.type) else {
                 return nil
             }
-            return "\(property.type) == \(name)Configuration.\(property.type)"
+            return "\(property.field.type) == \(name)Configuration.\(property.field.type)"
         }.joined(separator: ", ")
         return """
         \(prefix)init(
@@ -246,16 +252,16 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         properties: [Property]
     ) -> String {
         let params = properties.compactMap { property -> String? in
-            guard !subviews.contains(property.type) else {
+            guard !subviews.contains(property.field.type) else {
                 return nil
             }
-            return "\(property.name): \(property.isWrapper ? "$" : "")\(property.name)"
+            return "\(property.name): \(property.field.attributes.isEmpty ? "" : "$")\(property.name)"
         }
         let modifiers = properties.compactMap { property -> String? in
-            guard subviews.contains(property.type) else {
+            guard subviews.contains(property.field.type) else {
                 return nil
             }
-            return ".viewAlias(\(name)Configuration.\(property.type).self) { \(property.name) }"
+            return ".viewAlias(\(name)Configuration.\(property.field.type).self) { \(property.name) }"
         }
         return """
         \(prefix)var _body: some View {
@@ -276,15 +282,15 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         properties: [Property]
     ) -> String {
         let fields = properties.flatMap { property in
-            if subviews.contains(property.type) {
+            if subviews.contains(property.field.type) {
                 return [
-                    "\(prefix)struct \(property.type): ViewAlias { }",
-                    "\(prefix)var \(property.name): \(property.type) { .init() }"
+                    "\(prefix)struct \(property.field.type): ViewAlias { }",
+                    "\(prefix)var \(property.name): \(property.field.type) { .init() }"
                 ]
 
             } else {
                 return [
-                    "\(prefix)var \(property.name): \(property.type)"
+                    "\(property.field.attributes.map({ "@\($0) " }).joined())\(prefix)var \(property.name): \(property.field.type)"
                 ]
             }
         }
@@ -366,26 +372,70 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
     }
 }
 
+struct SyntaxField {
+    var type: String
+    var attributes: [String]
+    var isFunction: Bool
+    var isOptional: Bool
+
+    var attributedType: String {
+        attributes.reduce(into: type) { result, attribute in
+            result = "\(attribute)<\(result)>"
+        }
+    }
+}
+
 extension VariableDeclSyntax {
-    var type: (text: String, isWrapper: Bool)? {
+    var field: SyntaxField? {
         guard
             let binding = bindings.first,
-            let typeAnnotation = binding.typeAnnotation,
-            let type = typeAnnotation.type.as(IdentifierTypeSyntax.self)
+            let typeAnnotation = binding.typeAnnotation
         else {
             return nil
         }
-        if attributes.isEmpty {
-            return (type.text, false)
+        switch typeAnnotation.type.kind {
+        case .identifierType:
+            let type = typeAnnotation.type.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            if attributes.isEmpty {
+                return SyntaxField(type: type, attributes: [], isFunction: false, isOptional: false)
+            }
+            let attributes = attributes
+                .compactMap { $0.as(AttributeSyntax.self)?.attributeName.as(IdentifierTypeSyntax.self) }
+                .map { $0.text }
+            return SyntaxField(type: type, attributes: attributes, isFunction: false, isOptional: false)
+
+        case .optionalType:
+            let type = typeAnnotation.type.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            let isFunction = {
+                guard let wrappedType = typeAnnotation.type.as(OptionalTypeSyntax.self)?.wrappedType else {
+                    return false
+                }
+                switch wrappedType.kind {
+                case .tupleType:
+                    guard let tupleType = wrappedType.as(TupleTypeSyntax.self), tupleType.elements.count == 1 else { return false }
+                    return tupleType.elements.first?.type.kind == .functionType
+
+                case .functionType:
+                    return true
+
+                default:
+                    return false
+                }
+            }()
+            return SyntaxField(type: type, attributes: [], isFunction: isFunction, isOptional: true)
+
+        case .functionType:
+            let type = typeAnnotation.type.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return SyntaxField(type: type, attributes: [], isFunction: true, isOptional: false)
+
+        default:
+            return nil
         }
-        let attributes = attributes
-            .compactMap { $0.as(AttributeSyntax.self)?.attributeName.as(IdentifierTypeSyntax.self) }
-            .map { $0.text }
-        let result = attributes.reduce(into: type.text) { result, attribute in
-            result = "\(attribute)<\(result)>"
-        }
-        return (result, true)
     }
+}
+
+extension FunctionTypeSyntax {
+
 }
 
 extension IdentifierTypeSyntax {

@@ -4,23 +4,16 @@
 
 import SwiftUI
 
+protocol PropertyListKey {
+    associatedtype Value
+
+    var defaultValue: Value { get }
+}
+
 struct PropertyList {
     struct ElementLayout<Fields> {
         var metadata: (Any.Type, UInt)
         var fields: Fields
-
-        mutating func withUnsafeValuePointer<T, ReturnType>(
-            _ type: T.Type,
-            do body: (UnsafeMutablePointer<PropertyList.TypedElementLayout<Fields, T>>) -> ReturnType
-        ) -> ReturnType {
-            withUnsafeMutablePointer(to: &self) { ptr -> ReturnType in
-                ptr.withMemoryRebound(
-                    to: PropertyList.TypedElementLayout<Fields, T>.self,
-                    capacity: 1,
-                    body
-                )
-            }
-        }
     }
 
     struct ElementFieldsV1 {
@@ -30,6 +23,13 @@ struct PropertyList {
         var length: Int
         var keyFilter: UInt
         var id: Int
+    }
+
+    class ElementV1 {
+        var fields: PropertyList.ElementFieldsV1
+        init(fields: PropertyList.ElementFieldsV1) {
+            self.fields = fields
+        }
     }
 
     struct ElementFieldsV6 {
@@ -43,9 +43,32 @@ struct PropertyList {
         var id: Int
     }
 
+    class ElementV6 {
+        var fields: PropertyList.ElementFieldsV6
+        init(fields: PropertyList.ElementFieldsV6) {
+            self.fields = fields
+        }
+    }
+
     struct TypedElementLayout<Fields, Value> {
         var base: ElementLayout<Fields>
         var value: Value
+    }
+
+    class TypedElementV1<Value>: ElementV1 {
+        var value: Value
+        init(fields: ElementFieldsV1, value: Value) {
+            self.value = value
+            super.init(fields: fields)
+        }
+    }
+
+    class TypedElementV6<Value>: ElementV6 {
+        var value: Value
+        init(fields: ElementFieldsV6, value: Value) {
+            self.value = value
+            super.init(fields: fields)
+        }
     }
 
     enum ElementPointer {
@@ -176,16 +199,32 @@ struct PropertyList {
             }
         }
 
-        func getValue<T>(
+        var valueType: Any.Type? {
+            let object = object.takeUnretainedValue()
+            let type = try? swift_getFieldType("value", object)
+            return type
+        }
+
+        var value: Any {
+            guard let valueType = valueType else {
+                return Mirror(reflecting: object.takeUnretainedValue()).descendant("value") as Any
+            }
+            func project<T>(_: T.Type) -> Any {
+                getValue(T.self)
+            }
+            return _openExistential(valueType, do: project)
+        }
+
+        private func getValue<T>(
             _ type: T.Type
         ) -> T {
             switch self {
             case .v1(let ptr):
-                return ptr.pointee.withUnsafeValuePointer(T.self) { ptr in
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV1.self) { ptr in
                     return ptr.pointee.value
                 }
             case .v6(let ptr):
-                return ptr.pointee.withUnsafeValuePointer(T.self) { ptr in
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV6.self) { ptr in
                     ptr.pointee.value
                 }
             }
@@ -214,7 +253,7 @@ struct PropertyList {
         var ptr = elements
         while let p = ptr {
             if p.keyType == Input.self {
-                return p.getValue(Value.self)
+                return p.value as? Value
             }
             ptr = p.after
         }
@@ -229,7 +268,7 @@ struct PropertyList {
         while let p = ptr {
             let typeName = _typeName(p.keyType, qualified: false)
             if typeName == key {
-                return p.getValue(Value.self)
+                return p.value as? Value
             }
             ptr = p.after
         }
@@ -245,44 +284,47 @@ struct PropertyList {
         }
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             let lastValue = lastValue.assumingMemoryBound(to: ElementLayout<ElementFieldsV6>.self)
-            let newValue = TypedElementLayout<ElementFieldsV6, Value>(
-                base: ElementLayout(
-                    metadata: lastValue.pointee.metadata,
-                    fields: ElementFieldsV6(
-                        keyType: Input.self,
-                        before: nil,
-                        after: lastValue,
-                        skip: lastValue.pointee.fields.skip,
-                        length: lastValue.pointee.fields.length + 1,
-                        skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
-                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                        id: UniqueID.generate()
-                    )
+            let newValue = TypedElementV6<Value>(
+                fields: ElementFieldsV6(
+                    keyType: Input.self,
+                    before: nil,
+                    after: lastValue,
+                    skip: lastValue.pointee.fields.skip,
+                    length: lastValue.pointee.fields.length + 1,
+                    skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
+                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                    id: UniqueID.generate()
                 ),
                 value: newValue
             )
-            let ref = UnsafeMutablePointer<TypedElementLayout<ElementFieldsV6, Value>>.allocate(capacity: 1)
-            ref.initialize(to: newValue)
-            ptr = UnsafeMutableRawPointer(ref)
+            ptr = Unmanaged.passRetained(newValue).toOpaque()
         } else {
             let lastValue = lastValue.assumingMemoryBound(to: ElementLayout<ElementFieldsV1>.self)
-            let newValue = TypedElementLayout<ElementFieldsV1, Value>(
-                base: ElementLayout(
-                    metadata: lastValue.pointee.metadata,
-                    fields: ElementFieldsV1(
-                        keyType: Input.self,
-                        before: nil,
-                        after: lastValue,
-                        length: lastValue.pointee.fields.length + 1,
-                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                        id: UniqueID.generate()
-                    )
+            let newValue = TypedElementV1<Value>(
+                fields: ElementFieldsV1(
+                    keyType: Input.self,
+                    before: nil,
+                    after: lastValue,
+                    length: lastValue.pointee.fields.length + 1,
+                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                    id: UniqueID.generate()
                 ),
                 value: newValue
             )
-            let ref = UnsafeMutablePointer<TypedElementLayout<ElementFieldsV1, Value>>.allocate(capacity: 1)
-            ref.initialize(to: newValue)
-            ptr = UnsafeMutableRawPointer(ref)
+            ptr = Unmanaged.passRetained(newValue).toOpaque()
+        }
+    }
+}
+
+extension UnsafeMutablePointer {
+
+    func withUnsafeValuePointer<Fields, T, ReturnType>(
+        _ type: T.Type,
+        fields: Fields.Type,
+        do body: (UnsafeMutablePointer<PropertyList.TypedElementLayout<Fields, T>>) -> ReturnType
+    ) -> ReturnType where Pointee == PropertyList.ElementLayout<Fields> {
+        withMemoryRebound(to: PropertyList.TypedElementLayout<Fields, T>.self, capacity: 1) { p in
+            return body(&p.pointee)
         }
     }
 }
