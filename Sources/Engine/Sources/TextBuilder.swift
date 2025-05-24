@@ -88,6 +88,13 @@ public struct TextBuilder {
 
 extension Text {
 
+    @inlinable
+    public init(
+        @TextBuilder blocks: () -> [Text]
+    ) {
+        self.init(separator: Text(verbatim: " "), blocks: blocks)
+    }
+
     @_disfavoredOverload
     @inlinable
     public init<S: StringProtocol>(
@@ -140,7 +147,7 @@ struct TextBuilder_Previews: PreviewProvider {
             VStack {
                 Toggle(isOn: $flag) { Text("Flag") }
 
-                Text(separator: " ") {
+                let text = Text {
                     if flag {
                         Text("~")
                     }
@@ -157,6 +164,13 @@ struct TextBuilder_Previews: PreviewProvider {
                     } else {
                         Text(".")
                     }
+                }
+
+                text
+
+                if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                    text
+                        .redacted(reason: .placeholder)
                 }
             }
         }

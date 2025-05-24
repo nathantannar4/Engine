@@ -50,6 +50,16 @@ struct StyleContextExamples: View {
         ScrollView(.horizontal) {
             TestView()
         }
+
+        TestView()
+            .hidden()
+            .overlay(
+                NavigationView {
+                    VStack {
+                        TestView()
+                    }
+                }
+            )
     }
 }
 

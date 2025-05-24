@@ -4,10 +4,8 @@
 
 import SwiftUI
 
-protocol PropertyListKey {
-    associatedtype Value
-
-    var defaultValue: Value { get }
+public protocol _AnyPropertyListKey {
+    static var value: Any.Type { get }
 }
 
 struct PropertyList {
@@ -25,13 +23,6 @@ struct PropertyList {
         var id: Int
     }
 
-    class ElementV1 {
-        var fields: PropertyList.ElementFieldsV1
-        init(fields: PropertyList.ElementFieldsV1) {
-            self.fields = fields
-        }
-    }
-
     struct ElementFieldsV6 {
         var keyType: Any.Type
         var before: UnsafeMutablePointer<ElementLayout<ElementFieldsV6>>?
@@ -43,32 +34,9 @@ struct PropertyList {
         var id: Int
     }
 
-    class ElementV6 {
-        var fields: PropertyList.ElementFieldsV6
-        init(fields: PropertyList.ElementFieldsV6) {
-            self.fields = fields
-        }
-    }
-
     struct TypedElementLayout<Fields, Value> {
         var base: ElementLayout<Fields>
         var value: Value
-    }
-
-    class TypedElementV1<Value>: ElementV1 {
-        var value: Value
-        init(fields: ElementFieldsV1, value: Value) {
-            self.value = value
-            super.init(fields: fields)
-        }
-    }
-
-    class TypedElementV6<Value>: ElementV6 {
-        var value: Value
-        init(fields: ElementFieldsV6, value: Value) {
-            self.value = value
-            super.init(fields: fields)
-        }
     }
 
     enum ElementPointer {
@@ -200,6 +168,11 @@ struct PropertyList {
         }
 
         var valueType: Any.Type? {
+            // Engine
+            if let keyType = keyType as? _AnyPropertyListKey.Type {
+                return keyType.value
+            }
+            // SwiftUI
             let object = object.takeUnretainedValue()
             let type = try? swift_getFieldType("value", object)
             return type
@@ -213,6 +186,20 @@ struct PropertyList {
                 getValue(T.self)
             }
             return _openExistential(valueType, do: project)
+        }
+
+        func value<T>(as _: T.Type) -> T? {
+            let value = value
+            let valueType = type(of: value)
+            if T.self == valueType {
+                return value as? T
+            } else if swift_getSize(of: valueType) >= MemoryLayout<T>.size {
+                func project<Value>(_ value: Value) -> T {
+                    unsafeBitCast(value, to: T.self)
+                }
+                return _openExistential(value, do: project)
+            }
+            return nil
         }
 
         private func getValue<T>(
@@ -253,7 +240,7 @@ struct PropertyList {
         var ptr = elements
         while let p = ptr {
             if p.keyType == Input.self {
-                return p.value as? Value
+                return p.value(as: Value.self)
             }
             ptr = p.after
         }
@@ -268,7 +255,7 @@ struct PropertyList {
         while let p = ptr {
             let typeName = _typeName(p.keyType, qualified: false)
             if typeName == key {
-                return p.value as? Value
+                return p.value(as: Value.self)
             }
             ptr = p.after
         }
@@ -284,34 +271,44 @@ struct PropertyList {
         }
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             let lastValue = lastValue.assumingMemoryBound(to: ElementLayout<ElementFieldsV6>.self)
-            let newValue = TypedElementV6<Value>(
-                fields: ElementFieldsV6(
-                    keyType: Input.self,
-                    before: nil,
-                    after: lastValue,
-                    skip: lastValue.pointee.fields.skip,
-                    length: lastValue.pointee.fields.length + 1,
-                    skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
-                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                    id: UniqueID.generate()
+            let newValue = TypedElementLayout<ElementFieldsV6, Value>(
+                base: ElementLayout(
+                    metadata: lastValue.pointee.metadata, // Fake a class type of the last value
+                    fields: ElementFieldsV6(
+                        keyType: Input.self,
+                        before: nil,
+                        after: lastValue,
+                        skip: lastValue.pointee.fields.skip,
+                        length: lastValue.pointee.fields.length + 1,
+                        skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
+                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                        id: UniqueID.generate()
+                    )
                 ),
                 value: newValue
             )
-            ptr = Unmanaged.passRetained(newValue).toOpaque()
+            let ref = UnsafeMutablePointer<TypedElementLayout<ElementFieldsV6, Value>>.allocate(capacity: 1)
+            ref.initialize(to: newValue)
+            ptr = UnsafeMutableRawPointer(ref)
         } else {
             let lastValue = lastValue.assumingMemoryBound(to: ElementLayout<ElementFieldsV1>.self)
-            let newValue = TypedElementV1<Value>(
-                fields: ElementFieldsV1(
-                    keyType: Input.self,
-                    before: nil,
-                    after: lastValue,
-                    length: lastValue.pointee.fields.length + 1,
-                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                    id: UniqueID.generate()
+            let newValue = TypedElementLayout<ElementFieldsV1, Value>(
+                base: ElementLayout(
+                    metadata: lastValue.pointee.metadata, // Fake a class type of the last value
+                    fields: ElementFieldsV1(
+                        keyType: Input.self,
+                        before: nil,
+                        after: lastValue,
+                        length: lastValue.pointee.fields.length + 1,
+                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                        id: UniqueID.generate()
+                    )
                 ),
                 value: newValue
             )
-            ptr = Unmanaged.passRetained(newValue).toOpaque()
+            let ref = UnsafeMutablePointer<TypedElementLayout<ElementFieldsV1, Value>>.allocate(capacity: 1)
+            ref.initialize(to: newValue)
+            ptr = UnsafeMutableRawPointer(ref)
         }
     }
 }

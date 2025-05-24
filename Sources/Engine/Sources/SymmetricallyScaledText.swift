@@ -32,3 +32,33 @@ public struct SymmetricallyScaledText: View {
         _SymmetricallyScaledText(source: source, reference: reference)
     }
 }
+
+// MARK: - Previews
+
+struct SymmetricallyScaledText_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            let topText = Text("Hello, World")
+            let bottomText = Text("Lorem ipsum dolor sit amet consectetur adipiscing elit")
+            VStack {
+                topText
+                bottomText
+            }
+
+            VStack {
+                SymmetricallyScaledText(
+                    source: topText,
+                    reference: bottomText
+                )
+
+                SymmetricallyScaledText(
+                    source: bottomText,
+                    reference: topText
+                )
+            }
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+            .frame(width: 200)
+        }
+    }
+}

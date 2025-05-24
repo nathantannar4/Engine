@@ -99,6 +99,13 @@ public func swift_getMangledTypeName(of type: Any.Type) -> String? {
     return String(cString: namePtr)
 }
 
+public func swift_getSize(of type: Any.Type) -> Int {
+    func project<T>(_: T.Type) -> Int {
+        MemoryLayout<T>.size
+    }
+    return _openExistential(type, do: project)
+}
+
 struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
     var key: String
     var instance: Any.Type
@@ -282,13 +289,6 @@ private func withUnsafeMutableInstancePointer<InstanceType, Result>(
             return try body(ptr)
         }
     }
-}
-
-private func swift_getSize(of type: Any.Type) -> Int {
-    func project<T>(_: T.Type) -> Int {
-        MemoryLayout<T>.size
-    }
-    return _openExistential(type, do: project)
 }
 
 private struct Field {

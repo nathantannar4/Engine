@@ -59,6 +59,34 @@ struct SectionView_Previews: PreviewProvider {
                         Text("Footer")
                     }
                 }
+
+                VariadicViewAdapter {
+                    Section {
+                        Text("Content")
+                    } header: {
+                        SectionHeader {
+                            Text("Header")
+                        }
+                    } footer: {
+                        SectionFooter {
+                            Text("Footer")
+                        }
+                    }
+                } content: { sourceView in
+                    ForEach(sourceView.sections) { section in
+                        VStack {
+                            section.header
+                                .border(Color.red)
+
+                            section.content
+                                .border(Color.blue)
+
+                            section.footer
+                                .border(Color.yellow)
+                        }
+                    }
+                }
+
             }
         }
     }

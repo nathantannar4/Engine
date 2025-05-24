@@ -229,12 +229,14 @@ public struct StyleContextModifier<
 }
 
 private struct StyleContextInput: ViewInputKey {
-    static var defaultValue: StyleContext.Type { NoStyleContext.self }
+    static let defaultValue: StyleContextInputLayout = StyleContextInputLayout(metadata: (NoStyleContext.self, 0))
 }
 
 private struct StyleContextInputValue<Context: StyleContext>: ViewInput {
     typealias Key = StyleContextInput
-    static var value: Key.Value { Context.self }
+    static var value: Key.Value {
+        StyleContextInputLayout(metadata: (Context.self, 0))
+    }
 }
 
 @frozen

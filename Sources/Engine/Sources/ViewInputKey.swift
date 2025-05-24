@@ -5,9 +5,13 @@
 import SwiftUI
 
 /// A static input key for a view
-public protocol ViewInputKey {
+public protocol ViewInputKey: _AnyPropertyListKey {
     associatedtype Value
     static var defaultValue: Value { get }
+}
+
+extension ViewInputKey {
+    public static var value: any Any.Type { Value.self }
 }
 
 /// A static input for a view
