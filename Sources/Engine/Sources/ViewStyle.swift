@@ -189,18 +189,31 @@ public struct ViewStyleModifier<
     StyledView: ViewStyledView,
     Style: ViewStyle
 >: ViewModifier where StyledView.Configuration == Style.Configuration {
+
+    // Wrap in a non `DynamicProperty` to avoid styles `DynamicProperty` resolution
+    @frozen
     @usableFromInline
-    var style: Style
+    struct Storage {
+        var style: Style
+
+        @usableFromInline
+        init(style: Style) {
+            self.style = style
+        }
+    }
+
+    @usableFromInline
+    var storage: Storage
 
     @inlinable
     public init(_ : StyledView.Type = StyledView.self, style: Style) {
-        self.style = style
+        self.storage = Storage(style: style)
     }
 
     public func body(content: Content) -> some View {
         content
             .transformEnvironment(\.viewStyles) { value in
-                value[StyledView.self].append(AnyViewStyle(style))
+                value[StyledView.self].append(AnyViewStyle(storage.style))
             }
             .modifier(ViewStyleWritingModifier<Style>())
     }
@@ -217,7 +230,7 @@ public struct ViewStyleModifier<
                 modifier: _GraphValue<Self>,
                 inputs: inout _GraphInputs
             ) {
-                inputs[ViewStyleInput<StyledView>.self].append(S.Body.self)
+                inputs[ViewStyleInput<StyledView>.self].append(S.self)
             }
         }
     }
@@ -286,13 +299,13 @@ private struct ViewStylesBox {
 }
 
 private struct ViewStyleInput<ID: ViewStyledView>: ViewInputKey {
-    typealias Value = [Any.Type] // ViewStyle.Body Type
-    static var defaultValue: [Any.Type] { [] }
+    typealias Value = [any ViewStyle.Type]
+    static var defaultValue: Value { [] }
 }
 
 private struct ViewStyleContext<ID: ViewStyledView>: ViewInputKey {
     typealias Value = Any.Type?
-    static var defaultValue: Any.Type? { nil }
+    static var defaultValue: Value { nil }
 }
 
 extension ViewStyledView {
@@ -359,7 +372,10 @@ extension ViewStyledView {
     }
 }
 
-private struct ViewStyledViewDefaultBody<StyledView: ViewStyledView>: View {
+private struct ViewStyledViewDefaultBody<
+    StyledView: ViewStyledView
+>: View {
+
     var style: StyledView.DefaultStyle
     var configuration: StyledView.Configuration
 
@@ -368,7 +384,10 @@ private struct ViewStyledViewDefaultBody<StyledView: ViewStyledView>: View {
     }
 }
 
-private struct ViewStyledViewBody<StyledView: ViewStyledView>: View {
+private struct ViewStyledViewBody<
+    StyledView: ViewStyledView
+>: View {
+
     var configuration: StyledView.Configuration
 
     @Environment(\.viewStyles) var viewStyles
@@ -388,6 +407,7 @@ private struct AnyViewStyledView<
     StyledView: ViewStyledView,
     ViewStyleBody: View
 >: PrimitiveView {
+
     var style: AnyViewStyle
     var configuration: StyledView.Configuration
 
@@ -400,23 +420,24 @@ private struct AnyViewStyledView<
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         var inputs = inputs
-        var types = inputs[ViewStyleInput<StyledView>.self]
-        let type = types.popLast()!
-        inputs[ViewStyleInput<StyledView>.self] = types
-        if types.isEmpty {
+        var styles = inputs[ViewStyleInput<StyledView>.self]
+        let style = styles.popLast()!
+        inputs[ViewStyleInput<StyledView>.self] = styles
+        if styles.isEmpty {
             inputs[ViewStyleContext<StyledView>.self] = nil
         }
 
-        func project<T>(_ type: T.Type) -> _ViewOutputs {
-            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = ViewOutputsVisitor(
-                view: view,
+        func project<Style: ViewStyle>(_ : Style.Type) -> _ViewOutputs {
+            let view = unsafeBitCast(
+                view,
+                to: _GraphValue<AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>>.self
+            )
+            return AnyViewStyledViewBody<Style>._makeView(
+                view: view[\.content],
                 inputs: inputs
             )
-            conformance.visit(visitor: &visitor)
-            return visitor.outputs
         }
-        return _openExistential(type, do: project)
+        return _openExistential(style, do: project)
     }
 
     static func makeViewList(
@@ -424,23 +445,24 @@ private struct AnyViewStyledView<
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         var inputs = inputs
-        var types = inputs[ViewStyleInput<StyledView>.self]
-        let type = types.popLast()!
-        inputs[ViewStyleInput<StyledView>.self] = types
-        if types.isEmpty {
+        var styles = inputs[ViewStyleInput<StyledView>.self]
+        let style = styles.popLast()!
+        inputs[ViewStyleInput<StyledView>.self] = styles
+        if styles.isEmpty {
             inputs[ViewStyleContext<StyledView>.self] = nil
         }
 
-        func project<T>(_ type: T.Type) -> _ViewListOutputs {
-            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = ViewListOutputsVisitor(
-                view: view,
+        func project<Style: ViewStyle>(_ : Style.Type) -> _ViewListOutputs {
+            let view = unsafeBitCast(
+                view,
+                to: _GraphValue<AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>>.self
+            )
+            return AnyViewStyledViewBody<Style>._makeViewList(
+                view: view[\.content],
                 inputs: inputs
             )
-            conformance.visit(visitor: &visitor)
-            return visitor.outputs
         }
-        return _openExistential(type, do: project)
+        return _openExistential(style, do: project)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -448,20 +470,29 @@ private struct AnyViewStyledView<
         inputs: _ViewListCountInputs
     ) -> Int? {
         var inputs = inputs
-        var types = inputs[ViewStyleInput<StyledView>.self]
-        let type = types.popLast()!
-        inputs[ViewStyleInput<StyledView>.self] = types
-        if types.isEmpty {
+        var styles = inputs[ViewStyleInput<StyledView>.self]
+        let style = styles.popLast()!
+        inputs[ViewStyleInput<StyledView>.self] = styles
+        if styles.isEmpty {
             inputs[ViewStyleContext<StyledView>.self] = nil
         }
 
-        func project<T>(_ type: T.Type) -> Int? {
-            let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
-            var visitor = ViewListOutputsCountVisitor(inputs: inputs)
-            conformance.visit(visitor: &visitor)
-            return visitor.outputs
+        func project<Style: ViewStyle>(_ : Style.Type) -> Int? {
+            return AnyViewStyledViewBody<Style>._viewListCount(
+                inputs: inputs
+            )
         }
-        return _openExistential(type, do: project)
+        return _openExistential(style, do: project)
+    }
+}
+
+private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
+
+    var style: Style
+    var configuration: Style.Configuration
+
+    var body: some View {
+        style.makeBody(configuration: configuration)
     }
 }
 
@@ -490,11 +521,14 @@ struct AnyViewStyle {
                 "\(Configuration.self) != \(Style.Configuration.self)"
             )
             assert(
-                Body.self == Style.Body.self,
+                Body.self == AnyViewStyledViewBody<Style>.self,
                 "\(Body.self) != \(Style.Body.self)"
             )
             let configuration = unsafeBitCast(configuration, to: Style.Configuration.self)
-            let body = style.makeBody(configuration: configuration)
+            let body = AnyViewStyledViewBody(
+                style: style,
+                configuration: configuration
+            )
             return unsafeBitCast(body, to: Body.self)
         }
     }
@@ -513,51 +547,106 @@ struct AnyViewStyle {
     }
 }
 
-private struct ViewOutputsVisitor<
-    StyledView: ViewStyledView,
-    ViewStyleBody: View
->: ViewVisitor {
+// MARK: - Previews
 
-    var view: _GraphValue<AnyViewStyledView<StyledView, ViewStyleBody>>
-    var inputs: _ViewInputs
+protocol PreviewCustomViewStyle: ViewStyle where Configuration == PreviewCustomViewStyleConfiguration {
+    associatedtype Configuration = Configuration
+}
 
-    var outputs: _ViewOutputs!
+struct PreviewCustomViewStyleConfiguration {
+    struct Content: ViewAlias { }
+    var content: Content { .init() }
+}
 
-    mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(
-            view,
-            to: _GraphValue<AnyViewStyledView<StyledView, Content>>.self
+struct PreviewCustomView<Content: View>: View {
+
+    var content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    init(
+        configuration: PreviewCustomViewStyleConfiguration
+    ) where Content == PreviewCustomViewStyleConfiguration.Content {
+        self.content = configuration.content
+    }
+
+    var body: some View {
+        PreviewCustomViewBody(
+            configuration: PreviewCustomViewStyleConfiguration()
         )
-        outputs = Content._makeView(view: view[\.content], inputs: inputs)
+        .viewAlias(PreviewCustomViewStyleConfiguration.Content.self) {
+            content
+        }
     }
 }
 
-private struct ViewListOutputsVisitor<
-    StyledView: ViewStyledView,
-    ViewStyleBody: View
->: ViewVisitor {
+struct PreviewCustomViewBody: ViewStyledView {
+    var configuration: PreviewCustomViewStyleConfiguration
 
-    var view: _GraphValue<AnyViewStyledView<StyledView, ViewStyleBody>>
-    var inputs: _ViewListInputs
+    static var defaultStyle: DefaultPreviewCustomViewStyle { .init() }
+}
 
-    var outputs: _ViewListOutputs!
-
-    mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(
-            view,
-            to: _GraphValue<AnyViewStyledView<StyledView, Content>>.self
-        )
-        outputs = Content._makeViewList(view: view[\.content], inputs: inputs)
+struct DefaultPreviewCustomViewStyle: PreviewCustomViewStyle {
+    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
+        configuration.content
     }
 }
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-private struct ViewListOutputsCountVisitor: ViewVisitor {
-    var inputs: _ViewListCountInputs
+struct BorderColorKey: EnvironmentKey {
+    static let defaultValue: Color = .accentColor
+}
 
-    var outputs: Int?
+extension EnvironmentValues {
+    var borderColor: Color {
+        get { self[BorderColorKey.self] }
+        set { self[BorderColorKey.self] = newValue }
+    }
+}
 
-    mutating func visit<Content>(type: Content.Type) where Content: View {
-        outputs = Content._viewListCount(inputs: inputs)
+struct BorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
+
+    @Environment(\.borderColor) var borderColor
+
+    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
+        PreviewCustomView(configuration: configuration)
+            .padding()
+            .border(borderColor)
+    }
+}
+
+struct ViewStyledView_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+            .environment(\.borderColor, .green)
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle()
+            )
+            .environment(\.borderColor, .red)
+
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+            .environment(\.borderColor, .green)
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle()
+            )
+            .environment(\.borderColor, .yellow)
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle()
+            )
+            .environment(\.borderColor, .red)
+        }
     }
 }

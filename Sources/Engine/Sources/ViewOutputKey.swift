@@ -250,6 +250,7 @@ public struct ViewOutputKeyReader<
         PreferenceKeyReader(ViewOutputPreferenceKey<Key>.self) { value in
             content(Value(value: value))
         }
+        .preference(key: ViewOutputPreferenceKey<Key>.self, value: .init())
     }
 }
 
@@ -301,20 +302,32 @@ struct ViewOutputKey_Previews: PreviewProvider {
         var body: some View {
             ViewOutputKeyReader(PreviewViewOutputKey.self) { value in
                 VStack {
-                    ViewOutputKeyValueReader(value) { views in
-                        ForEach(views) { view in
-                            view
+                    VStack {
+                        ViewOutputKeyValueReader(value) { views in
+                            ForEach(views) { view in
+                                view
+                            }
                         }
                     }
-                }
-                .viewOutput(PreviewViewOutputKey.self) {
-                    Text("Hello, World")
-                }
-                .viewOutput(PreviewViewOutputKey.self) {
-                    Button {
-                        counter += 1
-                    } label: {
-                        Text(counter.description)
+
+                    ViewOutputKeyReader(PreviewViewOutputKey.self) { value in
+                        VStack {
+                            ViewOutputKeyValueReader(value) { views in
+                                ForEach(views) { view in
+                                    view
+                                }
+                            }
+                        }
+                        .viewOutput(PreviewViewOutputKey.self) {
+                            Text("Hello, World")
+                        }
+                        .viewOutput(PreviewViewOutputKey.self) {
+                            Button {
+                                counter += 1
+                            } label: {
+                                Text(counter.description)
+                            }
+                        }
                     }
                 }
             }

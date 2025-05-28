@@ -195,18 +195,32 @@ private struct ViewOutputAliasKey<
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct ViewOutputAlias_Previews: PreviewProvider {
-    struct PreviewViewOutputAlias: ViewOutputAlias { }
+    struct PreviewViewOutputAlias: ViewOutputAlias {
+        var defaultBody: some View {
+            Text("default")
+        }
+    }
 
     static var previews: some View {
-        ViewOutputAliasReader(PreviewViewOutputAlias.self) {
-            VStack {
-                PreviewViewOutputAlias()
-            }
-            .viewOutputAlias(PreviewViewOutputAlias.self) {
-                Text("Hello, World A")
-            }
-            .viewOutputAlias(PreviewViewOutputAlias.self) {
-                Text("Hello, World B")
+        VStack {
+            PreviewViewOutputAlias()
+
+            ViewOutputAliasReader(PreviewViewOutputAlias.self) {
+                VStack {
+                    PreviewViewOutputAlias()
+
+                    ViewOutputAliasReader(PreviewViewOutputAlias.self) {
+                        VStack {
+                            PreviewViewOutputAlias()
+                        }
+                        .viewOutputAlias(PreviewViewOutputAlias.self) {
+                            Text("Hello, World A")
+                        }
+                        .viewOutputAlias(PreviewViewOutputAlias.self) {
+                            Text("Hello, World B")
+                        }
+                    }
+                }
             }
         }
     }

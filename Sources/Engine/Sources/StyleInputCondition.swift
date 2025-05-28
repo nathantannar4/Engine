@@ -38,51 +38,6 @@ public struct StyleInputCondition<Style>: ViewInputsCondition {
 
 // MARK: - Previews
 
-protocol PreviewCustomViewStyle: ViewStyle where Configuration == PreviewCustomViewStyleConfiguration {
-    associatedtype Configuration = Configuration
-}
-
-struct PreviewCustomViewStyleConfiguration {
-    struct Content: ViewAlias { }
-    var content: Content { .init() }
-}
-
-struct PreviewCustomView<Content: View>: View {
-
-    var content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        PreviewCustomViewBody(
-            configuration: PreviewCustomViewStyleConfiguration()
-        )
-        .viewAlias(PreviewCustomViewStyleConfiguration.Content.self) {
-            content
-        }
-    }
-}
-
-struct PreviewCustomViewBody: ViewStyledView {
-    var configuration: PreviewCustomViewStyleConfiguration
-
-    static var defaultStyle: DefaultPreviewCustomViewStyle { .init() }
-}
-
-struct DefaultPreviewCustomViewStyle: PreviewCustomViewStyle {
-    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
-        configuration.content
-    }
-}
-
-struct CustomPreviewCustomViewStyle: PreviewCustomViewStyle {
-    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
-        configuration.content
-    }
-}
-
 struct CustomButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -234,7 +189,7 @@ struct StyleInputCondition_Previews: PreviewProvider {
                     Text("Section")
                 }
                 .background {
-                    ViewInputConditionalContent(StyleInputCondition<CustomPreviewCustomViewStyle>.self) {
+                    ViewInputConditionalContent(StyleInputCondition<BorderedPreviewCustomViewStyle>.self) {
                         Color.green
                     } otherwise: {
                         Color.red
@@ -246,7 +201,7 @@ struct StyleInputCondition_Previews: PreviewProvider {
                 styledView
                     .styledViewStyle(
                         PreviewCustomViewBody.self,
-                        style: CustomPreviewCustomViewStyle()
+                        style: BorderedPreviewCustomViewStyle()
                     )
             }
         }

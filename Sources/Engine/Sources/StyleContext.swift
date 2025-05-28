@@ -281,3 +281,32 @@ public struct _StyleContextLogModifier: ViewInputsModifier {
         #endif
     }
 }
+
+// MARK: - Previews
+
+struct PreviewStyleContext: StyleContext { }
+
+struct StyleContext_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle(),
+                predicate: PreviewStyleContext()
+            )
+
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle(),
+                predicate: PreviewStyleContext()
+            )
+            .styleContext(PreviewStyleContext())
+        }
+    }
+}
