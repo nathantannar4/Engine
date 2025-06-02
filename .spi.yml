@@ -9,5 +9,3 @@ builder:
       platform: tvos
     - documentation_targets: [Engine, EngineCore, EngineMacros]
       platform: watchos
-    - documentation_targets: [Engine, EngineCore, EngineMacros]
-      platform: visionos

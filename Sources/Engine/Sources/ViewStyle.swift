@@ -172,7 +172,7 @@ public protocol ViewStyle: DynamicProperty {
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
 @MainActor @preconcurrency
-public protocol ViewStyledView: PrimitiveView {
+public protocol ViewStyledView: View {
     associatedtype Configuration
     @MainActor @preconcurrency var configuration: Configuration { get }
 
@@ -304,8 +304,18 @@ private struct ViewStyleInput<ID: ViewStyledView>: ViewInputKey {
 }
 
 private struct ViewStyleContext<ID: ViewStyledView>: ViewInputKey {
-    typealias Value = Any.Type?
-    static var defaultValue: Value { nil }
+    enum Value {
+        case unstyled
+        case styling
+        case styled
+    }
+    static var defaultValue: Value { .unstyled }
+}
+
+extension ViewStyledView where Body == Never {
+    public var body: Body {
+        bodyError()
+    }
 }
 
 extension ViewStyledView {
@@ -320,53 +330,59 @@ extension ViewStyledView {
         )
     }
 
-    public static func makeView(
+    public static func _makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         if Body.self != Never.self,
-            inputs[ViewStyleContext<Self>.self] != Self.self
+            inputs[ViewStyleContext<Self>.self] == .unstyled
         {
             var inputs = inputs
-            inputs[ViewStyleContext<Self>.self] = Self.self
+            inputs[ViewStyleContext<Self>.self] = .styling
             return Body._makeView(view: view[\.body], inputs: inputs)
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
             return ViewStyledViewBody<Self>._makeView(view: view[\.content], inputs: inputs)
         } else {
+            var inputs = inputs
+            inputs[ViewStyleContext<Self>.self] = .unstyled
             return ViewStyledViewDefaultBody<Self>._makeView(view: view[\.defaultContent], inputs: inputs)
         }
     }
 
-    public static func makeViewList(
+    public static func _makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         if Body.self != Never.self,
-            inputs[ViewStyleContext<Self>.self] != Self.self
+           inputs[ViewStyleContext<Self>.self] == .unstyled
         {
             var inputs = inputs
-            inputs[ViewStyleContext<Self>.self] = Self.self
+            inputs[ViewStyleContext<Self>.self] = .styling
             return Body._makeViewList(view: view[\.body], inputs: inputs)
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
             return ViewStyledViewBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
         } else {
+            var inputs = inputs
+            inputs[ViewStyleContext<Self>.self] = .unstyled
             return ViewStyledViewDefaultBody<Self>._makeViewList(view: view[\.defaultContent], inputs: inputs)
         }
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         if Body.self != Never.self,
-            inputs[ViewStyleContext<Self>.self] != Self.self
+           inputs[ViewStyleContext<Self>.self] == .unstyled
         {
             var inputs = inputs
-            inputs[ViewStyleContext<Self>.self] = Self.self
+            inputs[ViewStyleContext<Self>.self] = .styling
             return Body._viewListCount(inputs: inputs)
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
             return ViewStyledViewBody<Self>._viewListCount(inputs: inputs)
         } else {
+            var inputs = inputs
+            inputs[ViewStyleContext<Self>.self] = .unstyled
             return ViewStyledViewDefaultBody<Self>._viewListCount(inputs: inputs)
         }
     }
@@ -424,7 +440,7 @@ private struct AnyViewStyledView<
         let style = styles.popLast()!
         inputs[ViewStyleInput<StyledView>.self] = styles
         if styles.isEmpty {
-            inputs[ViewStyleContext<StyledView>.self] = nil
+            inputs[ViewStyleContext<StyledView>.self] = .styled
         }
 
         func project<Style: ViewStyle>(_ : Style.Type) -> _ViewOutputs {
@@ -449,7 +465,7 @@ private struct AnyViewStyledView<
         let style = styles.popLast()!
         inputs[ViewStyleInput<StyledView>.self] = styles
         if styles.isEmpty {
-            inputs[ViewStyleContext<StyledView>.self] = nil
+            inputs[ViewStyleContext<StyledView>.self] = .styled
         }
 
         func project<Style: ViewStyle>(_ : Style.Type) -> _ViewListOutputs {
@@ -474,7 +490,7 @@ private struct AnyViewStyledView<
         let style = styles.popLast()!
         inputs[ViewStyleInput<StyledView>.self] = styles
         if styles.isEmpty {
-            inputs[ViewStyleContext<StyledView>.self] = nil
+            inputs[ViewStyleContext<StyledView>.self] = .styled
         }
 
         func project<Style: ViewStyle>(_ : Style.Type) -> Int? {
@@ -585,6 +601,11 @@ struct PreviewCustomView<Content: View>: View {
 struct PreviewCustomViewBody: ViewStyledView {
     var configuration: PreviewCustomViewStyleConfiguration
 
+    var body: some View {
+        PreviewCustomView(configuration: configuration)
+            .background(Color.yellow.opacity(0.25))
+    }
+
     static var defaultStyle: DefaultPreviewCustomViewStyle { .init() }
 }
 
@@ -647,6 +668,19 @@ struct ViewStyledView_Previews: PreviewProvider {
                 style: BorderedPreviewCustomViewStyle()
             )
             .environment(\.borderColor, .red)
+
+            PreviewCustomView {
+                PreviewCustomView {
+                    PreviewCustomView {
+                        Text("Hello, World")
+                    }
+                    .padding()
+                }
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle()
+            )
         }
     }
 }
