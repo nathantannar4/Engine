@@ -23,6 +23,23 @@ extension Text {
         }
         return _resolveAttributed(in: environment)
     }
+
+    /// Transforms the `Text` to a `NSAttributedString`, using the environment to resolve localized
+    /// string keys if necessary.
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    public func resolveAttributed(in environment: EnvironmentValues) -> NSAttributedString? {
+        #if os(macOS)
+        return try? NSAttributedString(
+            resolveAttributed(in: environment).toAppKit(in: environment),
+            including: \.appKit
+        )
+        #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS) || os(macOS)
+        return try? NSAttributedString(
+            resolveAttributed(in: environment).toUIKit(in: environment),
+            including: \.uiKit
+        )
+        #endif
+    }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)

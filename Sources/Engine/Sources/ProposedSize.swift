@@ -42,6 +42,10 @@ public struct ProposedSize: Equatable {
         #endif
     }
 
+    public func replacingUnspecifiedDimensions(by size: CGSize = CGSize(width: 10, height: 10)) -> CGSize {
+        return CGSize(width: width ?? size.width, height: height ?? size.height)
+    }
+
     public func toSwiftUI() -> _ProposedSize {
         assert(MemoryLayout<ProposedSize>.size == MemoryLayout<_ProposedSize>.size)
         return withUnsafePointer(to: self) {

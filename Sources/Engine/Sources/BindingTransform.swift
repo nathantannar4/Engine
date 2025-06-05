@@ -6,7 +6,7 @@ import SwiftUI
 import os.log
 
 /// A protocol for defining a transform for a `Binding`
-public protocol BindingTransform {
+public protocol BindingTransform: Sendable {
     associatedtype Input
     associatedtype Output
 

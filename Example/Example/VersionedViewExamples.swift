@@ -13,8 +13,6 @@ struct VersionedViewExamples: View {
             VersionText()
                 .version(.v4)
 
-            VersionedViewWithDynamicProperties()
-
             GradientRectangle(color: .red)
                 .frame(height: 32)
 
@@ -28,27 +26,15 @@ struct VersionedViewExamples: View {
     }
 }
 
-// The only dynamic property a `VersionedView` / `VersionedViewModifier` can only contain is a `Binding`
-struct VersionedViewWithDynamicProperties: VersionedView {
-
-    var v1Body: V1Body {
-        V1Body()
-    }
-
-    struct V1Body: View {
-        @State var counter = 0
-
-        var body: some View {
-            Button {
-                counter += 1
-            } label: {
-                Text("\(counter)")
-            }
-        }
-    }
-}
-
 struct VersionText: VersionedView {
+    var v7Body: some View {
+        Text("iOS 26 / macOS 26")
+    }
+
+    var v6Body: some View {
+        Text("iOS 18 / macOS 15")
+    }
+
     var v5Body: some View {
         Text("iOS 17 / macOS 14")
     }

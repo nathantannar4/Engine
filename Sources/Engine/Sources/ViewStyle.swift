@@ -330,7 +330,7 @@ extension ViewStyledView {
         )
     }
 
-    public static func _makeView(
+    public nonisolated static func _makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -339,17 +339,23 @@ extension ViewStyledView {
         {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .styling
-            return Body._makeView(view: view[\.body], inputs: inputs)
+            return MainActor.unsafe {
+                Body._makeView(view: view[\.body], inputs: inputs)
+            }
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
-            return ViewStyledViewBody<Self>._makeView(view: view[\.content], inputs: inputs)
+            return MainActor.unsafe {
+                ViewStyledViewBody<Self>._makeView(view: view[\.content], inputs: inputs)
+            }
         } else {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .unstyled
-            return ViewStyledViewDefaultBody<Self>._makeView(view: view[\.defaultContent], inputs: inputs)
+            return MainActor.unsafe {
+                ViewStyledViewDefaultBody<Self>._makeView(view: view[\.defaultContent], inputs: inputs)
+            }
         }
     }
 
-    public static func _makeViewList(
+    public nonisolated static func _makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -358,18 +364,24 @@ extension ViewStyledView {
         {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .styling
-            return Body._makeViewList(view: view[\.body], inputs: inputs)
+            return MainActor.unsafe {
+                Body._makeViewList(view: view[\.body], inputs: inputs)
+            }
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
-            return ViewStyledViewBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
+            return MainActor.unsafe {
+                ViewStyledViewBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
+            }
         } else {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .unstyled
-            return ViewStyledViewDefaultBody<Self>._makeViewList(view: view[\.defaultContent], inputs: inputs)
+            return MainActor.unsafe {
+                ViewStyledViewDefaultBody<Self>._makeViewList(view: view[\.defaultContent], inputs: inputs)
+            }
         }
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func _viewListCount(
+    public nonisolated static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         if Body.self != Never.self,

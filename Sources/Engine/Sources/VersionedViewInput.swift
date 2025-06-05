@@ -38,6 +38,11 @@ public struct VersionInput: Equatable {
     public struct V6: _VersionInput {
         public static let value: VersionInput = .v6
     }
+
+    public static let v7 = VersionInput(rawValue: 7)
+    public struct V7: _VersionInput {
+        public static let value: VersionInput = .v7
+    }
 }
 
 public protocol _VersionInput: ViewInput where Key == VersionInputKey { }
@@ -59,10 +64,15 @@ extension _VersionInput where Self == VersionInput.V5 {
 extension _VersionInput where Self == VersionInput.V6 {
     public static var v6: VersionInput.V6 { .init() }
 }
+extension _VersionInput where Self == VersionInput.V7 {
+    public static var v7: VersionInput.V7 { .init() }
+}
 
 public struct VersionInputKey: ViewInputKey {
     public static var defaultValue: VersionInput {
-        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+            return .v7
+        } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             return .v6
         } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
             return .v5
@@ -129,6 +139,8 @@ extension View {
 
 struct VersionInput_Previews: PreviewProvider {
     struct PreviewVersionInputView: VersionedView {
+        var v7Body: some View { Text("V7") }
+        var v6Body: some View { Text("V6") }
         var v5Body: some View { Text("V5") }
         var v4Body: some View { Text("V4") }
         var v3Body: some View { Text("V3") }
@@ -137,6 +149,8 @@ struct VersionInput_Previews: PreviewProvider {
     }
 
     struct PreviewVersionInputViewModifier: VersionedViewModifier {
+        func v7Body(content: Content) -> some View { Text("V7") }
+        func v6Body(content: Content) -> some View { Text("V6") }
         func v5Body(content: Content) -> some View { Text("V5") }
         func v4Body(content: Content) -> some View { Text("V4") }
         func v3Body(content: Content) -> some View { Text("V3") }
@@ -148,6 +162,11 @@ struct VersionInput_Previews: PreviewProvider {
         Group {
             VStack {
                 PreviewVersionInputView()
+
+                PreviewVersionInputView()
+                    .version(.v6)
+
+                PreviewVersionInputView()
                     .version(.v5)
 
                 PreviewVersionInputView()
@@ -167,6 +186,13 @@ struct VersionInput_Previews: PreviewProvider {
             VStack {
                 EmptyView()
                     .modifier(PreviewVersionInputViewModifier())
+
+                EmptyView()
+                    .modifier(PreviewVersionInputViewModifier())
+                    .version(.v6)
+
+                EmptyView()
+                    .modifier(PreviewVersionInputViewModifier())
                     .version(.v5)
 
                 EmptyView()
@@ -185,7 +211,7 @@ struct VersionInput_Previews: PreviewProvider {
                     .modifier(PreviewVersionInputViewModifier())
                     .version(.v1)
             }
-            .previewDisplayName("VersionedView")
+            .previewDisplayName("VersionedViewModifier")
         }
     }
 }

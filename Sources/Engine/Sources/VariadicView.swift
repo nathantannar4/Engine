@@ -572,7 +572,7 @@ struct VariadicView_Previews: PreviewProvider {
                         ForEach(source.sections) { section in
                             Section {
                                 HStack {
-                                    Text("\(section.id)")
+                                    Text(verbatim: "\(section.id)")
 
                                     VStack {
                                         ForEach(section.content) { child in
@@ -582,13 +582,13 @@ struct VariadicView_Previews: PreviewProvider {
                                 }
                             } header: {
                                 HStack {
-                                    Text("\(section.id)")
+                                    Text(verbatim: "\(section.id)")
 
                                     section.header
                                 }
                             } footer: {
                                 HStack {
-                                    Text("\(section.id)")
+                                    Text(verbatim: "\(section.id)")
 
                                     section.footer
                                 }

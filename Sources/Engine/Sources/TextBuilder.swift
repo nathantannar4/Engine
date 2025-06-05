@@ -37,6 +37,13 @@ public struct TextBuilder {
     }
 
     @inlinable
+    public static func buildExpression(
+        _ expression: Optional<Text>
+    ) -> [Optional<Text>] {
+        [expression]
+    }
+
+    @inlinable
     public static func buildEither(
         first component: [Optional<Text>]
     ) -> [Optional<Text>] {
@@ -143,6 +150,10 @@ struct TextBuilder_Previews: PreviewProvider {
     struct Preview: View {
         @State var flag = false
 
+        func optionalText() -> Text? {
+            Text("*")
+        }
+
         var body: some View {
             VStack {
                 Toggle(isOn: $flag) { Text("Flag") }
@@ -164,6 +175,8 @@ struct TextBuilder_Previews: PreviewProvider {
                     } else {
                         Text(".")
                     }
+
+                    optionalText()
                 }
 
                 text

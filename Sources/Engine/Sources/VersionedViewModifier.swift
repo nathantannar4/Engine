@@ -10,9 +10,6 @@ import SwiftUI
 /// for type erasure. This is unlike `@ViewBuilder` which  requires an
 /// `if #available(...)` conditional to be type-erased by `AnyView`.
 ///
-/// > Important: The only `DynamicProperty` a `VersionedViewModifier`
-/// can only contain is a `Binding`
-///
 /// By default, unsupported versions will resolve to `Content`. Supported
 /// versions that don't have their body implemented will resolve to the next
 /// version body that is implemented.
@@ -22,6 +19,12 @@ import SwiftUI
 ///
 @MainActor @preconcurrency
 public protocol VersionedViewModifier: ViewModifier {
+
+    associatedtype V7Body: View = V6Body
+
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+    @ViewBuilder @MainActor @preconcurrency func v7Body(content: Content) -> V7Body
+
     associatedtype V6Body: View = V5Body
 
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
@@ -50,6 +53,13 @@ public protocol VersionedViewModifier: ViewModifier {
     associatedtype V1Body: View = Content
 
     @ViewBuilder @MainActor @preconcurrency func v1Body(content: Content) -> V1Body
+}
+
+extension VersionedViewModifier where V7Body == V6Body {
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+    public func v7Body(content: Content) -> V7Body {
+        v6Body(content: content)
+    }
 }
 
 extension VersionedViewModifier where V6Body == V5Body {
@@ -105,6 +115,11 @@ public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: Versi
     var content: Modifier.Content
     var modifier: Modifier
 
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+    public var v7Body: Modifier.V7Body {
+        modifier.v7Body(content: content)
+    }
+
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     public var v6Body: Modifier.V6Body {
         modifier.v6Body(content: content)
@@ -137,28 +152,43 @@ public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: Versi
 
 // MARK: - Previews
 
-struct UnderlineModifier: VersionedViewModifier {
-    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    func v4Body(content: Content) -> some View {
-        content.underline()
-    }
-
-    // Add support for a semi-equivalent version for iOS 13-15
-    func v1Body(content: Content) -> some View {
-        content
-            .background(
-                Rectangle()
-                    .frame(height: 1)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            )
-    }
-}
-
 struct VersionedViewModifier_Previews: PreviewProvider {
+    struct UnderlineModifier: VersionedViewModifier {
+
+        @State var isActive = true
+
+        @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+        func v4Body(content: Content) -> some View {
+            content
+                .underline(isActive)
+                .onTapGesture {
+                    isActive.toggle()
+                }
+        }
+
+        // Add support for a semi-equivalent version for iOS 13-15
+        func v1Body(content: Content) -> some View {
+            content
+                .background(
+                    Rectangle()
+                        .frame(height: 1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .opacity(isActive ? 1 : 0)
+                )
+                .onTapGesture {
+                    isActive.toggle()
+                }
+        }
+    }
+
     static var previews: some View {
         VStack {
             Text("Hello, World")
                 .modifier(UnderlineModifier())
+
+            Text("Hello, World")
+                .modifier(UnderlineModifier())
+                .version(.v1)
         }
     }
 }

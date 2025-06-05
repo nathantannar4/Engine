@@ -126,9 +126,7 @@ extension StyledView {
     public nonisolated static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        MainActor.unsafe {
-            _Body._viewListCount(inputs: inputs)
-        }
+        _Body._viewListCount(inputs: inputs)
     }
 }
 
