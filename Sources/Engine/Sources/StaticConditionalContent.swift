@@ -96,5 +96,11 @@ struct StaticConditionalContent_Previews: PreviewProvider {
         StaticConditionalContent(PreviewCondition.self) {
             Text("DEBUG")
         }
+
+        StaticConditionalContent(PreviewCondition.self) {
+            Text("DEBUG")
+        } otherwise: {
+            Text("!DEBUG")
+        }
     }
 }
