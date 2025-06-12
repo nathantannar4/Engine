@@ -173,11 +173,7 @@ struct VersionedViewModifier_Previews: PreviewProvider {
                     Rectangle()
                         .frame(height: 1)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        .opacity(isActive ? 1 : 0)
                 )
-                .onTapGesture {
-                    isActive.toggle()
-                }
         }
     }
 
