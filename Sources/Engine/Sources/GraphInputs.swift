@@ -91,6 +91,7 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
 
     public func body(content: Content) -> some View {
         content
+            .modifier(UnaryViewModifier())
             .modifier(Modifier())
     }
 
@@ -110,34 +111,17 @@ extension PropertyList {
     fileprivate mutating func detach() {
 
         var ptr = elements
-        var hasRoot = false
-        let rootInputSuffix = ".BodyInput<SwiftUI._ViewModifier_Content<SwiftUI.RootModifier>>"
-        #if !os(macOS)
-        // This seems to be the last key before the incorrectly reused inputs
-        let branchKey: String = ".FocusedItemInputKey"
-        let containerKey = "SwiftUI.UIKitHostContainerFocusItemInput"
-        #endif
+        let branchKey: String = ".ImplicitRootType"
+        let containerKey = ".UIKitHostContainerFocusItemInput"
+        var hasPassedContainer = false
         while let p = ptr {
             let key = _typeName(p.keyType, qualified: true)
-            var isMatch = key.hasSuffix(rootInputSuffix)
+            let isMatch = key.hasSuffix(branchKey)
+                || (key.hasSuffix(".ViewListOptionsInput") && hasPassedContainer)
             if isMatch {
-                hasRoot = true
-            }
-            #if !os(macOS)
-            isMatch = isMatch || key.hasSuffix(branchKey)
-            #endif
-            if isMatch {
-                // Reached the {UI/NS}ViewRepresentable
-                #if !os(macOS)
-                if let next = p.after {
-                    // Reached the UIViewRepresentable
-                    if _typeName(next.keyType, qualified: true).hasSuffix(containerKey) {
-                        ptr = next
-                    }
-                }
-                #endif
                 break
             }
+            hasPassedContainer = hasPassedContainer || key.hasSuffix(containerKey)
             if let next = p.after {
                 ptr = next
             } else {
@@ -150,10 +134,12 @@ extension PropertyList {
         tail.after = nil
 
         while let p = last?.after {
-            if !hasRoot, let after = p.after {
+            if let after = p.after {
                 let key = _typeName(after.keyType, qualified: true)
-                let isMatch = key.hasSuffix(rootInputSuffix) || key.hasSuffix(".ViewListOptionsInput") || key.hasSuffix(".AccessibilityRelationshipScope") ||
-                    key.hasSuffix(".ImplicitRootType")
+                let isMatch = key.hasSuffix(branchKey)
+                    || key.hasSuffix(".AccessibilityRelationshipScope")
+                    || key.hasSuffix(".EventBindingBridgeFactoryInput")
+                    || key.hasSuffix(".InterfaceIdiomInput")
                 if isMatch {
                     break
                 }
