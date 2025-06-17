@@ -185,6 +185,23 @@ struct VersionedViewModifier_Previews: PreviewProvider {
             Text("Hello, World")
                 .modifier(UnderlineModifier())
                 .version(.v1)
+
+            VariadicViewAdapter {
+                Text("Line 1")
+                Text("Line 2")
+            } content: { source in
+                HStack(spacing: 8) {
+                    ForEachSubview(source) { index, subview in
+                        subview
+                            .modifier(UnderlineModifier())
+
+                        if index < source.count - 1 {
+                            Circle()
+                                .frame(width: 10, height: 10)
+                        }
+                    }
+                }
+            }
         }
     }
 }

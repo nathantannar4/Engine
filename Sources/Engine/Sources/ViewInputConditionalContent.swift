@@ -42,7 +42,7 @@ public struct ViewInputConditionalContent<
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
+        Condition.evaluate(ViewInputs(inputs: inputs))
             ? TrueContent._makeView(view: view[\.trueContent], inputs: inputs)
             : FalseContent._makeView(view: view[\.falseContent], inputs: inputs)
     }
@@ -51,7 +51,7 @@ public struct ViewInputConditionalContent<
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
+        Condition.evaluate(ViewInputs(inputs: inputs))
             ? TrueContent._makeViewList(view: view[\.trueContent], inputs: inputs)
             : FalseContent._makeViewList(view: view[\.falseContent], inputs: inputs)
     }
@@ -60,7 +60,7 @@ public struct ViewInputConditionalContent<
     public static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        Condition.evaluate(ViewInputs(inputs: inputs._graphInputs))
+        Condition.evaluate(ViewInputs(inputs: inputs))
             ? TrueContent._viewListCount(inputs: inputs)
             : FalseContent._viewListCount(inputs: inputs)
     }
@@ -95,6 +95,12 @@ struct ViewInputConditionalContent_Previews: PreviewProvider {
                 Text("FALSE")
             }
             .input(PreviewFlag.self)
+
+            ViewInputConditionalContent(PreviewFlag.self) {
+                Text("TRUE")
+            } otherwise: {
+                Text("FALSE")
+            }
         }
     }
 }

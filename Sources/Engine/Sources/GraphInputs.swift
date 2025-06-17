@@ -22,57 +22,50 @@ private struct GraphInputsLayout {
     var customInputs: PropertyList
 }
 
-extension _GraphInputs {
-    var customInputs: PropertyList {
-        withUnsafePointer(to: self) { ptr -> PropertyList in
-            ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> PropertyList in
-                ptr.pointee.customInputs
-            }
-        }
-    }
+protocol _CustomInputsProvider { }
 
-    mutating func withCustomInputs<ReturnType>(
-        do body: (inout PropertyList) -> ReturnType
-    ) -> ReturnType {
-        withUnsafeMutablePointer(to: &self) { ptr -> ReturnType in
-            ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> ReturnType in
-                body(&ptr.pointee.customInputs)
+extension _CustomInputsProvider {
+
+    var customInputs: PropertyList {
+        get {
+            withUnsafePointer(to: self) { ptr -> PropertyList in
+                ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr -> PropertyList in
+                    ptr.pointee.customInputs
+                }
+            }
+        }
+        set {
+            withUnsafeMutablePointer(to: &self) { ptr in
+                ptr.withMemoryRebound(to: GraphInputsLayout.self, capacity: 1) { ptr in
+                    ptr.pointee.customInputs = newValue
+                }
             }
         }
     }
+}
+
+extension _GraphInputs: _CustomInputsProvider {
 
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
-        get {
-            customInputs.value(Input.self, as: Input.Value.self) ?? Input.defaultValue
-        }
-        set {
-            withCustomInputs {
-                $0.add(Input.self, newValue)
-            }
-        }
+        get { customInputs[Input.self] }
+        set { customInputs[Input.self] = newValue }
     }
 
     @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value? {
-        get {
-            customInputs.value(Input.self, as: Input.Value.self)
-        }
-        set {
-            withCustomInputs {
-                $0.add(Input.self, newValue ?? Input.defaultValue)
-            }
-        }
+        get { customInputs[Input.self] }
+        set { customInputs[Input.self] = newValue }
     }
 
     public subscript<Value>(
         key: String,
         _: Value.Type
     ) -> Value? {
-        customInputs.value(key: key, as: Value.self)
+        get { customInputs[key, Value.self] }
     }
 }
 
@@ -100,9 +93,7 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
         ) {
-            inputs.withCustomInputs { customInputs in
-                customInputs.detach()
-            }
+            inputs.customInputs.detach()
         }
     }
 }

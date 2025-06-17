@@ -311,6 +311,36 @@ struct PropertyList {
             ptr = UnsafeMutableRawPointer(ref)
         }
     }
+
+    public subscript<Input: ViewInputKey>(
+        _ : Input.Type
+    ) -> Input.Value {
+        get {
+            value(Input.self, as: Input.Value.self) ?? Input.defaultValue
+        }
+        set {
+            add(Input.self, newValue)
+        }
+    }
+
+    @_disfavoredOverload
+    public subscript<Input: ViewInputKey>(
+        _ : Input.Type
+    ) -> Input.Value? {
+        get {
+            value(Input.self, as: Input.Value.self)
+        }
+        set {
+            add(Input.self, newValue ?? Input.defaultValue)
+        }
+    }
+
+    public subscript<Value>(
+        key: String,
+        _: Value.Type
+    ) -> Value? {
+        value(key: key, as: Value.self)
+    }
 }
 
 extension UnsafeMutablePointer {

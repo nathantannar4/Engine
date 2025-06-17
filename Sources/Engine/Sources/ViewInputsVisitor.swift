@@ -11,7 +11,7 @@ public protocol ViewInputsVisitor {
     mutating func visit<Value>(_ value: Value, key: String, stop: inout Bool)
 }
 
-extension _GraphInputs {
+extension ViewInputs {
 
     /// Visits the custom view inputs with the `Visitor`
     public func visit<
@@ -31,6 +31,18 @@ extension _GraphInputs {
     }
 }
 
+extension _GraphInputs {
+
+    /// Visits the custom view inputs with the `Visitor`
+    public func visit<
+        Visitor: ViewInputsVisitor
+    >(
+        visitor: inout Visitor
+    ) {
+        ViewInputs(inputs: self).visit(visitor: &visitor)
+    }
+}
+
 extension _ViewInputs {
 
     /// Visits the custom view inputs with the `Visitor`
@@ -39,7 +51,7 @@ extension _ViewInputs {
     >(
         visitor: inout Visitor
     ) {
-        _graphInputs.visit(visitor: &visitor)
+        ViewInputs(inputs: self).visit(visitor: &visitor)
     }
 }
 
@@ -51,7 +63,7 @@ extension _ViewListInputs {
     >(
         visitor: inout Visitor
     ) {
-        _graphInputs.visit(visitor: &visitor)
+        ViewInputs(inputs: self).visit(visitor: &visitor)
     }
 }
 
@@ -64,19 +76,7 @@ extension _ViewListCountInputs {
     >(
         visitor: inout Visitor
     ) {
-        _graphInputs.visit(visitor: &visitor)
-    }
-}
-
-extension ViewInputs {
-
-    /// Visits the custom view inputs with the `Visitor`
-    public func visit<
-        Visitor: ViewInputsVisitor
-    >(
-        visitor: inout Visitor
-    ) {
-        _graphInputs.visit(visitor: &visitor)
+        ViewInputs(inputs: self).visit(visitor: &visitor)
     }
 }
 
