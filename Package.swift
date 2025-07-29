@@ -32,10 +32,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(
-            url: "https://github.com/swiftlang/swift-syntax",
-            "509.0.0"...(Range<Version>.upToNextMinor(from: "600.0.0").upperBound)
-        ),
+        .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"602.0.0"),
     ],
     targets: [
         .target(
