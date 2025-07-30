@@ -2,6 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
+import Foundation
 import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
