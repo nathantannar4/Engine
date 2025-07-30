@@ -17,7 +17,7 @@ public struct MultiViewElementContext {
 
     public typealias ID = ViewTypeIdentifier
 
-    public struct Traits: OptionSet {
+    public struct Traits: OptionSet, Sendable {
         public var rawValue: UInt8
 
         public init(rawValue: UInt8) {

@@ -4,9 +4,9 @@
 
 import SwiftUI
 
-public struct ViewTypeIdentifier: Hashable, CustomDebugStringConvertible {
+public struct ViewTypeIdentifier: Hashable, Sendable, CustomDebugStringConvertible {
 
-    private indirect enum Storage: Hashable, CustomDebugStringConvertible {
+    private indirect enum Storage: Hashable, @unchecked Sendable, CustomDebugStringConvertible {
         case root(TypeIdentifier)
         case subview(Storage, TypeIdentifier)
         case offset(Storage, AnyHashable)

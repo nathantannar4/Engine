@@ -14,6 +14,20 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
+        try expansion(
+            of: node,
+            providingMembersOf: declaration,
+            conformingTo: [],
+            in: context
+        )
+    }
+
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
         let type = try getType(
             declaration: declaration
         )
