@@ -87,25 +87,27 @@ extension View {
     }
 
     nonisolated func getBody() -> Body {
-        let copy = SendableView(content: self)
+        let content = SendableStorage(value: self)
         if Thread.isMainThread {
-            return MainActor.assumeIsolated { [copy] in
-                SendableView(content: copy.content.body)
-            }.content
+            let storage = MainActor.assumeIsolated { [content] in
+                SendableStorage<Body>(value: content.value.body)
+            }
+            return storage.value
         }
-        var body: SendableView<Body>!
+        let body = SendableStorage<Body>()
         let semaphore = DispatchSemaphore(value: 0)
-        Task { @MainActor in
-            body = SendableView(content: copy.content.body)
+        Task { @MainActor [content] in
+            body.value = content.value.body
             semaphore.signal()
         }
         semaphore.wait()
-        return body.content
+        return body.value
     }
 }
 
-private struct SendableView<Content: View>: @unchecked Sendable {
-    var content: Content
+private class SendableStorage<T>: @unchecked Sendable {
+    var value: T!
+    init(value: T? = nil) { self.value = value }
 }
 
 private struct IsMultiViewVisitor: MultiViewVisitor {

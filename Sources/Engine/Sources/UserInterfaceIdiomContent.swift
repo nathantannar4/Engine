@@ -179,15 +179,19 @@ extension UIDevice {
                 UIDevice.current.userInterfaceIdiom
             }
         }
-        var idiom: UIUserInterfaceIdiom = .unspecified
+        let storage = SendableStorage<UIUserInterfaceIdiom>()
         let semaphore = DispatchSemaphore(value: 0)
         Task { @MainActor in
-            idiom = UIDevice.current.userInterfaceIdiom
+            storage.value = UIDevice.current.userInterfaceIdiom
             semaphore.signal()
         }
         semaphore.wait()
-        return idiom
+        return storage.value
     }()
+}
+
+private class SendableStorage<T>: @unchecked Sendable {
+    var value: T!
 }
 #endif
 
