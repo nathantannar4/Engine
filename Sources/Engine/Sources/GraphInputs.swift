@@ -6,11 +6,11 @@ import SwiftUI
 
 /// A `ViewModifier` that only modifies the static inputs
 public protocol GraphInputsModifier: _GraphInputsModifier, ViewModifier where Body == Never {
-    static func makeInputs(modifier: _GraphValue<Self>, inputs: inout _GraphInputs)
+    static nonisolated func makeInputs(modifier: _GraphValue<Self>, inputs: inout _GraphInputs)
 }
 
 extension GraphInputsModifier {
-    public static func _makeInputs(
+    public nonisolated static func _makeInputs(
         modifier: _GraphValue<Self>,
         inputs: inout _GraphInputs
     ) {
@@ -89,7 +89,7 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
     }
 
     private struct Modifier: GraphInputsModifier {
-        static func makeInputs(
+        nonisolated static func makeInputs(
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
         ) {

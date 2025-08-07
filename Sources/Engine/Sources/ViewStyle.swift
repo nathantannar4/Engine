@@ -172,9 +172,9 @@ public protocol ViewStyle: DynamicProperty {
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
 @MainActor @preconcurrency
-public protocol ViewStyledView: View {
+public protocol ViewStyledView: PrimitiveView {
     associatedtype Configuration
-    @MainActor @preconcurrency var configuration: Configuration { get }
+    nonisolated var configuration: Configuration { get }
 
     associatedtype DefaultStyle: ViewStyle where DefaultStyle.Configuration == Configuration
     @MainActor @preconcurrency static var defaultStyle: DefaultStyle { get }
@@ -226,7 +226,7 @@ public struct ViewStyleModifier<
         }
 
         struct InputModifier: GraphInputsModifier {
-            static func makeInputs(
+            nonisolated static func makeInputs(
                 modifier: _GraphValue<Self>,
                 inputs: inout _GraphInputs
             ) {
@@ -287,7 +287,7 @@ extension EnvironmentValues {
     }
 }
 
-private struct ViewStylesBox {
+private struct ViewStylesBox: @unchecked Sendable {
     private var storage: [UnsafeRawPointer: [AnyViewStyle]] = [:]
 
     fileprivate subscript<ID: ViewStyledView>(
@@ -312,25 +312,21 @@ private struct ViewStyleContext<ID: ViewStyledView>: ViewInputKey {
     static var defaultValue: Value { .unstyled }
 }
 
-extension ViewStyledView where Body == Never {
-    public var body: Body {
-        bodyError()
-    }
-}
-
 extension ViewStyledView {
-    private var content: ViewStyledViewBody<Self> {
-        ViewStyledViewBody(configuration: configuration)
+
+    private nonisolated var _body: ViewStyledViewBody<Self> {
+        ViewStyledViewBody(content: self)
     }
 
-    private var defaultContent: ViewStyledViewDefaultBody<Self> {
-        ViewStyledViewDefaultBody(
-            style: Self.defaultStyle,
-            configuration: configuration
-        )
+    private nonisolated var content: ViewStyledViewStyledBody<Self> {
+        ViewStyledViewStyledBody(configuration: configuration)
     }
 
-    public nonisolated static func _makeView(
+    private nonisolated var defaultContent: ViewStyledViewDefaultBody<Self> {
+        ViewStyledViewDefaultBody(configuration: configuration)
+    }
+
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -339,23 +335,17 @@ extension ViewStyledView {
         {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .styling
-            return MainActor.unsafe {
-                Body._makeView(view: view[\.body], inputs: inputs)
-            }
+            return ViewStyledViewBody<Self>._makeView(view: view[\._body], inputs: inputs)
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
-            return MainActor.unsafe {
-                ViewStyledViewBody<Self>._makeView(view: view[\.content], inputs: inputs)
-            }
+            return ViewStyledViewStyledBody<Self>._makeView(view: view[\.content], inputs: inputs)
         } else {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .unstyled
-            return MainActor.unsafe {
-                ViewStyledViewDefaultBody<Self>._makeView(view: view[\.defaultContent], inputs: inputs)
-            }
+            return ViewStyledViewDefaultBody<Self>._makeView(view: view[\.defaultContent], inputs: inputs)
         }
     }
 
-    public nonisolated static func _makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -364,24 +354,18 @@ extension ViewStyledView {
         {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .styling
-            return MainActor.unsafe {
-                Body._makeViewList(view: view[\.body], inputs: inputs)
-            }
+            return ViewStyledViewBody<Self>._makeViewList(view: view[\._body], inputs: inputs)
         } else if inputs[ViewStyleInput<Self>.self].last != nil {
-            return MainActor.unsafe {
-                ViewStyledViewBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
-            }
+            return ViewStyledViewStyledBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
         } else {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .unstyled
-            return MainActor.unsafe {
-                ViewStyledViewDefaultBody<Self>._makeViewList(view: view[\.defaultContent], inputs: inputs)
-            }
+            return ViewStyledViewDefaultBody<Self>._makeViewList(view: view[\.defaultContent], inputs: inputs)
         }
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public nonisolated static func _viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         if Body.self != Never.self,
@@ -389,9 +373,9 @@ extension ViewStyledView {
         {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .styling
-            return Body._viewListCount(inputs: inputs)
-        } else if inputs[ViewStyleInput<Self>.self].last != nil {
             return ViewStyledViewBody<Self>._viewListCount(inputs: inputs)
+        } else if inputs[ViewStyleInput<Self>.self].last != nil {
+            return ViewStyledViewStyledBody<Self>._viewListCount(inputs: inputs)
         } else {
             var inputs = inputs
             inputs[ViewStyleContext<Self>.self] = .unstyled
@@ -400,23 +384,33 @@ extension ViewStyledView {
     }
 }
 
-private struct ViewStyledViewDefaultBody<
-    StyledView: ViewStyledView
->: View {
-
-    var style: StyledView.DefaultStyle
-    var configuration: StyledView.Configuration
-
-    var body: some View {
-        style.makeBody(configuration: configuration)
-    }
-}
-
 private struct ViewStyledViewBody<
     StyledView: ViewStyledView
 >: View {
 
-    var configuration: StyledView.Configuration
+    nonisolated(unsafe) var content: StyledView
+
+    var body: some View {
+        content.body
+    }
+}
+
+private struct ViewStyledViewDefaultBody<
+    StyledView: ViewStyledView
+>: View {
+
+    nonisolated(unsafe) var configuration: StyledView.Configuration
+
+    var body: some View {
+        StyledView.defaultStyle.makeBody(configuration: configuration)
+    }
+}
+
+private struct ViewStyledViewStyledBody<
+    StyledView: ViewStyledView
+>: View {
+
+    nonisolated(unsafe) var configuration: StyledView.Configuration
 
     @Environment(\.viewStyles) var viewStyles
 
@@ -436,14 +430,14 @@ private struct AnyViewStyledView<
     ViewStyleBody: View
 >: PrimitiveView {
 
-    var style: AnyViewStyle
-    var configuration: StyledView.Configuration
+    nonisolated(unsafe) var style: AnyViewStyle
+    nonisolated(unsafe) var configuration: StyledView.Configuration
 
-    @MainActor @preconcurrency var content: ViewStyleBody {
+    nonisolated var content: ViewStyleBody {
         style.body(as: ViewStyleBody.self, configuration: configuration)
     }
 
-    static func makeView(
+    nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -468,7 +462,7 @@ private struct AnyViewStyledView<
         return _openExistential(style, do: project)
     }
 
-    static func makeViewList(
+    nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -494,7 +488,7 @@ private struct AnyViewStyledView<
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    static func viewListCount(
+    nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         var inputs = inputs
@@ -516,17 +510,17 @@ private struct AnyViewStyledView<
 
 private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
 
-    var style: Style
-    var configuration: Style.Configuration
+    nonisolated(unsafe) var style: Style
+    nonisolated(unsafe) var configuration: Style.Configuration
 
     var body: some View {
         style.makeBody(configuration: configuration)
     }
 }
 
-struct AnyViewStyle {
+struct AnyViewStyle: @unchecked Sendable {
     private class AnyViewStyleStorageBase {
-        @MainActor func visit<Configuration, Body>(
+        func visit<Configuration, Body>(
             as body: Body.Type,
             configuration: Configuration
         ) -> Body {
@@ -567,7 +561,7 @@ struct AnyViewStyle {
         self.storage = AnyViewStyleStorage(style)
     }
 
-    @MainActor func body<Configuration, Body>(
+    func body<Configuration, Body>(
         as body: Body.Type,
         configuration: Configuration
     ) -> Body {

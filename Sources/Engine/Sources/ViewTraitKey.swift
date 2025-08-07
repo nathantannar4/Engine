@@ -179,8 +179,8 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
     }
 
     private struct BodyModifier: PrimitiveView {
-        var content: Content
-        var value: Trait.Value
+        nonisolated(unsafe) var content: Content
+        nonisolated(unsafe) var value: Trait.Value
 
         private struct TraitVisitor: ViewTraitKeyVisitor {
             var content: Content
@@ -200,7 +200,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             }
         }
 
-        private var modifiedContent: Any {
+        private nonisolated var modifiedContent: Any {
             let conformance = Trait.conformance!
             var visitor = TraitVisitor(
                 content: content,
@@ -210,7 +210,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             return visitor.output!
         }
 
-        static func makeView(
+        nonisolated static func makeView(
             view: _GraphValue<Self>,
             inputs: _ViewInputs
         ) -> _ViewOutputs {
@@ -223,7 +223,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             return visitor.outputs
         }
 
-        static func makeViewList(
+        nonisolated static func makeViewList(
             view: _GraphValue<Self>,
             inputs: _ViewListInputs
         ) -> _ViewListOutputs {
@@ -237,7 +237,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
         }
 
         @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-        static func viewListCount(
+        nonisolated static func viewListCount(
             inputs: _ViewListCountInputs
         ) -> Int? {
             let conformance = Trait.conformance!

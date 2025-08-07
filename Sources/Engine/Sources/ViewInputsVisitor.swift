@@ -82,11 +82,13 @@ extension _ViewListCountInputs {
 
 public protocol ViewInputsVisitorModifier: ViewInputsModifier {
     associatedtype Visitor: ViewInputsVisitor
-    static var visitor: Visitor { get }
+    nonisolated static var visitor: Visitor { get }
 }
 
 extension ViewInputsVisitorModifier {
-    public static func makeInputs(inputs: inout ViewInputs) {
+    public nonisolated static func makeInputs(
+        inputs: inout ViewInputs
+    ) {
         var visitor = visitor
         inputs.visit(visitor: &visitor)
     }

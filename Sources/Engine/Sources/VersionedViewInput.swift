@@ -5,7 +5,7 @@
 import SwiftUI
 import EngineCore
 
-public struct VersionInput: Equatable {
+public struct VersionInput: Equatable, Sendable {
 
     var rawValue: UInt8
 

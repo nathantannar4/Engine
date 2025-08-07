@@ -189,7 +189,7 @@ private func setFieldValue<Value, InstanceType>(
     }
 }
 
-private class FieldLookupCache {
+private class FieldLookupCache: @unchecked Sendable {
 
     private let lock: os_unfair_lock_t
     private var storage = [UnsafeRawPointer: [String: Field]]()

@@ -8,7 +8,7 @@ import os.log
 
 public struct ViewInputs {
 
-    public struct Options: OptionSet {
+    public struct Options: OptionSet, Sendable {
         public var rawValue: UInt32
 
         public init(rawValue: UInt32) { self.rawValue = rawValue }
@@ -59,11 +59,11 @@ public struct ViewInputs {
 
 /// A `ViewModifier` that only modifies the static inputs
 public protocol ViewInputsModifier: GraphInputsModifier {
-    static func makeInputs(inputs: inout ViewInputs)
+    nonisolated static func makeInputs(inputs: inout ViewInputs)
 }
 
 extension ViewInputsModifier {
-    public static func makeInputs(
+    public nonisolated static func makeInputs(
         modifier: _GraphValue<Self>,
         inputs: inout _GraphInputs
     ) {

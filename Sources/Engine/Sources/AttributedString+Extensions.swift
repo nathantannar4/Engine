@@ -133,7 +133,10 @@ private class HostingTextAttachmentViewProvider<Content: View>: NSTextAttachment
     #endif
 
     override func loadView() {
-        view = HostingView(content: attachment.content)
+        let content = attachment.content
+        view = MainActor.assumeIsolated {
+            HostingView(content: content)
+        }
     }
 }
 

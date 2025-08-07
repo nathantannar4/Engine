@@ -6,6 +6,7 @@ import XCTest
 import SwiftUI
 @testable import EngineCore
 
+@MainActor
 final class CoreRuntimeTests: XCTestCase {
 
     override func setUp() {

@@ -357,10 +357,16 @@ extension UnsafeMutablePointer {
 }
 
 private struct UniqueID {
-    private static var seed: Int = .max
+    private nonisolated(unsafe) static let lock: os_unfair_lock_t = {
+        let lock = os_unfair_lock_t.allocate(capacity: 1)
+        lock.initialize(to: os_unfair_lock_s())
+        return lock
+    }()
+    private nonisolated(unsafe) static var seed: Int = .max
 
     static func generate() -> Int {
         defer {
+            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(Self.lock) }
             seed -= 1
             if seed < 0 {
                 seed = .max

@@ -6,6 +6,7 @@ import SwiftUI
 
 /// A property wrapper that reads a value from a view's environment,
 /// if it was not initialized with a constant value.
+@MainActor @preconcurrency
 @propertyWrapper
 @frozen
 public struct EnvironmentOrValue<Value>: DynamicProperty {

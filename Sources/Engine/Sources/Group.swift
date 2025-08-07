@@ -11,6 +11,7 @@ extension Group where Content: View {
     @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviews: ...) init")
     @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(subviews: ...) init")
     @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(subviews: ...) init")
+    @MainActor @preconcurrency
     public init<V: View, Result: View>(
         subviewsOf view: V,
         @ViewBuilder transform: @escaping (AnyVariadicView) -> Result
@@ -27,6 +28,7 @@ extension Group where Content: View {
     @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sections: ...) init")
     @available(watchOS, introduced: 6.0, deprecated: 11.0, message: "Please use the built in Group(sections: ...) init")
     @available(visionOS, introduced: 1.0, deprecated: 2.0, message: "Please use the built in Group(sections: ...) init")
+    @MainActor @preconcurrency
     public init<V: View, Result: View>(
         sectionsOf view: V,
         @ViewBuilder transform: @escaping ([AnyVariadicSectionView]) -> Result

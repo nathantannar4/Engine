@@ -16,7 +16,7 @@ public struct StaticModifier<
 >: PrimitiveViewModifier {
 
     @usableFromInline
-    var modifier: Any
+    nonisolated(unsafe) var modifier: Any
 
     @inlinable
     public init(

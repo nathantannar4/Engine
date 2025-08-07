@@ -6,6 +6,7 @@ import SwiftUI
 
 /// A property wrapper that can read and write a value from
 /// a wrapped `State` or `Binding`
+@MainActor @preconcurrency
 @propertyWrapper
 @frozen
 public struct StateOrBinding<Value>: DynamicProperty {

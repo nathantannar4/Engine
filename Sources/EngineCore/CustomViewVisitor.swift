@@ -31,26 +31,20 @@ private struct CustomViewIterator<
                 stop: &stop
             )
         } else if Content.Body.self != Never.self,
-            let conformance = MultiViewProtocolDescriptor.conformance(of: Content.Body.self)
+            let conformance = MultiViewProtocolDescriptor.conformance(of: Content.Body.self),
+            !content.hasDynamicProperties
         {
-            let body = content.body
+            let body = content.getBody()
             if IsMultiViewVisitor.isMultiView(
                 body, 
                 conformance: conformance
             ) {
                 var context = context
-                // SwiftUI v6 wraps in AnyView
-                var isAnyView = false
-                #if DEBUG
-                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-                    isAnyView = true
-                }
-                #endif
-                if !isAnyView {
+                if isOpaqueViewAnyView() {
                     context.id.append(Content.Body.self)
                 }
                 conformance.visit(
-                    content: content.body,
+                    content: body,
                     visitor: visitor,
                     context: context,
                     stop: &stop
@@ -73,9 +67,45 @@ private struct CustomViewIterator<
 }
 
 extension View {
-    public func makeSubviewIterator() -> some MultiViewIterator {
+    public nonisolated func makeSubviewIterator() -> some MultiViewIterator {
         CustomViewIterator(content: self)
     }
+
+    nonisolated var hasDynamicProperties: Bool {
+        let fields = swift_getFields(self)
+        for field in fields {
+            guard let value = field.value else { continue }
+            func project<Value>(_ value: Value) -> Bool {
+                value is DynamicProperty
+            }
+            let isDynamicProperty = _openExistential(value, do: project)
+            if isDynamicProperty {
+                return true
+            }
+        }
+        return false
+    }
+
+    nonisolated func getBody() -> Body {
+        let copy = SendableView(content: self)
+        if Thread.isMainThread {
+            return MainActor.assumeIsolated { [copy] in
+                SendableView(content: copy.content.body)
+            }.content
+        }
+        var body: SendableView<Body>!
+        let semaphore = DispatchSemaphore(value: 0)
+        Task { @MainActor in
+            body = SendableView(content: copy.content.body)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return body.content
+    }
+}
+
+private struct SendableView<Content: View>: @unchecked Sendable {
+    var content: Content
 }
 
 private struct IsMultiViewVisitor: MultiViewVisitor {

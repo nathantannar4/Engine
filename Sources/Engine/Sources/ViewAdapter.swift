@@ -16,24 +16,62 @@ public struct ViewAdapter<Content: View>: PrimitiveView {
         self.content = content()
     }
 
-    public static func makeView(
+    private nonisolated var _body: ViewAdapterBody<Content> {
+        ViewAdapterBody(content: self)
+    }
+
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        Content._makeView(view: view[\.content], inputs: inputs)
+        ViewAdapterBody<Content>._makeView(view: view[\._body], inputs: inputs)
     }
 
-    public static func makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        Content._makeViewList(view: view[\.content], inputs: inputs)
+        ViewAdapterBody<Content>._makeViewList(view: view[\._body], inputs: inputs)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        Content._viewListCount(inputs: inputs)
+        ViewAdapterBody<Content>._viewListCount(inputs: inputs)
+    }
+}
+
+private struct ViewAdapterBody<Content: View>: View {
+    nonisolated(unsafe) var content: ViewAdapter<Content>
+
+    var body: some View {
+        content.content
+    }
+}
+
+// MARK: - Previews
+
+struct ViewAdapter_Previews: PreviewProvider {
+    static var previews: some View {
+        Preview()
+    }
+
+    struct Preview: View {
+        var body: some View {
+            ViewAdapter {
+                Content()
+            }
+        }
+
+        struct Content: View {
+            @State var value = 0
+
+            var body: some View {
+                Button(value.description) {
+                    value += 1
+                }
+            }
+        }
     }
 }

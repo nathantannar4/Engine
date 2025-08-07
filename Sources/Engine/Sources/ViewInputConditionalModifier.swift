@@ -13,10 +13,10 @@ public struct ViewInputConditionalModifier<
 >: PrimitiveViewModifier {
 
     @usableFromInline
-    var trueModifier: TrueModifier
+    nonisolated(unsafe) var trueModifier: TrueModifier
 
     @usableFromInline
-    var falseModifier: FalseModifier
+    nonisolated(unsafe) var falseModifier: FalseModifier
 
     @inlinable
     public init(
@@ -38,7 +38,7 @@ public struct ViewInputConditionalModifier<
         self.falseModifier = otherwise()
     }
 
-    public static func makeView(
+    public nonisolated static func makeView(
         modifier: _GraphValue<Self>,
         inputs: _ViewInputs,
         body: @escaping (_Graph, _ViewInputs) -> _ViewOutputs
@@ -48,7 +48,7 @@ public struct ViewInputConditionalModifier<
             : FalseModifier._makeView(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
 
-    public static func makeViewList(
+    public nonisolated static func makeViewList(
         modifier: _GraphValue<Self>,
         inputs: _ViewListInputs,
         body: @escaping (_Graph, _ViewListInputs) -> _ViewListOutputs
@@ -59,7 +59,7 @@ public struct ViewInputConditionalModifier<
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs,
         body: (_ViewListCountInputs) -> Int?
     ) -> Int? {
@@ -89,9 +89,17 @@ extension ViewInputConditionalModifier where FalseModifier == EmptyModifier {
 
 struct ViewInputConditionalModifier_Previews: PreviewProvider {
     struct PreviewFlag: ViewInputFlag { }
+
     struct BorderModifier: ViewModifier {
+        @State var flag = true
+
         func body(content: Content) -> some View {
-            content.border(Color.red)
+            Button {
+                flag.toggle()
+            } label: {
+                content
+                    .border(flag ? Color.green : Color.red)
+            }
         }
     }
 

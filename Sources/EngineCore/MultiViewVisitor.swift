@@ -57,7 +57,7 @@ func c_visit_MultiView(
 public protocol MultiView: View {
 
     associatedtype Iterator: MultiViewIterator
-    func makeSubviewIterator() -> Iterator
+    nonisolated func makeSubviewIterator() -> Iterator
 }
 
 public protocol MultiViewIterator {
@@ -118,7 +118,7 @@ extension View {
 
     @_disfavoredOverload
     @inline(__always)
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>
@@ -129,7 +129,7 @@ extension View {
 
     @_disfavoredOverload
     @inline(__always)
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>,
@@ -139,7 +139,7 @@ extension View {
     }
 
     @_disfavoredOverload
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>,
@@ -168,7 +168,7 @@ extension MultiView {
 
     /// Unwraps the type to be visited by the `Visitor`
     @inline(__always)
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>
@@ -179,7 +179,7 @@ extension MultiView {
 
     /// Unwraps the type to be visited by the `Visitor`
     @inline(__always)
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>,
@@ -189,7 +189,7 @@ extension MultiView {
     }
 
     @inlinable
-    public func visit<
+    public nonisolated func visit<
         Visitor: MultiViewVisitor
     >(
         visitor: UnsafeMutablePointer<Visitor>,
@@ -319,8 +319,8 @@ private struct MultiViewIteratorContextModifierVisitor<M, N: ViewModifier>: View
     }
 }
 
-var didRegisterKnownMultiViewConformances = false
-func registerKnownMultiViewConformancesIfNeeded() {
+nonisolated(unsafe) var didRegisterKnownMultiViewConformances = false
+nonisolated func registerKnownMultiViewConformancesIfNeeded() {
     guard !didRegisterKnownMultiViewConformances else { return }
     didRegisterKnownMultiViewConformances = true
 

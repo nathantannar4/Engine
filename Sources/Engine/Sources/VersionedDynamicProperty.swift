@@ -80,6 +80,7 @@ import SwiftUI
 ///         }
 ///     }
 ///
+@MainActor @preconcurrency
 public protocol VersionedDynamicProperty: DynamicProperty {
 
     associatedtype V7Property: DynamicProperty = V6Property

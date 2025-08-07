@@ -76,9 +76,9 @@ public struct ViewAliasSourceModifier<
     }
 
     private struct Modifier: GraphInputsModifier {
-        var source: Source
+        nonisolated(unsafe) var source: Source
 
-        public static func makeInputs(
+        public nonisolated static func makeInputs(
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
         ) {
@@ -131,13 +131,18 @@ extension ViewAlias where DefaultBody == EmptyView {
 }
 
 extension ViewAlias {
-    public static func makeView(
+
+    private nonisolated var _defaultBody: ViewAliasDefaultBody<Self> {
+        ViewAliasDefaultBody(alias: self)
+    }
+
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         var inputs = inputs
         guard let input = inputs[ViewAliasInput<Self>.self].popLast() else {
-            return DefaultBody._makeView(view: view[\.defaultBody], inputs: inputs)
+            return ViewAliasDefaultBody<Self>._makeView(view: view[\._defaultBody], inputs: inputs)
         }
         func project<T>(_ type: T.Type) -> _ViewOutputs {
             let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
@@ -148,13 +153,13 @@ extension ViewAlias {
         return _openExistential(input.type, do: project)
     }
 
-    public static func makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         var inputs = inputs
         guard let input = inputs[ViewAliasInput<Self>.self].popLast() else {
-            return DefaultBody._makeViewList(view: view[\.defaultBody], inputs: inputs)
+            return ViewAliasDefaultBody<Self>._makeViewList(view: view[\._defaultBody], inputs: inputs)
         }
         func project<T>(_ type: T.Type) -> _ViewListOutputs {
             let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
@@ -166,12 +171,12 @@ extension ViewAlias {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         var inputs = inputs
         guard let input = inputs[ViewAliasInput<Self>.self].popLast() else {
-            return DefaultBody._viewListCount(inputs: inputs)
+            return ViewAliasDefaultBody<Self>._viewListCount(inputs: inputs)
         }
         func project<T>(_ type: T.Type) -> Int? {
             let conformance = ViewProtocolDescriptor.conformance(of: T.self)!
@@ -180,6 +185,14 @@ extension ViewAlias {
             return visitor.outputs
         }
         return _openExistential(input.type, do: project)
+    }
+}
+
+private struct ViewAliasDefaultBody<Alias: ViewAlias>: View {
+    nonisolated(unsafe) var alias: Alias
+
+    var body: some View {
+        alias.defaultBody
     }
 }
 

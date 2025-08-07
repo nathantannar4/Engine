@@ -8,6 +8,7 @@ extension Binding {
 
     /// Unwraps a `Binding` with an optional wrapped value to an optional `Binding`
     @inlinable
+    @MainActor @preconcurrency
     public func unwrap<Wrapped>() -> Binding<Wrapped>? where Optional<Wrapped> == Value {
         guard let value = self.wrappedValue else { return nil }
         return Binding<Wrapped>(
@@ -20,6 +21,7 @@ extension Binding {
 
     /// Unwraps a `Binding` projected value with a default value when `nil`
     @inlinable
+    @MainActor @preconcurrency
     public func unwrap<Wrapped>(
         _ defaultValue: Wrapped
     ) -> Binding<Wrapped> where Optional<Wrapped> == Value {

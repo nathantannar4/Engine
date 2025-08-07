@@ -18,6 +18,7 @@ extension Binding {
 
     /// Projects a `Binding` with the `transform`
     @inlinable
+    @MainActor @preconcurrency
     public func projecting<Transform: BindingTransform>(
         _ transform: Transform
     ) -> Binding<Transform.Output> where Transform.Input == Value {

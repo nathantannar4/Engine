@@ -14,7 +14,7 @@ import EngineCore
 public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
 
     @usableFromInline
-    var content: Any
+    nonisolated(unsafe) var content: Any
 
     @inlinable
     public init(
@@ -24,7 +24,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
         self.content = content()
     }
 
-    public static func makeView(
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
@@ -38,7 +38,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
         return _openExistential(type, do: project)
     }
 
-    public static func makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
@@ -53,7 +53,7 @@ public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
         func project<T>(_ type: T.Type) -> Int? {
@@ -115,8 +115,12 @@ private struct ViewListOutputsCountVisitor: ViewVisitor {
 struct StaticContent_Previews: PreviewProvider {
 
     struct Content: View {
+        @State var value = 0
+
         var body: some View {
-            Text("Hello, World")
+            Button(value.description) {
+                value += 1
+            }
         }
     }
 

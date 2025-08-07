@@ -6,6 +6,7 @@ import XCTest
 import SwiftUI
 @testable import EngineCore
 
+@MainActor
 final class MultiViewVisitorTests: XCTestCase {
 
     fileprivate func expectation<Content: View>(
@@ -168,6 +169,15 @@ final class MultiViewVisitorTests: XCTestCase {
         expectation(count: 0) {
             CustomEmptyView()
         }
+        struct CustomStatefulEmptyView: View {
+            @State var flag = false
+            var body: some View {
+                EmptyView()
+            }
+        }
+        expectation(count: 1) {
+            CustomStatefulEmptyView()
+        }
     }
 
     func testSection() {
@@ -283,7 +293,7 @@ final class MultiViewVisitorTests: XCTestCase {
     func testForEach() {
         struct Item: Identifiable {
             var id: String
-            static var allItems: [Item] = [
+            static let allItems: [Item] = [
                 Item(id: "one"), Item(id: "two"), Item(id: "three")
             ]
         }
@@ -600,6 +610,18 @@ final class MultiViewVisitorTests: XCTestCase {
                 XCTAssertEqual(ctx.id, .init(Group<CustomMultiView>.self).appending(CustomMultiView.self).appending(offset: index).appending(Text.self))
             }
         }
+        struct CustomStatefulMultiView: View {
+            @State var flag = false
+            var body: some View {
+                Text("Hello")
+                Text("World")
+            }
+        }
+        expectation(CustomStatefulMultiView.self) {
+            CustomStatefulMultiView()
+        } validation: { ctx, _ in
+            XCTAssertEqual(ctx.id, .init(CustomStatefulMultiView.self))
+        }
     }
 
     #if os(iOS) || os(macOS)
@@ -626,7 +648,7 @@ final class MultiViewVisitorTests: XCTestCase {
             var body: Never { fatalError() }
         }
         struct PrimitiveMultiView<Content: View>: View, MultiView {
-            @ViewBuilder var content: Content
+            @ViewBuilder nonisolated(unsafe) var content: Content
             var body: Never { fatalError() }
             func makeSubviewIterator() -> some MultiViewIterator {
                 content.makeSubviewIterator()

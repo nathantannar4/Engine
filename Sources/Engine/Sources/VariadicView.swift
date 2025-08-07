@@ -89,11 +89,11 @@ public struct VariadicView<Content: View>: View, RandomAccessCollection, Sequenc
 
     public typealias Iterator = AnyVariadicView.Iterator
 
-    public func makeIterator() -> Iterator {
+    public nonisolated func makeIterator() -> Iterator {
         children.makeIterator()
     }
 
-    public var underestimatedCount: Int {
+    public nonisolated var underestimatedCount: Int {
         children.underestimatedCount
     }
 
@@ -102,19 +102,19 @@ public struct VariadicView<Content: View>: View, RandomAccessCollection, Sequenc
     public typealias Element = AnyVariadicView.Element
     public typealias Index = AnyVariadicView.Index
 
-    public var startIndex: Index {
+    public nonisolated var startIndex: Index {
         children.startIndex
     }
 
-    public var endIndex: Index {
+    public nonisolated var endIndex: Index {
         children.endIndex
     }
 
-    public subscript(position: Index) -> Element {
+    public nonisolated subscript(position: Index) -> Element {
         children[position]
     }
 
-    public func index(after index: Index) -> Index {
+    public nonisolated func index(after index: Index) -> Index {
         children.index(after: index)
     }
 }
@@ -128,13 +128,13 @@ public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
     public struct Subview: View, Identifiable {
 
         @usableFromInline
-        var element: _VariadicView.Children.Element
+        nonisolated(unsafe) var element: _VariadicView.Children.Element
 
-        init(_ element: _VariadicView.Children.Element) {
+        nonisolated init(_ element: _VariadicView.Children.Element) {
             self.element = element
         }
 
-        public var id: AnyHashable {
+        public nonisolated var id: AnyHashable {
             element.id
         }
 
@@ -206,7 +206,7 @@ public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
         }
     }
 
-    var children: _VariadicView.Children
+    nonisolated(unsafe) var children: _VariadicView.Children
 
     init(_ children: _VariadicView.Children) {
         self.children = children
@@ -256,11 +256,11 @@ public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
 
     public typealias Iterator = IndexingIterator<Array<Element>>
 
-    public func makeIterator() -> Iterator {
+    public nonisolated func makeIterator() -> Iterator {
         children.map { Subview($0) }.makeIterator()
     }
 
-    public var underestimatedCount: Int {
+    public nonisolated var underestimatedCount: Int {
         children.underestimatedCount
     }
 
@@ -269,19 +269,19 @@ public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
     public typealias Element = Subview
     public typealias Index = Int
 
-    public var startIndex: Index {
+    public nonisolated var startIndex: Index {
         children.startIndex
     }
 
-    public var endIndex: Index {
+    public nonisolated var endIndex: Index {
         children.endIndex
     }
 
-    public subscript(position: Index) -> Element {
+    public nonisolated subscript(position: Index) -> Element {
         Subview(children[position])
     }
 
-    public func index(after index: Index) -> Index {
+    public nonisolated func index(after index: Index) -> Index {
         children.index(after: index)
     }
 }
@@ -342,11 +342,11 @@ public struct AnyVariadicSectionView: View, Identifiable {
 
         public typealias Iterator = IndexingIterator<Array<Element>>
 
-        public func makeIterator() -> Iterator {
+        public nonisolated func makeIterator() -> Iterator {
             children.makeIterator()
         }
 
-        public var underestimatedCount: Int {
+        public nonisolated var underestimatedCount: Int {
             children.underestimatedCount
         }
 
@@ -355,24 +355,24 @@ public struct AnyVariadicSectionView: View, Identifiable {
         public typealias Element = Subview
         public typealias Index = Int
 
-        public var startIndex: Index {
+        public nonisolated var startIndex: Index {
             children.startIndex
         }
 
-        public var endIndex: Index {
+        public nonisolated var endIndex: Index {
             children.endIndex
         }
 
-        public subscript(position: Index) -> Element {
+        public nonisolated subscript(position: Index) -> Element {
             children[position]
         }
 
-        public func index(after index: Index) -> Index {
+        public nonisolated func index(after index: Index) -> Index {
             children.index(after: index)
         }
     }
 
-    public var id: AnyHashable
+    public nonisolated(unsafe) var id: AnyHashable
     public var header: Header
     public var content: Content
     public var footer: Footer

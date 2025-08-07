@@ -10,10 +10,11 @@ import Combine
 ///
 /// > Tip: Useful for when you need to observe when a view updates
 ///
+@MainActor @preconcurrency
 @propertyWrapper
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-public struct UpdatePhase: DynamicProperty {
+public struct UpdatePhase: @preconcurrency DynamicProperty {
 
     @usableFromInline
     final class Storage: ObservableObject {
@@ -33,6 +34,7 @@ public struct UpdatePhase: DynamicProperty {
         self.storage = StateObject(wrappedValue: Storage(value: Value()))
     }
 
+    @MainActor
     public mutating func update() {
         storage.wrappedValue.value.update()
     }
@@ -74,7 +76,7 @@ struct UpdatePhase_Previews: PreviewProvider {
                 Button {
                     value += 1
                 } label: {
-                    Text("Increment")
+                    Text(verbatim: "Increment \(value)")
                 }
                 #if os(visionOS)
                 .onChange(of: phase) { _, _ in
@@ -86,7 +88,7 @@ struct UpdatePhase_Previews: PreviewProvider {
                 }
                 #endif
 
-                Text(value.description)
+                Text(phase.phase.description)
             }
         }
     }

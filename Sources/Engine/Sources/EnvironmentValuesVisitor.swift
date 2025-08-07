@@ -144,7 +144,7 @@ private struct EnvironmentValuesVisitor<Value>: EnvironmentKeyVisitor {
     }
 }
 
-private class EnvironmentKeyLookupCache {
+private class EnvironmentKeyLookupCache: @unchecked Sendable {
 
     private let lock: os_unfair_lock_t
     private var storage = [String: ProtocolConformance<EnvironmentKeyProtocolDescriptor>]()

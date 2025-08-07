@@ -9,6 +9,7 @@ let testMacros: [String: Macro.Type] = [
     "StyledView": StyledViewMacro.self,
 ]
 
+@MainActor
 final class MacroTests: XCTestCase {
     func testMacro() throws {
         let sourceInput = """

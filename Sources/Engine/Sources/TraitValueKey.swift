@@ -59,7 +59,7 @@ private struct TraitValueKeyBox<Key: TraitValueKey>: _ViewTraitKey {
 
 struct TraitValueKey_Previews: PreviewProvider {
     struct PreviewTraitValueKey: TraitValueKey {
-        static var defaultValue: Int = 0
+        static let defaultValue: Int = 0
     }
 
     static var previews: some View {

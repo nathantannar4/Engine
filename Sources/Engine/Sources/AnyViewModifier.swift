@@ -46,6 +46,7 @@ extension View {
 }
 
 @usableFromInline
+@MainActor @preconcurrency
 class AnyViewModifierStorageBase {
     func body(content: AnyViewModifier.Content) -> AnyView { fatalError() }
     func concat<M: ViewModifier>(_ modifier: M) -> AnyViewModifier { fatalError() }

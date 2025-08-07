@@ -98,35 +98,44 @@ public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "St
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.
 @MainActor @preconcurrency
-public protocol StyledView: View, DynamicProperty {
+public protocol StyledView: PrimitiveView {
     associatedtype _Body: View
     @ViewBuilder @MainActor @preconcurrency var _body: _Body { get }
 }
 
 extension StyledView {
-    public nonisolated static func _makeView(
+
+    private nonisolated var content: StyledViewBody<Self> {
+        StyledViewBody(content: self)
+    }
+
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        MainActor.unsafe {
-            _Body._makeView(view: view[\._body], inputs: inputs)
-        }
+        StyledViewBody<Self>._makeView(view: view[\.content], inputs: inputs)
     }
 
-    public nonisolated static func _makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        MainActor.unsafe {
-            _Body._makeViewList(view: view[\._body], inputs: inputs)
-        }
+        StyledViewBody<Self>._makeViewList(view: view[\.content], inputs: inputs)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public nonisolated static func _viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        _Body._viewListCount(inputs: inputs)
+        StyledViewBody<Self>._viewListCount(inputs: inputs)
+    }
+}
+
+private struct StyledViewBody<Content: StyledView>: View {
+    nonisolated(unsafe) var content: Content
+
+    var body: some View {
+        content._body
     }
 }
 

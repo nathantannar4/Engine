@@ -5,54 +5,51 @@
 import SwiftUI
 
 @MainActor @preconcurrency
-public protocol PrimitiveView: View where Body == Never {
+public protocol PrimitiveView: View, DynamicProperty {
 
-    static func makeView(
+    nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs
 
-    static func makeViewList(
+    nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    static func viewListCount(
+    nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int?
 }
 
 extension PrimitiveView where Body == Never {
-
+    
     public var body: Never {
         bodyError()
     }
+}
+
+extension PrimitiveView {
 
     public nonisolated static func _makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        MainActor.unsafe {
-            makeView(view: view, inputs: inputs)
-        }
+        makeView(view: view, inputs: inputs)
     }
 
     public nonisolated static func _makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        MainActor.unsafe {
-            makeViewList(view: view, inputs: inputs)
-        }
+        makeViewList(view: view, inputs: inputs)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public nonisolated static func _viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        MainActor.unsafe {
-            viewListCount(inputs: inputs)
-        }
+        viewListCount(inputs: inputs)
     }
 }

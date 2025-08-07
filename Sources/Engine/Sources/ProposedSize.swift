@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-public struct ProposedSize: Equatable {
+public struct ProposedSize: Equatable, Sendable {
     public var width: CGFloat?
     public var height: CGFloat?
 
@@ -32,6 +32,7 @@ public struct ProposedSize: Equatable {
         self.init(width: proposedSize.width, height: proposedSize.height)
     }
 
+    @MainActor @preconcurrency
     public func toCoreGraphics() -> CGSize {
         #if os(iOS) || os(tvOS) || os(visionOS)
         return CGSize(width: width ?? UIView.noIntrinsicMetric, height: height ?? UIView.noIntrinsicMetric)

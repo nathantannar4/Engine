@@ -44,7 +44,7 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Seque
             var value: Namespace.ID
         }
 
-        public var id: ID
+        public nonisolated(unsafe) var id: ID
         public var content: Content
 
         var phase: UpdatePhase.Value
@@ -76,11 +76,11 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Seque
 
     public typealias Iterator = IndexingIterator<Array<Element>>
 
-    public func makeIterator() -> Iterator {
+    public nonisolated func makeIterator() -> Iterator {
         elements.makeIterator()
     }
 
-    public var underestimatedCount: Int {
+    public nonisolated var underestimatedCount: Int {
         elements.underestimatedCount
     }
 
@@ -89,19 +89,19 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Seque
     public typealias Element = Subview
     public typealias Index = Int
 
-    public var startIndex: Index {
+    public nonisolated var startIndex: Index {
         elements.startIndex
     }
 
-    public var endIndex: Index {
+    public nonisolated var endIndex: Index {
         elements.endIndex
     }
 
-    public subscript(position: Index) -> Element {
+    public nonisolated subscript(position: Index) -> Element {
         elements[position]
     }
 
-    public func index(after index: Index) -> Index {
+    public nonisolated func index(after index: Index) -> Index {
         elements.index(after: index)
     }
 }

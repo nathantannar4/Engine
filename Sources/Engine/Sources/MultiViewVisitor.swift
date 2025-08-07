@@ -16,8 +16,20 @@ public typealias MultiViewProtocolDescriptor = EngineCore.MultiViewProtocolDescr
 public struct MultiViewSubviewVisitor: MultiViewVisitor {
     @frozen
     public struct Subview: View, Identifiable {
-        public var id: Context.ID
-        public var body: AnyView
+        public nonisolated(unsafe) var id: Context.ID
+        public nonisolated(unsafe) var content: AnyView
+
+        nonisolated init<Content: View>(
+            id: Context.ID,
+            content: Content
+        ) {
+            self.id = id
+            self.content = AnyView(content)
+        }
+
+        public var body: some View {
+            content
+        }
     }
 
     public private(set) var subviews: [Subview] = []
@@ -30,7 +42,7 @@ public struct MultiViewSubviewVisitor: MultiViewVisitor {
         context: Context,
         stop: inout Bool
     ) {
-        subviews.append(Subview(id: context.id, body: AnyView(content)))
+        subviews.append(Subview(id: context.id, content: content))
     }
 }
 

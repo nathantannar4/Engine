@@ -116,7 +116,7 @@ public struct ViewOutputAliasReader<
     public var body: some View {
         ViewOutputKeyReader(ViewOutputAliasKey<Alias>.self) { value in
             content
-                .viewAlias(ViewOutputAliasKey<Alias>.self) {
+                .viewAlias(ViewOutputAliasBody<Alias>.self) {
                     ViewOutputKeyValueReader(value) { view in
                         view
                     }
@@ -132,58 +132,60 @@ extension ViewOutputAlias where DefaultBody == EmptyView {
     }
 }
 
-
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension ViewOutputAlias {
 
-    private var content: ViewOutputAliasKey<Self> {
-        ViewOutputAliasKey(alias: self)
+    private nonisolated var _body: ViewOutputAliasBody<Self> {
+        ViewOutputAliasBody(alias: self)
     }
 
-    public static func makeView(
+    public nonisolated static func makeView(
         view: _GraphValue<Self>,
         inputs: _ViewInputs
     ) -> _ViewOutputs {
-        ViewOutputAliasKey<Self>._makeView(
-            view: view[\.content],
+        ViewOutputAliasBody<Self>._makeView(
+            view: view[\._body],
             inputs: inputs
         )
     }
 
-    public static func makeViewList(
+    public nonisolated static func makeViewList(
         view: _GraphValue<Self>,
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
-        ViewOutputAliasKey<Self>._makeViewList(
-            view: view[\.content],
+        ViewOutputAliasBody<Self>._makeViewList(
+            view: view[\._body],
             inputs: inputs
         )
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public static func viewListCount(
+    public nonisolated static func viewListCount(
         inputs: _ViewListCountInputs
     ) -> Int? {
-        ViewOutputAliasKey<Self>._viewListCount(
+        ViewOutputAliasBody<Self>._viewListCount(
             inputs: inputs
         )
     }
 }
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-private struct ViewOutputAliasKey<
-    Alias: ViewOutputAlias
->: ViewOutputKey, ViewAlias {
-
-    var alias: Alias
+private struct ViewOutputAliasBody<Alias: ViewOutputAlias>: ViewAlias {
+    nonisolated(unsafe) var alias: Alias
 
     var defaultBody: Alias.DefaultBody {
         alias.defaultBody
     }
+}
+
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+private struct ViewOutputAliasKey<
+    Alias: ViewOutputAlias
+>: ViewOutputKey {
 
     typealias Content = Alias.Content
 
-    static func reduce(
+    static nonisolated func reduce(
         value: inout Value,
         nextValue: () -> Value
     ) {

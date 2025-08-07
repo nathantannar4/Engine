@@ -13,7 +13,7 @@ public struct StaticConditionalContent<
 >: PrimitiveView {
 
     @usableFromInline
-    var content: ConditionalContent<TrueContent, FalseContent>
+    nonisolated(unsafe) var content: ConditionalContent<TrueContent, FalseContent>
 
     @inlinable
     public init(
@@ -24,7 +24,7 @@ public struct StaticConditionalContent<
         self.content = Condition.value ? .init(then()) : .init(otherwise())
     }
 
-    private var trueContent: TrueContent {
+    private nonisolated var trueContent: TrueContent {
         switch content.storage {
         case .trueContent(let content):
             return content
@@ -33,7 +33,7 @@ public struct StaticConditionalContent<
         }
     }
 
-    private var falseContent: FalseContent {
+    private nonisolated var falseContent: FalseContent {
         switch content.storage {
         case .trueContent:
             fatalError("Condition \(String(describing: Condition.self)) produced a dynamic result")
@@ -92,15 +92,28 @@ struct StaticConditionalContent_Previews: PreviewProvider {
         }
     }
 
+    struct Preview: View {
+        var label: String
+        @State var value = 0
+
+        var body: some View {
+            Button {
+                value += 1
+            } label: {
+                Text(verbatim: "\(label) \(value.description)")
+            }
+        }
+    }
+
     static var previews: some View {
         StaticConditionalContent(PreviewCondition.self) {
-            Text("DEBUG")
+            Preview(label: "DEBUG")
         }
 
         StaticConditionalContent(PreviewCondition.self) {
-            Text("DEBUG")
+            Preview(label: "DEBUG")
         } otherwise: {
-            Text("!DEBUG")
+            Preview(label: "!DEBUG")
         }
     }
 }
