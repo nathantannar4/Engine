@@ -5,6 +5,39 @@
 import SwiftUI
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension View {
+
+    @_disfavoredOverload
+    @inlinable
+    public func foregroundStyle<S: ShapeStyle>(
+        _ style: S?
+    ) -> some View {
+        modifier(ForegroundStyleModifier(style: style))
+    }
+}
+
+@frozen
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+public struct ForegroundStyleModifier<
+    S: ShapeStyle
+>: ViewModifier {
+
+    public var style: S?
+
+    @Environment(\.foregroundStyle) private var foregroundStyle
+
+    @inlinable
+    init(style: S? = nil) {
+        self.style = style
+    }
+
+    public func body(content: Content) -> some View {
+        content
+            .foregroundStyle(style.map { AnyShapeStyle($0) } ?? foregroundStyle)
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension AnyShapeStyle {
 
     public var color: Color? {
@@ -43,8 +76,23 @@ extension AnyShapeStyle {
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 struct AnyShapeStyle_Previews: PreviewProvider {
+    struct StyledText: View {
+        var color: Color?
+
+        var body: some View {
+            Text("Hello, World")
+                .foregroundStyle(color)
+        }
+    }
     static var previews: some View {
         VStack {
+            VStack {
+                StyledText(color: .red)
+
+                StyledText(color: nil)
+                    .foregroundStyle(.red)
+            }
+
             HStack {
                 Rectangle()
                     .fill(AnyShapeStyle(Color.red).color ?? .clear)

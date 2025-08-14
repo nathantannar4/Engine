@@ -31,17 +31,17 @@ extension Animation {
         Resolved(animation: self)
     }
 
-    public struct Resolved: Codable, Equatable {
-        public enum TimingCurve: Codable, Equatable {
+    public struct Resolved: Codable, Equatable, Sendable {
+        public enum TimingCurve: Codable, Equatable, Sendable {
             case `default`
 
-            public struct CustomAnimation: Codable, Equatable {
+            public struct CustomAnimation: Codable, Equatable, Sendable {
                 public var duration: TimeInterval?
             }
             case custom(CustomAnimation)
 
-            public struct BezierAnimation: Codable, Equatable {
-                public struct AnimationCurve: Codable, Equatable {
+            public struct BezierAnimation: Codable, Equatable, Sendable {
+                public struct AnimationCurve: Codable, Equatable, Sendable {
                     public var ax: Double
                     public var bx: Double
                     public var cx: Double
@@ -55,7 +55,7 @@ extension Animation {
             }
             case bezier(BezierAnimation)
 
-            public struct SpringAnimation: Codable, Equatable {
+            public struct SpringAnimation: Codable, Equatable, Sendable {
                 public var mass: Double
                 public var stiffness: Double
                 public var damping: Double
@@ -63,7 +63,7 @@ extension Animation {
             }
             case spring(SpringAnimation)
 
-            public struct FluidSpringAnimation: Codable, Equatable {
+            public struct FluidSpringAnimation: Codable, Equatable, Sendable {
                 public var duration: Double
                 public var dampingFraction: Double
                 public var blendDuration: TimeInterval

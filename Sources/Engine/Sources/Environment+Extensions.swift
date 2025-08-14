@@ -28,7 +28,10 @@ extension EnvironmentValues {
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public var foregroundColor: Color? {
-        foregroundStyle.color
+        if let foregroundStyle = self["ForegroundStyleKey", as: AnyShapeStyle.self] {
+            return foregroundStyle.color
+        }
+        return self["ForegroundColorKey"]
     }
 
     /// The value for the ``.tint(_)`` modifier
@@ -129,6 +132,24 @@ struct EnvironmentValues_Previews: PreviewProvider {
             } content: { foregroundStyle in
                 Circle()
                     .fill(foregroundStyle)
+                    .fixedSize()
+            }
+            .foregroundStyle(.red)
+
+            EnvironmentValuePreview(keyPath: \.foregroundStyle) {
+                Text("Hello, World")
+            } content: { foregroundStyle in
+                Circle()
+                    .fill(foregroundStyle)
+                    .fixedSize()
+            }
+            .foregroundStyle(.red)
+
+            EnvironmentValuePreview(keyPath: \.foregroundColor) {
+                Text("Hello, World")
+            } content: { foregroundColor in
+                Circle()
+                    .fill(foregroundColor ?? .black)
                     .fixedSize()
             }
             .foregroundStyle(.red)

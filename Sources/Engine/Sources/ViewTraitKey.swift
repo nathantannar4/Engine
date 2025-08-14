@@ -81,10 +81,13 @@ extension AnyVariadicView.Subview {
         var output: K.Value!
 
         mutating func visit<Key: _ViewTraitKey>(type: Key.Type) {
+            let value = subview.element[Key.self]
             if K.Value.self == Key.Value.self {
-                output = subview.element[Key.self] as? K.Value
+                output = value as? K.Value
+            } else if K.Value.self == Any.self {
+                output = (value as Any) as? K.Value
             } else if MemoryLayout<K.Value>.size == MemoryLayout<Key.Value>.size {
-                output = unsafeBitCast(subview.element[Key.self], to: K.Value.self)
+                output = unsafeBitCast(value, to: K.Value.self)
             }
         }
     }
@@ -123,10 +126,13 @@ extension Layout.Subviews.Element {
         var output: K.Value!
 
         mutating func visit<Key: _ViewTraitKey>(type: Key.Type) {
+            let trait = subview._trait(key: Key.self)
             if K.Value.self == Key.Value.self {
-                output = subview._trait(key: Key.self) as? K.Value
+                output = trait as? K.Value
+            } else if K.Value.self == Any.self {
+                output = (trait as Any) as? K.Value
             } else if MemoryLayout<K.Value>.size == MemoryLayout<Key.Value>.size {
-                output = unsafeBitCast(subview._trait(key: Key.self), to: K.Value.self)
+                output = unsafeBitCast(trait, to: K.Value.self)
             }
         }
     }

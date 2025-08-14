@@ -131,6 +131,7 @@ extension PropertyList {
                     || key.hasSuffix(".AccessibilityRelationshipScope")
                     || key.hasSuffix(".EventBindingBridgeFactoryInput")
                     || key.hasSuffix(".InterfaceIdiomInput")
+                    || key.hasSuffix(containerKey)
                 if isMatch {
                     break
                 }
@@ -143,7 +144,7 @@ extension PropertyList {
         while offset > 0, let p = ptr {
             if let skip = p.skip, last?.length ?? 0 < skip.length, skip.length < tail.length {
                 p.skip = last
-                p.skipCount = p.length - (last?.length ?? 0)
+                p.skipCount = p.length - (last?.length ?? 0) - offset
             }
             p.length -= offset
             if p.skip == nil {
@@ -153,10 +154,14 @@ extension PropertyList {
         }
 
         if let last {
-            _ = last.object.retain() // Prevent dealloc
             tail.after = last
-            tail.skip = last.skip
-            tail.skipCount = last.skipCount + 1
+            if let skip = last.skip {
+                tail.skip = skip
+                tail.skipCount = tail.length - last.length
+            } else {
+                tail.skip = last
+                tail.skipCount = 1
+            }
         }
     }
 }
