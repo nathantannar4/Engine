@@ -174,7 +174,7 @@ public protocol ViewStyle: DynamicProperty {
 @MainActor @preconcurrency
 public protocol ViewStyledView: PrimitiveView {
     associatedtype Configuration
-    nonisolated var configuration: Configuration { get }
+    var configuration: Configuration { get }
 
     associatedtype DefaultStyle: ViewStyle where DefaultStyle.Configuration == Configuration
     @MainActor @preconcurrency static var defaultStyle: DefaultStyle { get }
@@ -319,11 +319,11 @@ extension ViewStyledView {
     }
 
     private nonisolated var content: ViewStyledViewStyledBody<Self> {
-        ViewStyledViewStyledBody(configuration: configuration)
+        ViewStyledViewStyledBody(content: self)
     }
 
     private nonisolated var defaultContent: ViewStyledViewDefaultBody<Self> {
-        ViewStyledViewDefaultBody(configuration: configuration)
+        ViewStyledViewDefaultBody(content: self)
     }
 
     public nonisolated static func makeView(
@@ -399,10 +399,11 @@ private struct ViewStyledViewDefaultBody<
     StyledView: ViewStyledView
 >: View {
 
-    nonisolated(unsafe) var configuration: StyledView.Configuration
+    nonisolated(unsafe) var content: StyledView
 
     var body: some View {
-        StyledView.defaultStyle.makeBody(configuration: configuration)
+        StyledView.defaultStyle
+            .makeBody(configuration: content.configuration)
     }
 }
 
@@ -410,7 +411,7 @@ private struct ViewStyledViewStyledBody<
     StyledView: ViewStyledView
 >: View {
 
-    nonisolated(unsafe) var configuration: StyledView.Configuration
+    nonisolated(unsafe) var content: StyledView
 
     @Environment(\.viewStyles) var viewStyles
 
@@ -419,7 +420,7 @@ private struct ViewStyledViewStyledBody<
         let style = viewStyles[StyledView.self].popLast()!
         AnyViewStyledView<StyledView, Never>(
             style: style,
-            configuration: configuration
+            configuration: content.configuration
         )
         .environment(\.viewStyles, viewStyles)
     }

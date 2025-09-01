@@ -154,6 +154,7 @@ extension PropertyList {
         }
 
         if let last {
+            _ = last.object.retain() // Prevent dealloc
             tail.after = last
             if let skip = last.skip {
                 tail.skip = skip
