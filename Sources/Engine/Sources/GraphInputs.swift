@@ -139,12 +139,14 @@ extension PropertyList {
             last = p
         }
 
+        guard let last else { return }
+
         ptr = elements
-        let offset = tail.length - ((last?.length ?? 0) + 1)
+        let offset = tail.length - (last.length + 1)
         while offset > 0, let p = ptr {
-            if let skip = p.skip, last?.length ?? 0 < skip.length, skip.length < tail.length {
+            if let skip = p.skip, skip.length < tail.length {
                 p.skip = last
-                p.skipCount = p.length - (last?.length ?? 0) - offset
+                p.skipCount = p.length - last.length - offset
             }
             p.length -= offset
             if p.skip == nil {
@@ -153,16 +155,11 @@ extension PropertyList {
             ptr = p.after
         }
 
-        if let last {
-            _ = last.object.retain() // Prevent dealloc
-            tail.after = last
-            if let skip = last.skip {
-                tail.skip = skip
-                tail.skipCount = tail.length - last.length
-            } else {
-                tail.skip = last
-                tail.skipCount = 1
-            }
+        _ = last.object.retain() // Prevent dealloc
+        tail.after = last
+        if last.skip == nil {
+            tail.skip = last
+            tail.skipCount = 1
         }
     }
 }

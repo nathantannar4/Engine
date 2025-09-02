@@ -92,6 +92,15 @@ extension MultiViewAdapter where Visitor == MultiViewIsEmptyVisitor {
     }
 }
 
+extension View {
+
+    public var isEmptyView: Bool {
+        var visitor = MultiViewIsEmptyVisitor()
+        visit(visitor: &visitor)
+        return visitor.isEmpty
+    }
+}
+
 // MARK: - Previews
 
 struct MultiViewIsEmptyVisitor_Previews: PreviewProvider {
