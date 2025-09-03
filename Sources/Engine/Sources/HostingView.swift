@@ -163,7 +163,47 @@ open class HostingView<
     private var hitTestTimestamp: TimeInterval = 0
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let result = super.hitTest(point, with: event)
-        if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
+        if #available(iOS 26.0, *) {
+            if result == self {
+                // Hit testing on iOS 26 always returns self, so check the raw pixels to support passthrough
+                let size = CGSize(width: 10, height: 10)
+                UIGraphicsBeginImageContextWithOptions(size, false, window?.screen.scale ?? 1)
+                defer { UIGraphicsEndImageContext() }
+                guard let context = UIGraphicsGetCurrentContext() else {
+                    return result
+                }
+
+                context.translateBy(x: -point.x + size.width / 2, y: -point.y + size.height / 2)
+                layer.render(in: context)
+
+                let image = UIGraphicsGetImageFromCurrentImageContext()
+                UIGraphicsEndImageContext()
+
+                guard
+                    let cgImage = image?.cgImage,
+                    let data = cgImage.dataProvider?.data,
+                    let ptr = CFDataGetBytePtr(data)
+                else {
+                    return result
+                }
+
+                let bytesPerPixel = 4
+                let width = cgImage.width
+                let height = cgImage.height
+
+                for y in 0..<height {
+                    for x in 0..<width {
+                        let offset = (y * width + x) * bytesPerPixel
+                        let alpha = ptr[offset + 3]
+                        if alpha > 0 {
+                            return result
+                        }
+                    }
+                }
+                return nil
+            }
+            return result
+        } else if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
             defer { hitTestTimestamp = event?.timestamp ?? 0 }
             if result == self, event?.timestamp != hitTestTimestamp {
                 return nil
