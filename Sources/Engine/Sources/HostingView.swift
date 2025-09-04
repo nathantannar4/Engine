@@ -101,6 +101,14 @@ open class HostingView<
     private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
     #endif
 
+    public var isHitTestingPassthrough: Bool = {
+        if #available(iOS 26.0, *) {
+            // iOS 26 changes hit testing making passthrough less reliable
+            return false
+        }
+        return true
+    }()
+
     #if os(macOS)
     @available(macOS 11.0, *)
     open override var safeAreaInsets: NSEdgeInsets {
@@ -154,7 +162,8 @@ open class HostingView<
 
     #if os(macOS)
     open override func hitTest(_ point: NSPoint) -> NSView? {
-        guard let result = super.hitTest(point), result != self else {
+        let result = super.hitTest(point)
+        if result == self, isHitTestingPassthrough {
             return nil
         }
         return result
@@ -164,7 +173,7 @@ open class HostingView<
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let result = super.hitTest(point, with: event)
         if #available(iOS 26.0, *) {
-            if result == self {
+            if result == self, isHitTestingPassthrough {
                 // Hit testing on iOS 26 always returns self, so check the raw pixels to support passthrough
                 let size = CGSize(width: 10, height: 10)
                 UIGraphicsBeginImageContextWithOptions(size, false, window?.screen.scale ?? 1)
@@ -205,12 +214,12 @@ open class HostingView<
             return result
         } else if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
             defer { hitTestTimestamp = event?.timestamp ?? 0 }
-            if result == self, event?.timestamp != hitTestTimestamp {
+            if result == self, event?.timestamp != hitTestTimestamp, isHitTestingPassthrough {
                 return nil
             }
             return result
         } else {
-            if result == self {
+            if result == self, isHitTestingPassthrough {
                 return nil
             }
             return result
