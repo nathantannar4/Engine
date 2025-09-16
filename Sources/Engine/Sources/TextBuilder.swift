@@ -9,98 +9,134 @@ import SwiftUI
 @resultBuilder
 public struct TextBuilder {
 
-    @inlinable
-    public static func buildBlock() -> [Optional<Text>] {
-        []
-    }
+    public static func buildBlock() -> [Text] { [] }
 
-    @inlinable
     public static func buildPartialBlock(
-        first: [Optional<Text>]
-    ) -> [Optional<Text>] {
-        first
-    }
+        first: Void
+    ) -> [Text] { [] }
 
-    @inlinable
     public static func buildPartialBlock(
-        accumulated: [Optional<Text>],
-        next: [Optional<Text>]
-    ) -> [Optional<Text>] {
-        accumulated + next
-    }
+        first: Never
+    ) -> [Text] {}
 
-    @inlinable
     public static func buildExpression(
-        _ expression: Text
-    ) -> [Optional<Text>] {
-        [expression]
+        _ component: Text?
+    ) -> [Text] {
+        guard let component else { return []}
+        return [component]
     }
 
-    @inlinable
     public static func buildExpression(
-        _ expression: Optional<Text>
-    ) -> [Optional<Text>] {
-        [expression]
-    }
-
-    @inlinable
-    public static func buildEither(
-        first component: [Optional<Text>]
-    ) -> [Optional<Text>] {
-        component
-    }
-
-    @inlinable
-    public static func buildEither(
-        second component: [Optional<Text>]
-    ) -> [Optional<Text>] {
-        component
-    }
-
-    @inlinable
-    public static func buildOptional(
-        _ component: [Optional<Text>]?
-    ) -> [Optional<Text>] {
-        component ?? []
-    }
-
-    @inlinable
-    public static func buildLimitedAvailability(
-        _ component: [Optional<Text>]
-    ) -> [Optional<Text>] {
-        component
-    }
-
-    @inlinable
-    public static func buildArray(
-        _ components: [Optional<Text>]
-    ) -> [Optional<Text>] {
+        _ components: [Text]
+    ) -> [Text] {
         components
     }
 
-    @inlinable
-    public static func buildBlock(
-        _ components: [Optional<Text>]...
-    ) -> [Optional<Text>] {
+    public static func buildExpression<
+        Data: RandomAccessCollection,
+        ID
+    >(
+        _ components: ForEach<Data, ID, Text>
+    ) -> [Text] {
+        components.data.map { components.content($0) }
+    }
+
+    public static func buildIf(
+        _ components: [Text]?
+    ) -> [Text] {
+        components ?? []
+    }
+
+    public static func buildEither(
+        first: [Text]
+    ) -> [Text] { first }
+
+    public static func buildEither(
+        second: [Text]
+    ) -> [Text] {
+        second
+    }
+
+    public static func buildArray(
+        _ components: [[Text]]
+    ) -> [Text] {
         components.flatMap { $0 }
     }
 
-    public static func buildFinalResult(
-        _ component: [Optional<Text>]
+    public static func buildPartialBlock(
+        first: Text
     ) -> [Text] {
-        component.compactMap { $0 }
+        [first]
+    }
+
+    public static func buildPartialBlock(
+        first: [Text]
+    ) -> [Text] {
+        first
+    }
+
+    public static func buildPartialBlock(
+        accumulated: [Text],
+        next: Text
+    ) -> [Text] {
+        accumulated + [next]
+    }
+
+    public static func buildPartialBlock(
+        accumulated: [Text],
+        next: [Text]
+    ) -> [Text] {
+        accumulated + next
+    }
+}
+
+
+@frozen
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+public struct MultiText: View {
+
+    public var separator: Text
+    public var blocks: [Text]
+
+    @Environment(\.self) private var environment
+
+    @inlinable
+    public init(
+        separator: Text = Text(verbatim: " "),
+        @TextBuilder blocks: () -> [Text]
+    ) {
+        self.separator = separator
+        self.blocks = blocks()
+    }
+
+    @_disfavoredOverload
+    @inlinable
+    public init<S: StringProtocol>(
+        separator: S,
+        @TextBuilder blocks: () -> [Text]
+    ) {
+        self.init(separator: Text(separator), blocks: blocks)
+    }
+
+    @inlinable
+    public init(
+        separator: LocalizedStringKey,
+        @TextBuilder blocks: () -> [Text]
+    ) {
+        self.init(separator: Text(separator), blocks: blocks)
+    }
+
+    public var body: some View {
+        if let text = blocks.joined(separator: separator) {
+            environment.redactionReasons.isEmpty
+                ? text
+                : Text(text.resolve(in: environment))
+        }
     }
 }
 
 
 extension Text {
-
-    @inlinable
-    public init(
-        @TextBuilder blocks: () -> [Text]
-    ) {
-        self.init(separator: Text(verbatim: " "), blocks: blocks)
-    }
 
     @_disfavoredOverload
     @inlinable
@@ -121,19 +157,25 @@ extension Text {
 
     @inlinable
     public init(
-        separator: Text,
+        separator: Text = Text(verbatim: " "),
         @TextBuilder blocks: () -> [Text]
     ) {
-        let blocks = blocks()
-        switch blocks.count {
+        self = blocks().joined(separator: separator) ?? Text(verbatim: "")
+    }
+}
+
+extension RandomAccessCollection where Element == Text {
+
+    public func joined(separator: Text) -> Text? {
+        switch count {
         case 0:
-            self = Text(verbatim: "")
+            return nil
 
         case 1:
-            self = blocks[0]
+            return self[startIndex]
 
         default:
-            self = blocks.dropFirst().reduce(into: blocks[0]) { result, text in
+            return dropFirst().reduce(into: self[startIndex]) { result, text in
                 result = result + separator + text
             }
         }
@@ -154,29 +196,50 @@ struct TextBuilder_Previews: PreviewProvider {
             Text("*")
         }
 
+        @TextBuilder
+        var texts: [Text] {
+            if flag {
+                Text("~")
+            }
+
+            Text("Hello")
+                .font(.headline)
+                .foregroundColor(.red)
+
+            Text("World")
+                .fontWeight(.light)
+
+            if flag {
+                Text("!")
+            } else {
+                Text(".")
+            }
+
+            optionalText()
+
+            [Text("Line 1"), Text("Line 2")]
+
+            for i in 1...3 {
+                Text("Line \(i)")
+            }
+
+            ForEach(0..<3) { index in
+                Text(index.description)
+            }
+        }
+
         var body: some View {
             VStack {
                 Toggle(isOn: $flag) { Text("Flag") }
 
+                Text {
+                    // Empty
+                }
+                .frame(minWidth: 20)
+                .border(Color.red)
+
                 let text = Text {
-                    if flag {
-                        Text("~")
-                    }
-
-                    Text("Hello")
-                        .font(.headline)
-                        .foregroundColor(.red)
-
-                    Text("World")
-                        .fontWeight(.light)
-
-                    if flag {
-                        Text("!")
-                    } else {
-                        Text(".")
-                    }
-
-                    optionalText()
+                    texts
                 }
 
                 text
@@ -184,6 +247,18 @@ struct TextBuilder_Previews: PreviewProvider {
                 if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
                     text
                         .redacted(reason: .placeholder)
+
+                    // This wont be rendered, since no text
+                    MultiText {
+                        // Empty
+                    }
+                    .frame(minWidth: 20)
+                    .border(Color.red)
+
+                    MultiText {
+                        texts
+                    }
+                    .redacted(reason: .placeholder)
                 }
             }
         }

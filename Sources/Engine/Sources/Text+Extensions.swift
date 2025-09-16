@@ -61,7 +61,7 @@ extension Text {
         case anyTextModifier(AnyObject)
     }
 
-    private struct Environment {
+    private struct ResolvedEnvironment {
         var font: Font?
         var fontWeight: Font.Weight?
         var fontWidth: CGFloat?
@@ -166,11 +166,11 @@ extension Text {
     }
 
     func _resolveAttributed(in environment: EnvironmentValues) -> AttributedString {
-        let environment = Environment(environment: environment)
+        let environment = ResolvedEnvironment(environment: environment)
         return _resolveAttributed(in: environment)
     }
 
-    private func _resolveAttributed(in environment: Environment) -> AttributedString {
+    private func _resolveAttributed(in environment: ResolvedEnvironment) -> AttributedString {
         var environment = environment
         for modifier in layout.modifiers.reversed() {
             switch modifier {
@@ -255,7 +255,7 @@ extension Text {
 
     private func resolve(
         storage: Any,
-        environment: Environment
+        environment: ResolvedEnvironment
     ) -> AttributedString {
         let className = String(describing: type(of: storage))
         switch className {
