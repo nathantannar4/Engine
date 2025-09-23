@@ -108,6 +108,7 @@ extension PropertyList {
         while let p = ptr {
             let key = _typeName(p.keyType, qualified: true)
             let isMatch = key.hasSuffix(branchKey)
+                || (key.hasSuffix(".FocusedItemInputKey") && hasPassedContainer)
                 || (key.hasSuffix(".ViewListOptionsInput") && hasPassedContainer)
             if isMatch {
                 break
