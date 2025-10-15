@@ -169,7 +169,11 @@ open class HostingView<
         return result
     }
     #else
-    private var hitTestTimestamp: TimeInterval = 0
+    struct HitTestEvent {
+        var point: CGPoint
+        var timestamp: TimeInterval
+    }
+    private var lastHitTestEvent: HitTestEvent?
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let result = super.hitTest(point, with: event)
         if #available(iOS 26.0, *) {
@@ -213,8 +217,17 @@ open class HostingView<
             }
             return result
         } else if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
-            defer { hitTestTimestamp = event?.timestamp ?? 0 }
-            if result == self, event?.timestamp != hitTestTimestamp, isHitTestingPassthrough {
+            defer {
+                lastHitTestEvent = event.map {
+                    HitTestEvent(
+                        point: point,
+                        timestamp: $0.timestamp
+                    )
+                }
+            }
+            if result == self, isHitTestingPassthrough,
+                lastHitTestEvent?.timestamp != event?.timestamp || lastHitTestEvent?.point != point
+            {
                 return nil
             }
             return result

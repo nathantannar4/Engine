@@ -48,17 +48,82 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     }
 
     public var body: some View {
-        _VariadicView.Tree(Root(content: content)) {
+        VariadicViewVisitor(
+            source: source,
+            layout: AnyVariadicViewLayout(content: content)
+        )
+    }
+}
+
+@frozen
+public struct VariadicViewVisitor<
+    Source: View,
+    Layout: VariadicViewLayout
+>: View {
+
+    @usableFromInline
+    var source: Source
+
+    @usableFromInline
+    var layout: Layout
+
+    @inlinable
+    public init(
+        source: Source,
+        layout: Layout
+    ) {
+        self.source = source
+        self.layout = layout
+    }
+
+    @inlinable
+    public init(
+        layout: Layout,
+        @ViewBuilder source: () -> Source,
+    ) {
+        self.init(source: source(), layout: layout)
+    }
+
+    public var body: some View {
+        _VariadicView.Tree(Root(layout: layout)) {
             source
         }
     }
 
     private struct Root: _VariadicView.MultiViewRoot {
-        var content: (VariadicView<Source>) -> Content
+        var layout: Layout
 
         func body(children: _VariadicView.Children) -> some View {
-            content(VariadicView(children))
+            layout.body(children: VariadicView(children))
         }
+    }
+}
+
+@MainActor @preconcurrency
+public protocol VariadicViewLayout: DynamicProperty {
+
+    associatedtype Source: View
+    associatedtype Body: View
+
+    @ViewBuilder func body(children: VariadicView<Source>) -> Body
+}
+
+@frozen
+public struct AnyVariadicViewLayout<
+    Source: View,
+    Content: View
+>: VariadicViewLayout {
+
+    public var content: (VariadicView<Source>) -> Content
+
+    public init(
+        content: @escaping (VariadicView<Source>) -> Content
+    ) {
+        self.content = content
+    }
+
+    public func body(children: VariadicView<Source>) -> some View {
+        content(children)
     }
 }
 
@@ -140,6 +205,14 @@ public struct AnyVariadicView: View, RandomAccessCollection, Sequence {
 
         public func id<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
             element.id(as: ID.self)
+        }
+
+        @inlinable
+        public func selection<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *), let tag = tag(as: ID.self) {
+                return tag
+            }
+            return id(as: ID.self)
         }
 
         public subscript<K: _ViewTraitKey>(key: K.Type) -> K.Value {

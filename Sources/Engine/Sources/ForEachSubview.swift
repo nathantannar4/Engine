@@ -15,45 +15,45 @@ public struct ForEachSubview<
     var source: Array<Subview>
 
     @usableFromInline
-    var subview: (Int, Subview) -> Content
+    var content: (Int, Subview) -> Content
 
     public init<Source: View>(
         _ source: VariadicView<Source>,
-        @ViewBuilder subview: @escaping (Int, Subview) -> Content
+        @ViewBuilder content: @escaping (Int, Subview) -> Content
     ) where Subview == AnyVariadicView.Subview {
-        self.init(source.children.map { $0 }, subview: subview)
+        self.init(source.children.map { $0 }, content: content)
     }
 
     public init(
         _ source: [AnyVariadicView.Subview],
-        @ViewBuilder subview: @escaping (Int, Subview) -> Content
+        @ViewBuilder content: @escaping (Int, Subview) -> Content
     ) where Subview == AnyVariadicView.Subview {
         self.source = source
-        self.subview = subview
+        self.content = content
     }
 
     public init(
         _ source: [MultiViewSubviewVisitor.Subview],
-        @ViewBuilder subview: @escaping (Int, Subview) -> Content
+        @ViewBuilder content: @escaping (Int, Subview) -> Content
     ) where Subview == MultiViewSubviewVisitor.Subview {
         self.source = source
-        self.subview = subview
+        self.content = content
     }
 
     @_disfavoredOverload
     public init<Source: View>(
         _ source: Source,
-        @ViewBuilder subview: @escaping (Int, Subview) -> Content
+        @ViewBuilder content: @escaping (Int, Subview) -> Content
     ) where Subview == MultiViewSubviewVisitor.Subview {
         var visitor = MultiViewSubviewVisitor()
         source.visit(visitor: &visitor)
-        self.init(visitor.subviews, subview: subview)
+        self.init(visitor.subviews, content: content)
     }
 
     public var body: some View {
         let subviews = Array(zip(source.indices, source))
         ForEach(subviews, id: \.1.id) { index, element in
-            subview(index, element)
+            content(index, element)
         }
     }
 }
