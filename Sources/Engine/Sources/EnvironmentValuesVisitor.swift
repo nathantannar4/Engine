@@ -93,7 +93,7 @@ extension EnvironmentValues {
 
     fileprivate func visit<Result>(
         _ key: String,
-        body: (ProtocolConformance<EnvironmentKeyProtocolDescriptor>) -> Result
+        body: (ProtocolConformance<EnvironmentKeyProtocolDescriptor>) -> Result?
     ) -> Result? {
 
         if let conformance = EnvironmentKeyLookupCache.shared[key] {
@@ -144,7 +144,7 @@ extension ProtocolConformance where P == EnvironmentKeyProtocolDescriptor {
     fileprivate func value<Value>(
         in environment: EnvironmentValues,
         as _: Value.Type = Value.self
-    ) -> Value {
+    ) -> Value? {
         var visitor = EnvironmentValuesGetterVisitor<Value>(
             environment: environment
         )
@@ -170,7 +170,7 @@ extension ProtocolConformance where P == EnvironmentKeyProtocolDescriptor {
 
 private struct EnvironmentValuesGetterVisitor<Value>: EnvironmentKeyVisitor {
     var environment: EnvironmentValues
-    var output: Value!
+    var output: Value?
 
     mutating func visit<Key: EnvironmentKey>(type: Key.Type) {
         let value = environment[Key.self]
