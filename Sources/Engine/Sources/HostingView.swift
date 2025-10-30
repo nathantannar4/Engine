@@ -177,8 +177,16 @@ open class HostingView<
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let result = super.hitTest(point, with: event)
         if #available(iOS 26.0, *) {
+            // Hit testing on iOS 26 always seems to return self
             if result == self, isHitTestingPassthrough {
-                // Hit testing on iOS 26 always returns self, so check the raw pixels to support passthrough
+                // Hit test the layers
+                for sublayer in layer.sublayers ?? [] {
+                    if !sublayer.isHidden, sublayer.frame.contains(point) {
+                        return result
+                    }
+                }
+
+                // Check the raw pixels to support passthrough
                 let size = CGSize(width: 10, height: 10)
                 UIGraphicsBeginImageContextWithOptions(size, false, window?.screen.scale ?? 1)
                 defer { UIGraphicsEndImageContext() }
