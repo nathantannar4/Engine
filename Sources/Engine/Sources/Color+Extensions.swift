@@ -7,6 +7,7 @@ import SwiftUI
 extension Color {
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    /// Transforms SwiftUI `Color` to a non-bridged `CGColor`
     public func toCGColor() -> CGColor {
         if let cgColor = cgColor {
             return cgColor
@@ -16,6 +17,7 @@ extension Color {
     }
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Transforms SwiftUI `Color` to a non-bridged `UIColor`
     @available(iOS 14.0, tvOS 14.0, watchOS 7.0, *)
     public func toUIColor() -> UIColor {
         toPlatformValue()
@@ -23,6 +25,7 @@ extension Color {
     #endif
 
     #if os(macOS)
+    /// Transforms SwiftUI `Color` to a non-bridged `NSColor`
     @available(macOS 11.0, *)
     public func toNSColor() -> NSColor {
         toPlatformValue()
@@ -35,6 +38,12 @@ extension Color {
     typealias PlatformRepresentable = UIColor
     #endif
     #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Transforms SwiftUI `Color` to a non-bridged color
+    ///
+    /// > Important: Using the built in `UIColor(_ color: Color)`/`NSColor(_ color: Color)`
+    /// results in a bridged color which can sometimes fail to render correctly for the appropriate
+    /// light/dark appearance.
+    ///
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     private func toPlatformValue() -> PlatformRepresentable {
         func resolve(provider: Any) -> PlatformRepresentable {

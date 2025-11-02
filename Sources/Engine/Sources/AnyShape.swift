@@ -4,6 +4,7 @@
 
 import SwiftUI
 
+/// A type erased `Shape`
 @available(iOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
 @available(macOS, deprecated: 13.0, message: "Use the builtin SwiftUI.AnyShape")
 @available(tvOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")

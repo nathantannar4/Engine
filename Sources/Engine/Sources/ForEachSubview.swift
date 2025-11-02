@@ -17,17 +17,17 @@ public struct ForEachSubview<
     @usableFromInline
     var content: (Int, Subview) -> Content
 
-    public init<Source: View>(
-        _ source: VariadicView<Source>,
+    public init(
+        _ source: VariadicView,
         @ViewBuilder content: @escaping (Int, Subview) -> Content
-    ) where Subview == AnyVariadicView.Subview {
-        self.init(source.children.map { $0 }, content: content)
+    ) where Subview == VariadicView.Subview {
+        self.init(source.map { $0 }, content: content)
     }
 
     public init(
-        _ source: [AnyVariadicView.Subview],
+        _ source: [VariadicView.Subview],
         @ViewBuilder content: @escaping (Int, Subview) -> Content
-    ) where Subview == AnyVariadicView.Subview {
+    ) where Subview == VariadicView.Subview {
         self.source = source
         self.content = content
     }

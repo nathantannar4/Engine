@@ -4,6 +4,7 @@
 
 import SwiftUI
 
+/// A type erased `AnimatableData`
 @frozen
 public struct AnyAnimatableData: VectorArithmetic, Sendable {
 

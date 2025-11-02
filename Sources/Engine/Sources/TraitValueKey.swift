@@ -32,7 +32,7 @@ extension View {
     }
 }
 
-extension AnyVariadicView.Subview {
+extension VariadicView.Subview {
     public subscript<Key: TraitValueKey>(
         key: Key.Type
     ) -> Key.Value {
@@ -70,7 +70,7 @@ struct TraitValueKey_Previews: PreviewProvider {
                 Text("Line 1")
                     .trait(PreviewTraitValueKey.self, 1)
             } content: { content in
-                let sortedChildren = content.children
+                let sortedChildren = content
                     .sorted { lhs, rhs in
                         lhs[PreviewTraitValueKey.self] < rhs[PreviewTraitValueKey.self]
                     }

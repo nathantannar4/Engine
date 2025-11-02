@@ -7,6 +7,7 @@ import EngineCore
 
 extension Animation {
 
+    /// The duration of the animation
     public func duration(defaultDuration: CGFloat) -> TimeInterval {
         guard let resolved = Resolved(animation: self) else { return defaultDuration }
         switch resolved.timingCurve {
@@ -17,20 +18,24 @@ extension Animation {
         }
     }
 
+    /// The delay of the animation
     public var delay: TimeInterval? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.delay
     }
 
+    /// The speed of the animation
     public var speed: Double? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.speed
     }
 
+    /// The delay of the animation
     public func resolved() -> Resolved? {
         Resolved(animation: self)
     }
 
+    /// A deconstructed opaque `Animation`
     public struct Resolved: Codable, Equatable, Sendable {
         public enum TimingCurve: Codable, Equatable, Sendable {
             case `default`

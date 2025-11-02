@@ -62,7 +62,7 @@ public struct IsSectionFooterTrait: ViewTraitKey {
     )
 }
 
-extension AnyVariadicView.Subview {
+extension VariadicView.Subview {
     public subscript<K: ViewTraitKey>(
         key: K.Type
     ) -> K.Value? {
@@ -77,7 +77,7 @@ extension AnyVariadicView.Subview {
     }
 
     private struct Visitor<K: ViewTraitKey>: ViewTraitKeyVisitor {
-        var subview: AnyVariadicView.Subview
+        var subview: VariadicView.Subview
         var output: K.Value!
 
         mutating func visit<Key: _ViewTraitKey>(type: Key.Type) {

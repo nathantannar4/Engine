@@ -89,6 +89,9 @@ open class HostingController<
     private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
     #endif
 
+    /// The pending transaction that was used to trigger a content update
+    public private(set) var transaction: Transaction?
+
     public init(content: Content) {
         super.init(rootView: content)
     }
@@ -102,6 +105,11 @@ open class HostingController<
 
     public required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    open func update(content: Content, transaction: Transaction) {
+        self.content = content
+        self.transaction = transaction
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
@@ -120,6 +128,16 @@ open class HostingController<
             }
         }
         super.viewWillLayoutSubviews()
+    }
+
+    open override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        transaction = nil
+    }
+    #elseif os(macOS)
+    open override func viewDidLayout() {
+        super.viewDidLayout()
+        transaction = nil
     }
     #endif
 }

@@ -14,11 +14,11 @@ extension Group where Content: View {
     @MainActor @preconcurrency
     public init<V: View, Result: View>(
         subviewsOf view: V,
-        @ViewBuilder transform: @escaping (AnyVariadicView) -> Result
+        @ViewBuilder transform: @escaping (VariadicView) -> Result
     ) where Content == VariadicViewAdapter<V, Result> {
         self.init {
             VariadicViewAdapter(source: view) { source in
-                transform(source.children)
+                transform(source)
             }
         }
     }
@@ -31,7 +31,7 @@ extension Group where Content: View {
     @MainActor @preconcurrency
     public init<V: View, Result: View>(
         sectionsOf view: V,
-        @ViewBuilder transform: @escaping ([AnyVariadicSectionView]) -> Result
+        @ViewBuilder transform: @escaping ([VariadicSectionView]) -> Result
     ) where Content == VariadicViewAdapter<V, Result> {
         self.init {
             VariadicViewAdapter(source: view) { source in

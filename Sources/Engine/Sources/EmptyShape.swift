@@ -4,6 +4,7 @@
 
 import SwiftUI
 
+/// The empty shape
 @frozen
 public struct EmptyShape: Shape {
 

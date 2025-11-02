@@ -8,6 +8,7 @@ import SwiftUI
 extension AttributedString {
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Transforms SwiftUI `AttributedString` attributes to their UIKit equivalent
     public func toUIKit(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> AttributedString {
@@ -18,6 +19,7 @@ extension AttributedString {
         return result
     }
     #elseif os(macOS)
+    /// Transforms SwiftUI `AttributedString` attributes to their AppKit equivalent
     public func toAppKit(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> AttributedString {
@@ -146,6 +148,7 @@ private class HostingTextAttachmentViewProvider<Content: View>: NSTextAttachment
 extension AttributeContainer {
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Transforms SwiftUI `AttributedString` attributes to their UIKit equivalent
     public func toUIKit(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> AttributeContainer {
@@ -188,6 +191,7 @@ extension AttributeContainer {
         return attributes
     }
     #elseif os(macOS)
+    /// Transforms SwiftUI `AttributedString` attributes to their AppKit equivalent
     public func toAppKit(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> AttributeContainer {
