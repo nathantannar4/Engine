@@ -8,8 +8,8 @@ import SwiftUI
 @resultBuilder
 public struct ShapeBuilder {
 
-    public static func buildBlock() -> Rectangle {
-        Rectangle()
+    public static func buildBlock() -> EmptyShape {
+        EmptyShape()
     }
 
     public static func buildBlock<S: Shape>(
@@ -40,8 +40,8 @@ public struct ShapeBuilder {
         S: Shape
     >(
         _ shape: S?
-    ) -> ConditionalShape<S, Rectangle> {
-        shape.map { .init($0) } ?? .init(Rectangle())
+    ) -> ConditionalShape<S, EmptyShape> {
+        shape.map { .init($0) } ?? .init(EmptyShape())
     }
 
     @_disfavoredOverload
@@ -88,5 +88,72 @@ extension View {
         @ShapeBuilder shape: () -> S
     ) -> some View {
         contentShape(kind, shape(), eoFill: eoFill)
+    }
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    @inlinable
+    public func containerShape<S: InsettableShape>(
+        @ShapeBuilder shape: () -> S
+    ) -> some View {
+        containerShape(shape())
+    }
+}
+
+// MARK: - Previews
+
+
+struct ShapeBuilder_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            StateAdapter(initialValue: true) { $flag in
+                VStack {
+                    HStack {
+                        Rectangle()
+                            .fill(Color.blue)
+                            .clipShape {
+                                Circle()
+                            }
+
+                        Rectangle()
+                            .fill(Color.yellow)
+                            .clipShape {
+                                if flag {
+                                    Circle()
+                                } else {
+                                    RoundedRectangle(cornerRadius: 12)
+                                }
+                            }
+
+                        Rectangle()
+                            .fill(Color.red)
+                            .overlay(
+                                ZStack(alignment: .topLeading) {
+                                    Circle()
+                                        .frame(width: 30, height: 30)
+                                        .offset(x: -15, y: -15)
+                                },
+                                alignment: .topLeading
+                            )
+                            .clipShape {
+                                if !flag {
+                                    RoundedRectangle(cornerRadius: 12)
+                                }
+                            }
+                    }
+
+                    Rectangle()
+                        .clipShape {
+                            // Empty
+                        }
+                }
+                #if os(iOS) || os(macOS)
+                .onTapGesture {
+                    withAnimation {
+                        flag.toggle()
+                    }
+                }
+                #endif
+            }
+        }
     }
 }

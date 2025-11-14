@@ -71,6 +71,7 @@ public struct ViewAliasSourceModifier<
 
     public func body(content: Content) -> some View {
         content
+            .modifier(UnaryViewModifier())
             .modifier(Modifier(source: source))
             .modifier(UnaryViewModifier())
     }
@@ -253,12 +254,19 @@ struct ViewAlias_Previews: PreviewProvider {
 
             ZStack {
                 VStack {
-                    PreviewAlias()
+                    VStack {
+                        PreviewAlias()
+
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
 
                     PreviewAlias()
-                }
-                .viewAlias(PreviewAlias.self) {
-                    Text("Hello, World")
+                        .viewAlias(PreviewAlias.self) {
+                            Text("Hello, World")
+                        }
                 }
             }
             .previewDisplayName("Text")
@@ -286,11 +294,53 @@ struct ViewAlias_Previews: PreviewProvider {
             }
             .previewDisplayName("ForEach")
 
+            ZStack {
+                VStack {
+                    Group {
+                        PreviewAlias()
+                        PreviewAlias()
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
+                }
+            }
+            .previewDisplayName("Group")
 
             ZStack {
-                ConditionalView(if: true) {
-                    ZStack {
+                VStack {
+                    ConditionalView(if: true) {
+                        ZStack {
+                            PreviewAlias()
+                        }
+                        .viewAlias(PreviewAlias.self) {
+                            Text("Hello, World")
+                        }
+                    }
+
+                    ConditionalView(if: true) {
                         PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
+
+                    VStack {
+                        ConditionalView(if: true) {
+                            VStack {
+                                PreviewAlias()
+                            }
+                        }
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Hello, World")
+                    }
+
+                    ConditionalView(if: true) {
+                        VStack {
+                            PreviewAlias()
+                        }
                     }
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")

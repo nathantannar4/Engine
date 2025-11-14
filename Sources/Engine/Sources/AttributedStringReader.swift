@@ -10,35 +10,51 @@ import SwiftUI
 public struct AttributedStringReader<Content: View>: View {
 
     @usableFromInline
-    var text: Text
+    var text: Text?
 
     @usableFromInline
-    var content: (AttributedString) -> Content
+    var content: (AttributedString?) -> Content
 
     @Environment(\.self) var environment
 
     @inlinable
-    public init(_ text: Text, @ViewBuilder content: @escaping (AttributedString) -> Content) {
+    public init(
+        _ text: Text,
+        @ViewBuilder content: @escaping (AttributedString) -> Content
+    ) {
+        self.text = text
+        self.content = { content($0!) }
+    }
+
+    @inlinable
+    public init(
+        _ text: Text?,
+        @ViewBuilder content: @escaping (AttributedString?) -> Content
+    ) {
         self.text = text
         self.content = content
     }
 
     @inlinable
-    public init(_ text: LocalizedStringKey, @ViewBuilder content: @escaping (AttributedString) -> Content) {
+    public init(
+        _ text: LocalizedStringKey,
+        @ViewBuilder content: @escaping (AttributedString) -> Content
+    ) {
         self.init(Text(text), content: content)
     }
 
     public var body: some View {
-        content(text.resolveAttributed(in: environment))
+        content(text?.resolveAttributed(in: environment))
     }
 }
+
 
 // MARK: - Previews
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 struct AttributedStringReader_Previews: PreviewProvider {
     struct TextPreview: View {
-        var text: Text
+        var text: Text?
 
         var body: some View {
             HStack {

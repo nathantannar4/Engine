@@ -10,26 +10,41 @@ import SwiftUI
 public struct TextReader<Content: View>: View {
 
     @usableFromInline
-    var text: Text
+    var text: Text?
 
     @usableFromInline
-    var content: (String) -> Content
+    var content: (String?) -> Content
 
-    @Environment(\.self) var environment
+    @Environment(\.self) private var environment
 
     @inlinable
-    public init(_ text: Text, @ViewBuilder content: @escaping (String) -> Content) {
+    public init(
+        _ text: Text,
+        @ViewBuilder content: @escaping (String) -> Content
+    ) {
+        self.text = text
+        self.content = { content($0!) }
+    }
+
+    @inlinable
+    public init(
+        _ text: Text?,
+        @ViewBuilder content: @escaping (String?) -> Content
+    ) {
         self.text = text
         self.content = content
     }
 
     @inlinable
-    public init(_ text: LocalizedStringKey, @ViewBuilder content: @escaping (String) -> Content) {
+    public init(
+        _ text: LocalizedStringKey,
+        @ViewBuilder content: @escaping (String) -> Content
+    ) {
         self.init(Text(text), content: content)
     }
 
     public var body: some View {
-        content(text.resolve(in: environment))
+        content(text?.resolve(in: environment))
     }
 }
 
@@ -46,6 +61,7 @@ struct TextReader_Previews: PreviewProvider {
             TextReader(LocalizedStringKey("Hello, World")) { text in
                 Text(verbatim: text)
             }
+            .textCase(.uppercase)
         }
     }
 }

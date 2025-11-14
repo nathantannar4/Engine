@@ -102,7 +102,7 @@ public struct MultiText: View {
 
     @inlinable
     public init(
-        separator: Text = Text(verbatim: " "),
+        separator: Text = .space,
         @TextBuilder blocks: () -> [Text]
     ) {
         self.separator = separator
@@ -157,10 +157,19 @@ extension Text {
 
     @inlinable
     public init(
-        separator: Text = Text(verbatim: " "),
+        separator: Text = .space,
         @TextBuilder blocks: () -> [Text]
     ) {
-        self = blocks().joined(separator: separator) ?? Text(verbatim: "")
+        self = Text(joinedBy: separator, blocks: blocks) ?? Text(verbatim: "")
+    }
+
+    @inlinable
+    public init?(
+        joinedBy separator: Text,
+        @TextBuilder blocks: () -> [Text]
+    ) {
+        guard let joined = blocks().joined(separator: separator) else { return nil }
+        self = joined
     }
 }
 
@@ -233,6 +242,12 @@ struct TextBuilder_Previews: PreviewProvider {
                 Toggle(isOn: $flag) { Text("Flag") }
 
                 Text {
+                    // Empty
+                }
+                .frame(minWidth: 20)
+                .border(Color.red)
+
+                Text(joinedBy: .space) {
                     // Empty
                 }
                 .frame(minWidth: 20)

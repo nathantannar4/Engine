@@ -143,8 +143,12 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             self.element = element
         }
 
-        public nonisolated var id: AnyHashable {
-            element.id
+        @frozen
+        public struct ID: Hashable, @unchecked Sendable {
+            var value: AnyHashable
+        }
+        public nonisolated var id: ID {
+            ID(value: element.id)
         }
 
         public func id<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {

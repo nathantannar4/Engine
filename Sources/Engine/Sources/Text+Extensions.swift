@@ -4,6 +4,78 @@
 
 import SwiftUI
 
+extension Text {
+
+    public static let space = Text(verbatim: " ")
+
+    public static let newline = Text(verbatim: "\n")
+
+    @_disfavoredOverload
+    public init?<S: StringProtocol>(_ content: S?) {
+        guard let content, !content.isEmpty else { return nil }
+        self = Text(content)
+    }
+}
+
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+extension Text {
+
+    public init?<Subject>(
+        _ subject: Subject?,
+        formatter: Formatter
+    ) where Subject: ReferenceConvertible {
+        guard let subject else { return nil }
+        self = Text(subject, formatter: formatter)
+    }
+
+    public init?(_ date: Date?, style: Text.DateStyle) {
+        guard let date else { return nil }
+        self = Text(date, style: style)
+    }
+
+    public init?(_ dates: ClosedRange<Date>?) {
+        guard let dates else { return nil }
+        self = Text(dates)
+    }
+
+    public init?(_ interval: DateInterval?) {
+        guard let interval else { return nil }
+        self = Text(interval)
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension Text {
+
+    @_disfavoredOverload
+    public init?(_ content: AttributedString?) {
+        guard let content, !content.characters.isEmpty else { return nil }
+        self = Text(content)
+    }
+
+    @_disfavoredOverload
+    public init?<F>(
+        _ input: F.FormatInput?,
+        format: F
+    ) where F: FormatStyle, F.FormatInput: Equatable, F.FormatOutput == String {
+        guard let input else { return nil }
+        self.init(input, format: format)
+    }
+}
+
+@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+extension Text {
+
+    public init?<F>(
+        _ input: F.FormatInput?,
+        format: F
+    ) where F: FormatStyle, F.FormatInput: Equatable, F.FormatOutput == AttributedString {
+        guard let input else { return nil }
+        self.init(input, format: format)
+    }
+}
+
+
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Text {
 
@@ -314,3 +386,24 @@ extension NSTextAttachment: @unchecked @retroactive Sendable { }
 extension NSTextAttachment: @unchecked Sendable { }
 #endif
 #endif
+
+// MARK: - Previews
+
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+struct Text_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            let optionalText: Optional<String> = "Hello, World"
+            Text(optionalText)
+
+            let emptyText: Optional<String> = ""
+            if Text(emptyText) == nil {
+                Text(verbatim: "Empty")
+            }
+
+            if Text(Optional<String>.none) == nil {
+                Text(verbatim: "Nil")
+            }
+        }
+    }
+}
