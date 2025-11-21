@@ -49,7 +49,7 @@ extension EdgeInsets {
     #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
     typealias PlatformRepresentable = UIEdgeInsets
     #endif
-    private func toPlatformValue(layoutDirection: LayoutDirection) -> PlatformRepresentable {
+    func toPlatformValue(layoutDirection: LayoutDirection) -> PlatformRepresentable {
         let left = layoutDirection == .leftToRight ? leading : trailing
         let right = layoutDirection == .leftToRight ? trailing : leading
         return PlatformRepresentable(

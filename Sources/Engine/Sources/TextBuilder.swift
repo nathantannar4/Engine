@@ -22,7 +22,7 @@ public struct TextBuilder {
     public static func buildExpression(
         _ component: Text?
     ) -> [Text] {
-        guard let component else { return []}
+        guard let component else { return [] }
         return [component]
     }
 
@@ -176,15 +176,16 @@ extension Text {
 extension RandomAccessCollection where Element == Text {
 
     public func joined(separator: Text) -> Text? {
-        switch count {
+        let elements = filter { !$0.isEmpty }
+        switch elements.count {
         case 0:
             return nil
 
         case 1:
-            return self[startIndex]
+            return elements[0]
 
         default:
-            return dropFirst().reduce(into: self[startIndex]) { result, text in
+            return elements.dropFirst().reduce(into: elements[0]) { result, text in
                 result = result + separator + text
             }
         }
@@ -253,6 +254,16 @@ struct TextBuilder_Previews: PreviewProvider {
                 .frame(minWidth: 20)
                 .border(Color.red)
 
+                Text("isEmpty: \(Text(verbatim: "").isEmpty.description)")
+
+                Text(separator: Text(verbatim: " * ")) {
+                    Text("1")
+                    Text(verbatim: "") // Empty Filtered Out
+                    Text("2")
+                    Text(verbatim: "") // Empty Filtered Out
+                    Text("3")
+                }
+
                 let text = Text {
                     texts
                 }
@@ -274,6 +285,19 @@ struct TextBuilder_Previews: PreviewProvider {
                         texts
                     }
                     .redacted(reason: .placeholder)
+
+                    Text("Value with interpolation: \(Text("Hello, World!"))")
+                        .redacted(reason: .placeholder)
+
+                    // Different underlying storage cause redacted differences
+                    (Text("Line 1") + Text(verbatim: " ") + Text("Line 2"))
+                        .redacted(reason: .placeholder)
+
+                    (Text("Line 1") + Text(" ") + Text("Line 2"))
+                        .redacted(reason: .placeholder)
+
+                    Text("\(Text("Line 1")) \(Text("Line 2"))")
+                        .redacted(reason: .placeholder)
                 }
             }
         }

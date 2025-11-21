@@ -47,6 +47,13 @@ extension AttributedString {
     static let attachment: AttributedString = {
         AttributedString("\(Character(UnicodeScalar(NSTextAttachment.character)!))")
     }()
+
+    static func attachment(attributes: AttributeContainer) -> AttributedString {
+        AttributedString(
+            "\(Character(UnicodeScalar(NSTextAttachment.character)!))",
+            attributes: attributes
+        )
+    }
 }
 
 #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)

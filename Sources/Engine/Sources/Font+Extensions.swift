@@ -29,7 +29,7 @@ extension Font {
     #endif
 
     @available(iOS 13.0, macOS 11.0, tvOS 13.0, watchOS 6.0, *)
-    fileprivate func toPlatformValue() -> PlatformRepresentable? {
+    func toPlatformValue() -> PlatformRepresentable? {
         FontProvider(for: self)?.resolved()
     }
 }

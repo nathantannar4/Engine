@@ -28,7 +28,7 @@ extension Image {
     }
     #endif
 
-    fileprivate func toPlatformValue(
+    func toPlatformValue(
         in environment: EnvironmentValues
     ) -> PlatformRepresentable? {
         ImageProvider(for: self)?.resolved(in: environment)

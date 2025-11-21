@@ -462,7 +462,7 @@ struct VariadicView_Previews: PreviewProvider {
                             HStack {
                                 Text("\(subview.id(as: PreviewCases.self)?.rawValue ?? -1)")
 
-                                Text(String("\(subview.id)"))
+                                Text(verbatim: "\(subview.id)")
                             }
                             .background(index.isMultiple(of: 2) ? Color.red : Color.blue)
                         }
@@ -486,6 +486,37 @@ struct VariadicView_Previews: PreviewProvider {
                 }
                 .previewDisplayName("Custom Tag")
             }
+
+            ZStack {
+                VariadicViewAdapter {
+                    Text("Line 1").tag("1")
+                    Text("Line 2").tag("2")
+                    Text("Line 3").tag("3")
+                } content: { source in
+                    VariadicViewAdapter {
+                        ForEachSubview(source) { index, subview in
+                            HStack {
+                                Text(subview.selection(as: String.self) ?? "nil")
+
+                                subview
+                            }
+                            .id(subview.selection(as: String.self))
+                        }
+                    } content: { transformedSource in
+                        VStack {
+                            ForEachSubview(transformedSource) { index, subview in
+                                HStack {
+                                    Text(subview.selection(as: String.self) ?? "nil")
+
+                                    subview
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+            .previewDisplayName("ForEachSubview Transform")
 
             ZStack {
                 VariadicViewAdapter {

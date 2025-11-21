@@ -6,6 +6,27 @@ import SwiftUI
 
 extension ForEach {
 
+    @inlinable
+    public init(
+        _ count: Int,
+        @ViewBuilder content: () -> Content
+    ) where Data == Range<Int>, ID == Int, Content: View {
+        let content = content()
+        self.init(0..<count, id: \.self) { _ in
+            content
+        }
+    }
+
+    @inlinable
+    public init(
+        _ range: ClosedRange<Int>,
+        @ViewBuilder content: @escaping (Int) -> Content
+    ) where Data == ClosedRange<Int>, ID == Int, Content: View {
+        self.init(range, id: \.self) { index in
+            content(index)
+        }
+    }
+
     @_disfavoredOverload
     @inlinable
     public init<_Data: RandomAccessCollection>(
@@ -57,6 +78,14 @@ struct ForEach_Previews: PreviewProvider {
 
     static var previews: some View {
         VStack {
+            ForEach(2) {
+                Text("Hello, World")
+            }
+
+            ForEach(0) {
+                Text("Hello, World")
+            }
+
             ForEach([10, 20, 30]) { index, number in
                 Text("\(index): \(number)")
             }
