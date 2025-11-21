@@ -6,14 +6,38 @@ import SwiftUI
 
 extension Text {
 
-    public static let space = Text(verbatim: " ")
+    @inlinable
+    @inline(__always)
+    public static var space: Text {
+        Text(" ")
+    }
 
-    public static let newline = Text(verbatim: "\n")
+    @inlinable
+    @inline(__always)
+    public static var newline: Text {
+        Text("\n")
+    }
 
     @_disfavoredOverload
     public init?<S: StringProtocol>(_ content: S?) {
         guard let content, !content.isEmpty else { return nil }
         self = Text(content)
+    }
+
+    /// Returns the verbatim value if the text stores a `String`
+    public var verbatim: String? {
+        guard
+            MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size,
+            case .verbatim(let verbatim) = layout.storage
+        else {
+            return nil
+        }
+        return verbatim
+    }
+
+    /// Returns `true` if the text stores a `String` that is empty
+    public var isEmpty: Bool {
+        verbatim?.isEmpty ?? false
     }
 }
 
@@ -114,7 +138,6 @@ extension Text {
     }
 }
 
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension Text {
     private enum Storage {
         case verbatim(String)
@@ -132,6 +155,19 @@ extension Text {
         case rounded
         case anyTextModifier(AnyObject)
     }
+
+    private struct TypeLayout {
+        var storage: Storage
+        var modifiers: [Modifier]
+    }
+
+    private var layout: Text.TypeLayout {
+        unsafeBitCast(self, to: Text.TypeLayout.self)
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension Text {
 
     private struct ResolvedEnvironment {
         var font: Font?
@@ -226,15 +262,6 @@ extension Text {
             }
             return attributes
         }
-    }
-
-    private struct TypeLayout {
-        var storage: Storage
-        var modifiers: [Modifier]
-    }
-
-    private var layout: Text.TypeLayout {
-        unsafeBitCast(self, to: Text.TypeLayout.self)
     }
 
     func _resolveAttributed(in environment: EnvironmentValues) -> AttributedString {

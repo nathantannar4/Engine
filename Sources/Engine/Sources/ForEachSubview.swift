@@ -76,6 +76,85 @@ struct ForEachSubview_Previews: PreviewProvider {
                 subview
                     .border(Color.red)
             }
+
+            VariadicViewAdapter {
+                Text("Line 1")
+                Text("Line 2")
+                Text("Line 3")
+            } content: { content in
+                ForEachSubview(content) { _, subview in
+                    HStack {
+                        Text(verbatim: "\(subview.id(as: AnyHashable.self) ?? AnyHashable(-1))")
+
+                        Text(verbatim: "\(subview.id)")
+
+                        subview
+                            .border(Color.red)
+                    }
+                }
+            }
+
+            VariadicViewAdapter {
+                Text("Line 1").id(1)
+                Text("Line 2").id(2)
+                Text("Line 3").id(3)
+            } content: { content in
+                ForEachSubview(content) { _, subview in
+                    HStack {
+                        Text(verbatim: "\(subview.id(as: Int.self) ?? -1)")
+
+                        Text(verbatim: "\(subview.id)")
+
+                        subview
+                            .border(Color.red)
+                    }
+                }
+            }
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                VariadicViewAdapter {
+                    Text("Line 1").tag(1)
+                    Text("Line 2").tag(2)
+                    Text("Line 3").tag(3)
+                } content: { content in
+                    ForEachSubview(content) { _, subview in
+                        HStack {
+                            Text(verbatim: "\(subview.id(as: AnyHashable.self) ?? AnyHashable(-1))")
+
+                            Text(verbatim: "\(subview.tag(as: Int.self) ?? -1)")
+
+                            subview
+                                .border(Color.red)
+                        }
+                    }
+                }
+            }
+
+            VariadicViewAdapter {
+                Text("Line 1").id(1)
+                Text("Line 2").id(2)
+                Text("Line 3").id(3)
+                Text("Line 4").tag(4)
+            } content: { content in
+                VariadicViewAdapter {
+                    ForEachSubview(content) { _, subview in
+                        subview
+                            .border(Color.red)
+                            .id(subview.id(as: Int.self))
+                    }
+                } content: { content in
+                    ForEachSubview(content) { _, subview in
+                        HStack {
+                            Text(verbatim: "\(subview.id(as: Int.self) ?? -1)")
+
+                            Text(verbatim: "\(subview.id)")
+
+                            subview
+                                .border(Color.red)
+                        }
+                    }
+                }
+            }
         }
     }
 }
