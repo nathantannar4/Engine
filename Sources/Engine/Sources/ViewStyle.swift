@@ -525,7 +525,7 @@ struct AnyViewStyle: @unchecked Sendable {
             as body: Body.Type,
             configuration: Configuration
         ) -> Body {
-            fatalError("abstract")
+            fatalError("base")
         }
     }
 

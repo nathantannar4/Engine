@@ -35,7 +35,7 @@ public struct SafeAreaInsetsModifier: VersionedViewModifier {
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public func v5Body(content: Content) -> some View {
         content
-            .safeAreaPadding(edgeInsets)
+            ._safeAreaInsets(edgeInsets)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)

@@ -7,24 +7,6 @@ import EngineCore
 
 #if !os(watchOS)
 
-#if os(macOS)
-public typealias PlatformViewRepresentable = NSViewRepresentable
-public typealias PlatformViewControllerRepresentable = NSViewControllerRepresentable
-public typealias PlatformViewControllerRepresentableProtocolDescriptor = NSViewControllerRepresentableProtocolDescriptor
-public typealias PlatformViewController = NSViewController
-extension PlatformViewControllerRepresentable {
-    public typealias PlatformViewControllerType = NSViewControllerType
-}
-#else
-public typealias PlatformViewRepresentable = UIViewRepresentable
-public typealias PlatformViewControllerRepresentable = UIViewControllerRepresentable
-public typealias PlatformViewControllerRepresentableProtocolDescriptor = UIViewControllerRepresentableProtocolDescriptor
-public typealias PlatformViewController = UIViewController
-extension UIViewControllerRepresentable {
-    public typealias PlatformViewControllerType = UIViewControllerType
-}
-#endif
-
 /// An adapter that converts a generic ``View`` into a view controller
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
 @MainActor @preconcurrency

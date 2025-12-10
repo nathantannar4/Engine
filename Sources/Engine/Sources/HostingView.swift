@@ -236,7 +236,7 @@ open class HostingView<
                 }
             }
             if result == self, isHitTestingPassthrough,
-                lastHitTestEvent?.timestamp != event?.timestamp || lastHitTestEvent?.point != point
+                lastHitTestEvent?.timestamp != event?.timestamp || lastHitTestEvent?.point.rounded() != point.rounded()
             {
                 return nil
             }
@@ -251,4 +251,12 @@ open class HostingView<
     #endif
 }
 
-#endif // !os(watchOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
+fileprivate extension CGPoint {
+    func rounded() -> CGPoint {
+        CGPoint(x: x.rounded(), y: y.rounded())
+    }
+}
+#endif
+
+#endif
