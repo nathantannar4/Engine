@@ -197,4 +197,82 @@ private class AnimationTimingCurveProvider: NSObject, UITimingCurveProvider {
     }
 }
 
+// MARK: - Previews
+
+@available(iOS 14.0, *)
+struct Animation_Previews: PreviewProvider {
+    static var previews: some View {
+        Preview()
+    }
+
+    struct Preview: View {
+        @State var flag = false
+
+        var body: some View {
+            let backgroundColor = flag ? Color.blue : Color.red
+            VStack {
+                HStack {
+                    CustomAnimatedViewRepresentable(backgroundColor: backgroundColor)
+
+                    CustomAnimatedViewRepresentable(backgroundColor: backgroundColor)
+                        .animation(.default, value: flag)
+
+                    CustomAnimatedViewRepresentable(backgroundColor: backgroundColor)
+                        .animation(.linear(duration: 3), value: flag)
+                }
+
+                if #available(iOS 18.0, *) {
+                    HStack {
+                        BuiltinViewRepresentable(backgroundColor: backgroundColor)
+
+                        BuiltinViewRepresentable(backgroundColor: backgroundColor)
+                            .animation(.default, value: flag)
+
+                        BuiltinViewRepresentable(backgroundColor: backgroundColor)
+                            .animation(.linear(duration: 3), value: flag)
+                    }
+                }
+            }
+            .onTapGesture {
+                flag.toggle()
+            }
+        }
+    }
+
+    struct CustomAnimatedViewRepresentable: UIViewRepresentable {
+        var backgroundColor: Color
+
+        func makeUIView(context: Context) -> UIView {
+            UIView()
+        }
+
+        func updateUIView(_ uiView: UIView, context: Context) {
+            print("Custom", context.transaction.animation as Any)
+            UIView.animate(with: context.transaction.animation) {
+                uiView.backgroundColor = backgroundColor.toUIColor()
+            } completion: { success in
+                print("Custom", success)
+            }
+        }
+    }
+
+    @available(iOS 18.0, *)
+    struct BuiltinViewRepresentable: UIViewRepresentable {
+        var backgroundColor: Color
+
+        func makeUIView(context: Context) -> UIView {
+            UIView()
+        }
+
+        func updateUIView(_ uiView: UIView, context: Context) {
+            print("Builtin", context.transaction.animation as Any)
+            context.animate {
+                uiView.backgroundColor = backgroundColor.toUIColor()
+            } completion: {
+                print("Builtin", "done")
+            }
+        }
+    }
+}
+
 #endif

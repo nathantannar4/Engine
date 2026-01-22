@@ -18,6 +18,12 @@ public struct ShapeBuilder {
         shape
     }
 
+    public static func buildBlock<S: Shape>(
+        _ shape: S?
+    ) -> EmptyShape {
+        EmptyShape()
+    }
+
     public static func buildEither<
         TrueShape,
         FalseShape
@@ -144,6 +150,12 @@ struct ShapeBuilder_Previews: PreviewProvider {
                     Rectangle()
                         .clipShape {
                             // Empty
+                        }
+
+                    let s: Circle? = nil
+                    Rectangle()
+                        .clipShape {
+                            s
                         }
                 }
                 #if os(iOS) || os(macOS)

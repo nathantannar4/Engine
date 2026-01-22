@@ -22,6 +22,13 @@ public struct EmptyShape: Shape {
     }
 }
 
+extension EmptyShape: InsettableShape {
+
+    public func inset(by amount: CGFloat) -> EmptyShape {
+        EmptyShape()
+    }
+}
+
 // MARK: - Previews
 
 struct EmptyShape_Previews: PreviewProvider {

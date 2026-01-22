@@ -19,6 +19,17 @@ extension ForEach {
 
     @inlinable
     public init(
+        _ count: Int,
+        @ViewBuilder content: @escaping (Int) -> Content
+    ) where Data == Range<Int>, ID == Int, Content: View {
+        self.init(0..<count, id: \.self) { index in
+            content(index)
+        }
+    }
+
+
+    @inlinable
+    public init(
         _ range: ClosedRange<Int>,
         @ViewBuilder content: @escaping (Int) -> Content
     ) where Data == ClosedRange<Int>, ID == Int, Content: View {

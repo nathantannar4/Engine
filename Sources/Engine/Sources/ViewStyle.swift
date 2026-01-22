@@ -515,7 +515,17 @@ private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
     nonisolated(unsafe) var configuration: Style.Configuration
 
     var body: some View {
-        style.makeBody(configuration: configuration)
+        _Body(content: style.makeBody(configuration: configuration))
+    }
+
+    private struct _Body: View {
+        var content: Style.Body
+
+        var body: some View {
+            UnaryViewAdaptor {
+                content
+            }
+        }
     }
 }
 
@@ -644,6 +654,23 @@ struct BorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
     }
 }
 
+struct ConditionalPreviewCustomViewStyle: PreviewCustomViewStyle {
+
+    var isVertical: Bool
+
+    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
+        if isVertical {
+            VStack {
+                configuration.content
+            }
+        } else {
+            HStack {
+                configuration.content
+            }
+        }
+    }
+}
+
 struct ViewStyledView_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
@@ -687,6 +714,24 @@ struct ViewStyledView_Previews: PreviewProvider {
             .styledViewStyle(
                 PreviewCustomViewBody.self,
                 style: BorderedPreviewCustomViewStyle()
+            )
+
+            PreviewCustomView {
+                Text("Line 1")
+                Text("Line 2")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: ConditionalPreviewCustomViewStyle(isVertical: true)
+            )
+
+            PreviewCustomView {
+                Text("Line 1")
+                Text("Line 2")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: ConditionalPreviewCustomViewStyle(isVertical: false)
             )
         }
     }

@@ -6,8 +6,8 @@ import SwiftUI
 
 extension Color {
 
-    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     /// Transforms SwiftUI `Color` to a non-bridged `CGColor`
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public func toCGColor() -> CGColor {
         if let cgColor = cgColor {
             return cgColor

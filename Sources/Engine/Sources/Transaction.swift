@@ -5,11 +5,14 @@
 import SwiftUI
 
 @inline(__always)
-@available(watchOS, unavailable)
 public func withCATransaction(
     _ completion: @escaping () -> Void
 ) {
-    #if !os(watchOS)
+    #if os(watchOS)
+    RunLoop.main.schedule {
+        completion()
+    }
+    #else
     CATransaction.begin()
     CATransaction.setCompletionBlock(completion)
     CATransaction.commit()
