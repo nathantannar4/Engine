@@ -12,9 +12,18 @@ import SwiftUI
 /// > Note: Similar to `LayoutValueTrait` but backwards compatible to work with any
 /// view when transformed with a ``VariadicViewAdapter``
 ///
-public protocol TraitValueKey {
+public protocol TraitValueKey: ViewTraitKey {
     associatedtype Value
     static var defaultValue: Self.Value { get }
+}
+
+extension TraitValueKey {
+
+    public static var conformance: ProtocolConformance<ViewTraitKeyProtocolDescriptor>? {
+        ViewTraitKeyProtocolDescriptor.conformance(
+            of: TraitValueKeyBox<Self>.self
+        )
+    }
 }
 
 extension View {
@@ -33,26 +42,40 @@ extension View {
 }
 
 extension VariadicView.Subview {
-    public subscript<Key: TraitValueKey>(
-        key: Key.Type
-    ) -> Key.Value {
-        get { self[TraitValueKeyBox<Key>.self] }
-        set { self[TraitValueKeyBox<Key>.self] = newValue }
+
+    public subscript<K: TraitValueKey>(
+        key: K.Type
+    ) -> K.Value {
+        get { self[TraitValueKeyBox<K>.self] }
+        set { self[TraitValueKeyBox<K>.self] = newValue }
+    }
+
+    public func trait<K: TraitValueKey>(
+        _ key: K.Type
+    ) -> K.Value? {
+        self[TraitValueKeyBox<K>.self]
     }
 }
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension Layout.Subviews.Element {
-    public subscript<Key: TraitValueKey>(
-        key: Key.Type
-    ) -> Key.Value {
-        _trait(key: TraitValueKeyBox<Key>.self)
+    
+    public subscript<K: TraitValueKey>(
+        key: K.Type
+    ) -> K.Value {
+        _trait(key: TraitValueKeyBox<K>.self)
+    }
+
+    public func trait<K: TraitValueKey>(
+        _ key: K.Type
+    ) -> K.Value? {
+        _trait(key: TraitValueKeyBox<K>.self)
     }
 }
 
-private struct TraitValueKeyBox<Key: TraitValueKey>: _ViewTraitKey {
-    typealias Value = Key.Value
-    static var defaultValue: Key.Value { Key.defaultValue }
+private struct TraitValueKeyBox<K: TraitValueKey>: _ViewTraitKey {
+    typealias Value = K.Value
+    static var defaultValue: K.Value { K.defaultValue }
 }
 
 // MARK: - Previews

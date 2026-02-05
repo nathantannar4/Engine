@@ -418,10 +418,12 @@ private struct ViewStyledViewStyledBody<
     var body: some View {
         var viewStyles = viewStyles
         let style = viewStyles[StyledView.self].popLast()!
-        AnyViewStyledView<StyledView, Never>(
-            style: style,
-            configuration: content.configuration
-        )
+        UnaryViewAdaptor {
+            AnyViewStyledView<StyledView, Never>(
+                style: style,
+                configuration: content.configuration
+            )
+        }
         .environment(\.viewStyles, viewStyles)
     }
 }
@@ -515,17 +517,7 @@ private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
     nonisolated(unsafe) var configuration: Style.Configuration
 
     var body: some View {
-        _Body(content: style.makeBody(configuration: configuration))
-    }
-
-    private struct _Body: View {
-        var content: Style.Body
-
-        var body: some View {
-            UnaryViewAdaptor {
-                content
-            }
-        }
+        style.makeBody(configuration: configuration)
     }
 }
 
@@ -556,6 +548,10 @@ struct AnyViewStyle: @unchecked Sendable {
             assert(
                 Body.self == AnyViewStyledViewBody<Style>.self,
                 "\(Body.self) != \(Style.Body.self)"
+            )
+            assert(
+                Style.Body.self == AnyViewStyledViewBody<Style>.Body.self,
+                "\(Style.Body.self) != \(AnyViewStyledViewBody<Style>.Body.self)"
             )
             let configuration = unsafeBitCast(configuration, to: Style.Configuration.self)
             let body = AnyViewStyledViewBody(
@@ -671,6 +667,36 @@ struct ConditionalPreviewCustomViewStyle: PreviewCustomViewStyle {
     }
 }
 
+struct PrimitiveBorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
+    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
+        configuration.content
+            .modifier(Modifier())
+    }
+
+    struct Modifier: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .border(Color.red)
+        }
+    }
+}
+
+struct PrimitiveMultiBorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
+    func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
+        HStack {
+            configuration.content
+                .modifier(Modifier())
+        }
+    }
+
+    struct Modifier: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .border(Color.red)
+        }
+    }
+}
+
 struct ViewStyledView_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
@@ -722,12 +748,60 @@ struct ViewStyledView_Previews: PreviewProvider {
             }
             .styledViewStyle(
                 PreviewCustomViewBody.self,
+                style: PrimitiveBorderedPreviewCustomViewStyle()
+            )
+
+            PreviewCustomView {
+                Text("Line 1")
+                Text("Line 2")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: PrimitiveMultiBorderedPreviewCustomViewStyle()
+            )
+
+            PreviewCustomView {
+                ForEach(1...3, id: \.self) { index in
+                    Text("Line \(index)")
+                }
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: PrimitiveBorderedPreviewCustomViewStyle()
+            )
+
+            PreviewCustomView {
+                ForEach(1...3, id: \.self) { index in
+                    Text("Line \(index)")
+                }
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: PrimitiveMultiBorderedPreviewCustomViewStyle()
+            )
+
+            PreviewCustomView {
+                Text("Line 1")
+                Text("Line 2")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
                 style: ConditionalPreviewCustomViewStyle(isVertical: true)
             )
 
             PreviewCustomView {
                 Text("Line 1")
                 Text("Line 2")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: ConditionalPreviewCustomViewStyle(isVertical: false)
+            )
+
+            PreviewCustomView {
+                ForEach(1...3, id: \.self) { index in
+                    Text("Line \(index)")
+                }
             }
             .styledViewStyle(
                 PreviewCustomViewBody.self,

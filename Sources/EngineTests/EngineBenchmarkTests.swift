@@ -9,11 +9,6 @@ import SwiftUI
 @MainActor
 final class BenchmarkTests: XCTestCase {
 
-    override func setUp() {
-        super.setUp()
-        continueAfterFailure = false
-    }
-
     func measureRender<Content: View>(
         iterations: Int = 1,
         @ViewBuilder content: () -> Content

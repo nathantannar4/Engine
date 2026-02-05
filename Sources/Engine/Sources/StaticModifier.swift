@@ -125,8 +125,17 @@ private struct ViewListOutputsCountVisitor: ViewModifierVisitor {
 struct StaticModifier_Previews: PreviewProvider {
 
     struct Modifier: ViewModifier {
+        @State var value = 0
+
         func body(content: Content) -> some View {
-            content.border(Color.red)
+            HStack {
+                Button(value.description) {
+                    value += 1
+                }
+
+                content
+                    .border(Color.blue)
+            }
         }
     }
 

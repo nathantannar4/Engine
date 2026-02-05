@@ -157,15 +157,25 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
 
         @inlinable
         public func selection<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
-            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *), let tag = tag(as: ID.self) {
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *),
+                let tag = tag(as: ID.self)
+            {
                 return tag
+            } else if let id = id(as: ID.self) {
+                return id
             }
-            return id(as: ID.self)
+            return nil
         }
 
         public subscript<K: _ViewTraitKey>(key: K.Type) -> K.Value {
             get { element[K.self] }
             set { element[K.self] = newValue }
+        }
+
+        public func trait<K: _ViewTraitKey>(
+            _ key: K.Type
+        ) -> K.Value? {
+            self[K.self]
         }
 
         public subscript<K: ViewTraitKey>(
@@ -175,6 +185,12 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             self[K.self] ?? defaultValue()
         }
 
+        public func trait<K: ViewTraitKey>(
+            _ key: K.Type
+        ) -> K.Value? {
+            self[K.self]
+        }
+
         public subscript<T>(key: String, as _: T.Type) -> T? {
             if let conformance = ViewTraitKeyProtocolDescriptor.conformance(of: key) {
                 var visitor = AnyTraitVisitor<T>(element: element)
@@ -182,6 +198,13 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
                 return visitor.value
             }
             return nil
+        }
+
+        public func trait<T>(
+            key: String,
+            as _: T.Type
+        ) -> T? {
+            self[key, as: T.self]
         }
 
         private struct AnyTraitVisitor<T>: ViewTraitKeyVisitor {
@@ -428,12 +451,25 @@ public struct VariadicSectionView: View, Identifiable {
 
 // MARK: - Previews
 
+private struct PreviewTestEnvironmentKey: EnvironmentKey {
+    static let defaultValue: String = "default"
+}
+
+extension EnvironmentValues {
+    fileprivate var previewTest: String {
+        get { self[PreviewTestEnvironmentKey.self] }
+        set { self[PreviewTestEnvironmentKey.self] = newValue }
+    }
+}
+
 struct VariadicView_Previews: PreviewProvider {
-    enum PreviewCases: Int, Hashable, CaseIterable {
-        case one
+    private enum PreviewCases: Int, Hashable, CaseIterable {
+        case one = 1
         case two
         case three
     }
+
+    private struct VariadicAlias: ViewAlias { }
 
     static var previews: some View {
         Group {
@@ -716,6 +752,86 @@ struct VariadicView_Previews: PreviewProvider {
                 }
             }
             .previewDisplayName("Slice View")
+
+            ZStack {
+                VariadicViewAdapter {
+                    VariadicAlias()
+                } content: { source in
+                    Text(source.count.description)
+                }
+                .viewAlias(VariadicAlias.self) {
+                    Text("Line 1")
+                    Text("Line 2")
+                    Text("Line 3")
+                }
+            }
+            .previewDisplayName("ViewAlias")
+
+            ZStack {
+                StateAdapter(initialValue: 0) { $value in
+                    VariadicViewAdapter {
+                        Text("Label")
+                    } content: { source in
+                        Button {
+                            value += 1
+                        } label: {
+                            HStack {
+                                Text(value.description)
+
+                                source
+                            }
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Styles")
+
+            ZStack {
+                VariadicViewAdapter {
+                    Group {
+                        EnvironmentValueReader(\.previewTest) { value in
+                            Text(value)
+                        }
+                        .tag("Tag")
+                        .id("ID")
+                    }
+                    // Fixes custom environment keys, but breaks reading tag/id
+                    .modifier(UnaryViewModifier())
+
+                    EnvironmentValueReader(\.previewTest) { value in
+                        Text(value)
+                    }
+                    .tag("Tag")
+                    .id("ID")
+                } content: { source in
+                    VStack {
+                        ForEachSubview(source) { _, subview in
+                            VStack {
+                                subview
+                                subview
+                                    .font(.largeTitle)
+                                HStack {
+                                    EnvironmentValueReader(\.previewTest) { value in
+                                        Text(value)
+                                    }
+
+                                    subview
+                                }
+
+                                if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                                    let tag = subview.tag(as: String.self)
+                                    Text(tag ?? "nil")
+
+                                    let id = subview.id(as: String.self)
+                                    Text(id ?? "nil")
+                                }
+                            }
+                        }
+                    }
+                    .environment(\.previewTest, "Custom")
+                }
+            }
+            .previewDisplayName("Environment")
         }
         .padding()
         .previewLayout(.sizeThatFits)

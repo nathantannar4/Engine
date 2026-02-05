@@ -251,7 +251,7 @@ public struct StyleContextCondition<
 >: ViewInputsCondition {
 
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
-        let styleContext = inputs["StyleContextInput", StyleContextInputLayout.self]?.context ?? NoStyleContext.self
+        let styleContext = inputs["StyleContextInput", as: StyleContextInputLayout.self]?.context ?? NoStyleContext.self
         let input = StyleContextInputs(type: styleContext)
         return Context.evaluate(input)
     }
@@ -278,7 +278,7 @@ public struct _StyleContextLogModifier: ViewInputsModifier {
 
     public static func makeInputs(inputs: inout ViewInputs) {
         #if DEBUG
-        let styleContext = inputs["StyleContextInput", StyleContextInputLayout.self]?.context ?? NoStyleContext.self
+        let styleContext = inputs["StyleContextInput", as: StyleContextInputLayout.self]?.context ?? NoStyleContext.self
         let log = """
             === StyleContext ===
             \(_typeName(styleContext, qualified: false))

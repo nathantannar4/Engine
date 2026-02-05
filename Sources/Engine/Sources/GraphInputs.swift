@@ -6,7 +6,7 @@ import SwiftUI
 
 /// A `ViewModifier` that only modifies the static inputs
 public protocol GraphInputsModifier: _GraphInputsModifier, ViewModifier where Body == Never {
-    static nonisolated func makeInputs(modifier: _GraphValue<Self>, inputs: inout _GraphInputs)
+    nonisolated static func makeInputs(modifier: _GraphValue<Self>, inputs: inout _GraphInputs)
 }
 
 extension GraphInputsModifier {
@@ -22,9 +22,7 @@ private struct GraphInputsLayout {
     var customInputs: PropertyList
 }
 
-protocol _CustomInputsProvider { }
-
-extension _CustomInputsProvider {
+extension _GraphInputs {
 
     var customInputs: PropertyList {
         get {
@@ -42,9 +40,6 @@ extension _CustomInputsProvider {
             }
         }
     }
-}
-
-extension _GraphInputs: _CustomInputsProvider {
 
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
@@ -63,9 +58,16 @@ extension _GraphInputs: _CustomInputsProvider {
 
     public subscript<Value>(
         key: String,
-        _: Value.Type
+        as _: Value.Type
     ) -> Value? {
-        get { customInputs[key, Value.self] }
+        get { customInputs[key, as: Value.self] }
+    }
+
+    public subscript<Value>(
+        key: String
+    ) -> Value? {
+        get { customInputs[key, as: Value.self] }
+        set { customInputs[key] = newValue }
     }
 }
 

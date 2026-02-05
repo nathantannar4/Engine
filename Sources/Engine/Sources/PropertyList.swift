@@ -150,6 +150,23 @@ struct PropertyList {
             }
         }
 
+        var keyFilter: UInt {
+            get {
+                switch self {
+                case .v1(let ptr): ptr.pointee.fields.keyFilter
+                case .v6(let ptr): ptr.pointee.fields.keyFilter
+                }
+            }
+            nonmutating set {
+                switch self {
+                case .v1(let ptr):
+                    ptr.pointee.fields.keyFilter = newValue
+                case .v6(let ptr):
+                    ptr.pointee.fields.keyFilter = newValue
+                }
+            }
+        }
+
         var length: UInt32 {
             get {
                 switch self {
@@ -191,7 +208,7 @@ struct PropertyList {
         func value<T>(as _: T.Type) -> T? {
             let value = value
             let valueType = type(of: value)
-            if T.self == valueType {
+            if T.self == valueType || T.self == Any.self {
                 return value as? T
             } else if swift_getSize(of: valueType) >= MemoryLayout<T>.size {
                 func project<Value>(_ value: Value) -> T {
@@ -200,6 +217,22 @@ struct PropertyList {
                 return _openExistential(value, do: project)
             }
             return nil
+        }
+
+        func setValue<T>(
+            _ newValue: T
+        ) {
+            precondition(valueType == T.self)
+            switch self {
+            case .v1(let ptr):
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV1.self) { ptr in
+                    ptr.pointee.value = newValue
+                }
+            case .v6(let ptr):
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV6.self) { ptr in
+                    ptr.pointee.value = newValue
+                }
+            }
         }
 
         private func getValue<T>(
@@ -212,7 +245,7 @@ struct PropertyList {
                 }
             case .v6(let ptr):
                 return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV6.self) { ptr in
-                    ptr.pointee.value
+                    return ptr.pointee.value
                 }
             }
         }
@@ -260,6 +293,23 @@ struct PropertyList {
             ptr = p.after
         }
         return nil
+    }
+
+    mutating func set<Value>(
+        _ key: String,
+        _ newValue: Value
+    ) {
+        var ptr = elements
+        while let p = ptr {
+            let typeName = _typeName(p.keyType, qualified: false)
+            if typeName == key {
+                if p.valueType == Value.self {
+                    p.setValue(newValue)
+                }
+                return
+            }
+            ptr = p.after
+        }
     }
 
     mutating func add<Input, Value>(
@@ -315,31 +365,36 @@ struct PropertyList {
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
-        get {
-            value(Input.self, as: Input.Value.self) ?? Input.defaultValue
-        }
-        set {
-            add(Input.self, newValue)
-        }
+        get { value(Input.self, as: Input.Value.self) ?? Input.defaultValue }
+        set { add(Input.self, newValue) }
     }
 
     @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value? {
-        get {
-            value(Input.self, as: Input.Value.self)
-        }
-        set {
-            add(Input.self, newValue ?? Input.defaultValue)
-        }
+        get { value(Input.self, as: Input.Value.self) }
+        set { add(Input.self, newValue ?? Input.defaultValue) }
     }
 
     public subscript<Value>(
         key: String,
-        _: Value.Type
+        as _: Value.Type
     ) -> Value? {
-        value(key: key, as: Value.self)
+        get { value(key: key, as: Value.self) }
+    }
+
+    public subscript<Value>(
+        key: String
+    ) -> Value? {
+        get { value(key: key, as: Value.self) }
+        set {
+            if let newValue {
+                set(key, newValue)
+            } else {
+                assertionFailure("Elements cannot be removed from a PropertyList")
+            }
+        }
     }
 }
 

@@ -302,7 +302,13 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
     }
 }
 
+// MARK: - Previews
+
 struct ViewTraitKey_Previews: PreviewProvider {
+    struct PreviewViewTraitKey: TraitValueKey {
+        static var defaultValue: String { "default" }
+    }
+
     static var previews: some View {
         Group {
             HStack {
@@ -355,6 +361,17 @@ struct ViewTraitKey_Previews: PreviewProvider {
                 }
                 .previewDisplayName("TagValueTrait")
             }
+
+            VStack {
+                VariadicViewAdapter {
+                    Color.blue
+                        .trait(PreviewViewTraitKey.self, "Hello, World")
+                } content: { source in
+                    Text(source[0].trait(PreviewViewTraitKey.self))
+                    Text(source[0][PreviewViewTraitKey.self])
+                }
+            }
+            .previewDisplayName("Custom Trait")
         }
     }
 }

@@ -248,7 +248,14 @@ struct ViewAlias_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ZStack {
-                PreviewAlias()
+                VStack {
+                    PreviewAlias()
+
+                    PreviewAlias()
+                        .viewAlias(PreviewAlias.self) {
+                            PreviewAlias()
+                        }
+                }
             }
             .previewDisplayName("DefaultBody")
 
@@ -272,13 +279,20 @@ struct ViewAlias_Previews: PreviewProvider {
             .previewDisplayName("Text")
 
             ZStack {
-                HStack {
+                VStack {
+                    PreviewAlias()
+                        .viewAlias(PreviewAlias.self) {
+                            ForEach(0...2, id: \.self) { _ in
+                                Text("Hello, World")
+                            }
+                        }
+
                     VStack {
                         PreviewAlias()
                     }
                     .viewAlias(PreviewAlias.self) {
-                        ForEach(0...2, id: \.self) { index in
-                            Text(index.description)
+                        ForEach(0...2, id: \.self) { _ in
+                            Text("Hello, World")
                         }
                     }
 
@@ -304,9 +318,31 @@ struct ViewAlias_Previews: PreviewProvider {
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
                     }
+
+                    PreviewAlias()
+                        .viewAlias(PreviewAlias.self) {
+                            Group {
+                                Text("Hello, World")
+                                Text("Hello, World")
+                                Text("Hello, World")
+                            }
+                        }
+
                 }
             }
             .previewDisplayName("Group")
+
+            ZStack {
+                VariadicViewAdapter(source: PreviewAlias()) { content in
+                    Text(content.count.description)
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                    Text("Hello, World")
+                    Text("Hello, World")
+                }
+            }
+            .previewDisplayName("VariadicView")
 
             ZStack {
                 VStack {
@@ -344,6 +380,15 @@ struct ViewAlias_Previews: PreviewProvider {
                     }
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
+                    }
+
+                    VStack {
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        ConditionalView(if: true) {
+                            Text("Hello, World")
+                        }
                     }
                 }
             }

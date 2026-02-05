@@ -185,7 +185,7 @@ private struct ViewOutputAliasKey<
 
     typealias Content = Alias.Content
 
-    static nonisolated func reduce(
+    nonisolated static func reduce(
         value: inout Value,
         nextValue: () -> Value
     ) {

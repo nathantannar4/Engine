@@ -4,33 +4,62 @@
 
 import SwiftUI
 
-/// A `View` that statically depends if its parent is a `VStack` or `HStack`.
+/// A `View` that statically depends if its parent is a `VStack`, `HStack` or neither.
 ///
 /// > Tip: You to make views that behave like `Divider` and `Spacer`
 ///
 @frozen
-public struct ViewStackAxisReader<Content: View>: View {
+public struct ViewStackAxisReader<
+    VerticalContent: View,
+    HorizontalContent: View,
+    OtherContent: View,
+>: View {
 
     @usableFromInline
-    var vertical: Content
+    var vertical: VerticalContent
 
     @usableFromInline
-    var horizontal: Content
+    var horizontal: HorizontalContent
+
+    @usableFromInline
+    var other: OtherContent
 
     @inlinable
     public init(
-        @ViewBuilder content: (Axis) -> Content
-    ) {
+        @ViewBuilder content: (Axis) -> VerticalContent
+    ) where HorizontalContent == VerticalContent, OtherContent == EmptyView {
         self.vertical = content(.vertical)
         self.horizontal = content(.horizontal)
+        self.other = EmptyView()
+    }
+
+    @inlinable
+    public init(
+        @ViewBuilder vertical: () -> VerticalContent,
+        @ViewBuilder horizontal: () -> HorizontalContent,
+        @ViewBuilder other: () -> OtherContent
+    ) {
+        self.vertical = vertical()
+        self.horizontal = horizontal()
+        self.other = other()
     }
 
     public var body: some View {
-        ViewInputConditionalContent(IsAxisHorizontal.self) {
-            horizontal
+        ViewInputConditionalContent(IsAxisDefined.self) {
+            ViewInputConditionalContent(IsAxisHorizontal.self) {
+                horizontal
+            } otherwise: {
+                vertical
+            }
         } otherwise: {
-            vertical
+            other
         }
+    }
+}
+
+private struct IsAxisDefined: ViewInputsCondition {
+    static func evaluate(_ inputs: ViewInputs) -> Bool {
+        inputs.options.contains(.isAxisDefined)
     }
 }
 
@@ -64,8 +93,12 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 12) {
             HStack {
-                ViewStackAxisReader { axis in
-                    Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                ViewStackAxisReader {
+                    Text("Vertical")
+                } horizontal: {
+                    Text("Horizontal")
+                } other: {
+                    Text("Other")
                 }
 
                 CustomDivider(scale: 3)
@@ -77,8 +110,12 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
             }
 
             VStack {
-                ViewStackAxisReader { axis in
-                    Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                ViewStackAxisReader {
+                    Text("Vertical")
+                } horizontal: {
+                    Text("Horizontal")
+                } other: {
+                    Text("Other")
                 }
 
                 CustomDivider()
@@ -87,20 +124,32 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
             }
 
             LazyHStack {
-                ViewStackAxisReader { axis in
-                    Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                ViewStackAxisReader {
+                    Text("Vertical")
+                } horizontal: {
+                    Text("Horizontal")
+                } other: {
+                    Text("Other")
                 }
             }
 
             LazyVStack {
-                ViewStackAxisReader { axis in
-                    Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                ViewStackAxisReader {
+                    Text("Vertical")
+                } horizontal: {
+                    Text("Horizontal")
+                } other: {
+                    Text("Other")
                 }
             }
 
             ZStack {
-                ViewStackAxisReader { axis in
-                    Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                ViewStackAxisReader {
+                    Text("Vertical")
+                } horizontal: {
+                    Text("Horizontal")
+                } other: {
+                    Text("Other")
                 }
             }
 
@@ -110,13 +159,21 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
 
                     Divider()
 
-                    ViewStackAxisReader { axis in
-                        Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                    ViewStackAxisReader {
+                        Text("Vertical")
+                    } horizontal: {
+                        Text("Horizontal")
+                    } other: {
+                        Text("Other")
                     }
 
                     GridRow {
-                        ViewStackAxisReader { axis in
-                            Text(axis == .horizontal ? "Horizontal" : "Vertical")
+                        ViewStackAxisReader {
+                            Text("Vertical")
+                        } horizontal: {
+                            Text("Horizontal")
+                        } other: {
+                            Text("Other")
                         }
 
                         CustomDivider()

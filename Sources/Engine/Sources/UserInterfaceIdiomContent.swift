@@ -244,3 +244,36 @@ private struct UserInterfaceIdiomVisionContent<Content: UserInterfaceIdiomConten
         content.visionBody
     }
 }
+
+// MARK: - Previews
+
+struct UserInterfaceIdiomContent_Previews: PreviewProvider {
+    struct PreviewUserInterfaceIdiomContent: UserInterfaceIdiomContent {
+        var phoneBody: some View { Text("iOS") }
+        var padBody: some View { Text("iPadOS") }
+        var macBody: some View { Text("macOS") }
+        var tvBody: some View { Text("tvOS") }
+        var watchBody: some View { Text("watchOS") }
+        var visionBody: some View { Text("visionOS") }
+    }
+
+    struct UserInterfaceIdiomContentWithState: UserInterfaceIdiomContent {
+        @State var value = 0
+
+        var phoneBody: some View {
+            Button {
+                value += 1
+            } label: {
+                Text(value.description)
+            }
+        }
+    }
+
+    static var previews: some View {
+        VStack {
+            PreviewUserInterfaceIdiomContent()
+
+            UserInterfaceIdiomContentWithState()
+        }
+    }
+}
