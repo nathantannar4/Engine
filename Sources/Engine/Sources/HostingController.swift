@@ -12,6 +12,12 @@ public typealias PlatformHostingController<Content: View> = NSHostingController<
 public typealias PlatformHostingController<Content: View> = UIHostingController<Content>
 #endif
 
+public protocol AnyHostingController: PlatformViewController {
+
+    var disableSafeArea: Bool { get set }
+    func render()
+}
+
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
 open class HostingController<
     Content: View
@@ -110,6 +116,13 @@ open class HostingController<
     open func update(content: Content, transaction: Transaction) {
         self.content = content
         self.transaction = transaction
+        #if os(iOS)
+        if shouldRenderForContentUpdate {
+            withCATransaction {
+                self._render(seconds: 1 / 60)
+            }
+        }
+        #endif
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
@@ -117,15 +130,33 @@ open class HostingController<
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
             UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
         {
-            if children.count > 0 {
-                prepareForUIKitAnimations()
+            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
+                allowUIKitAnimations += 1
             } else {
-                if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                    allowUIKitAnimations += 1
-                } else {
-                    allowUIKitAnimationsForNextUpdate = true
+                allowUIKitAnimationsForNextUpdate = true
+            }
+            func setAllowUIKitAnimations(hostingView: AnyHostingView) {
+                do {
+                    if #available(iOS 18.1, tvOS 18.1, *) {
+                        var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView)
+                        allowUIKitAnimations += 1
+                        try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
+                    } else {
+                        try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
+                    }
+                } catch {
+                    print("Failed to allow UIKit animations, this is unexpected please file an issue =")
                 }
             }
+            func setAllowUIKitAnimations(children: [UIViewController]) {
+                for child in children {
+                    if let hostingView = child.view as? AnyHostingView {
+                        setAllowUIKitAnimations(hostingView: hostingView)
+                    }
+                    setAllowUIKitAnimations(children: child.children)
+                }
+            }
+            setAllowUIKitAnimations(children: children)
         }
         super.viewWillLayoutSubviews()
     }
@@ -142,30 +173,41 @@ open class HostingController<
     #endif
 }
 
-#if os(iOS) || os(tvOS) || os(visionOS)
-protocol _UIHostingViewType { }
-extension _UIHostingView: _UIHostingViewType { }
+extension PlatformHostingController: AnyHostingController {
 
-extension UIViewController {
-    func prepareForUIKitAnimations() {
-        guard let view else { return }
-        if view is _UIHostingViewType {
-            do {
-                if #available(iOS 18.1, tvOS 18.1, *) {
-                    var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, view)
-                    allowUIKitAnimations += 1
-                    try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, view)
-                } else {
-                    try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, view)
-                }
-            } catch {
-                print("Failed to allow UIKit animations, this is unexpected please file an issue =")
+    public var disableSafeArea: Bool {
+        get {
+            #if os(macOS)
+            return false
+            #else
+            return _disableSafeArea
+            #endif
+        }
+        set {
+            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
+                safeAreaRegions = newValue ? [] : .all
             }
+            #if !os(macOS)
+            _disableSafeArea = newValue
+            #endif
         }
-        for child in children {
-            child.prepareForUIKitAnimations()
+    }
+
+    public func render() {
+        _render(seconds: 1 / 60)
+    }
+}
+
+#if os(iOS)
+extension AnyHostingController {
+
+    public var shouldRenderForContentUpdate: Bool {
+        if view.frame != .zero, transitionCoordinator == nil, view.window == nil {
+            return true
         }
+        return false
     }
 }
 #endif
+
 #endif // !os(watchOS)

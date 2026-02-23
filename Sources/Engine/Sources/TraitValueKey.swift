@@ -52,7 +52,7 @@ extension VariadicView.Subview {
 
     public func trait<K: TraitValueKey>(
         _ key: K.Type
-    ) -> K.Value? {
+    ) -> K.Value {
         self[TraitValueKeyBox<K>.self]
     }
 }
@@ -68,7 +68,7 @@ extension Layout.Subviews.Element {
 
     public func trait<K: TraitValueKey>(
         _ key: K.Type
-    ) -> K.Value? {
+    ) -> K.Value {
         _trait(key: TraitValueKeyBox<K>.self)
     }
 }

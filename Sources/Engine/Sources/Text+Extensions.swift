@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import os.log
 
 extension Text {
 
@@ -644,6 +645,7 @@ extension Text {
                         attributes.scale = .init(scale: scale)
                     }
                 default:
+                    os_log(.error, log: .default, "Failed to resolve Text modifier %{public}@. Please file an issue.", className)
                     break
                 }
             }

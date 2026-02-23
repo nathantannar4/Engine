@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import os.log
 
 extension Font {
 
@@ -19,22 +20,49 @@ extension Font {
     public func toUIFont() -> UIFont? {
         toPlatformValue()
     }
+
+    public func toUIFont(
+        in environment: @autoclosure () -> EnvironmentValues
+    ) -> UIFont? {
+        toPlatformValue(in: environment())
+    }
     #endif
 
     #if os(macOS)
-    @available(macOS 11.0, *)
+    @available(macOS 10.15, *)
     public func toNSFont() -> NSFont? {
         toPlatformValue()
     }
+
+    @available(macOS 10.15, *)
+    public func toNSFont(
+        in environment: @autoclosure () -> EnvironmentValues
+    ) -> NSFont? {
+        toPlatformValue(in: environment())
+    }
     #endif
 
-    @available(iOS 13.0, macOS 11.0, tvOS 13.0, watchOS 6.0, *)
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
+    func toPlatformValue(
+        in environment: @autoclosure () -> EnvironmentValues
+    ) -> PlatformRepresentable? {
+        #if canImport(FoundationModels) // Xcode 26
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            let context = environment().fontResolutionContext
+            let resolved = resolve(in: context)
+            return resolved.ctFont as PlatformRepresentable
+        }
+        #endif
+        return toPlatformValue()
+    }
+
+    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
     func toPlatformValue() -> PlatformRepresentable? {
-        FontProvider(for: self)?.resolved()
+        return FontProvider(for: self)?.resolved()
     }
 }
 
-@available(iOS 13.0, macOS 11.0, tvOS 13.0, watchOS 6.0, *)
+@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 private enum FontProvider {
     case system(size: CGFloat, weight: Font.Weight?, design: Font.Design?)
     case textStyle(Font.TextStyle, weight: Font.Weight?, design: Font.Design?)
@@ -105,8 +133,20 @@ private enum FontProvider {
                 }
                 break
 
+            case "PointSizeModifier":
+                if let pointSize = mirror.descendant("modifier", "pointSize") as? CGFloat {
+                    font = font.withSize(pointSize)
+                }
+
+            case "ScalePointSizeModifier":
+                if let scaleFactor = mirror.descendant("modifier", "scaleFactor") as? CGFloat {
+                    let size = font.pointSize * scaleFactor
+                    font = font.withSize(size)
+                }
+
+
             default:
-                break
+                os_log(.error, log: .default, "Failed to resolve Font modifier %{public}@. Please file an issue.", String(modifier))
             }
 
             self = .named(font)
@@ -135,6 +175,7 @@ private enum FontProvider {
                 return nil
             }
             self = .platform(font)
+
         case "NamedProvider":
             guard
                 let name = mirror.descendant("name") as? String,
@@ -177,7 +218,10 @@ private enum FontProvider {
             return font
 
         case let .textStyle(textStyle, weight, design):
-            guard let textStyle = Font.PlatformRepresentable.TextStyle(textStyle) else {
+            guard
+                #available(macOS 11.0, *),
+                let textStyle = Font.PlatformRepresentable.TextStyle(textStyle)
+            else {
                 return nil
             }
             var font = Font.PlatformRepresentable.preferredFont(
@@ -341,6 +385,7 @@ fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
         switch design {
         case .default:
             self = .default
+
         case .serif:
             #if os(watchOS)
             if #available(watchOS 7.0, *) {
@@ -351,8 +396,10 @@ fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
             #else
             self = .serif
             #endif
+
         case .rounded:
             self = .rounded
+
         case .monospaced:
             #if os(watchOS)
             if #available(watchOS 7.0, *) {
@@ -363,6 +410,7 @@ fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
             #else
             self = .monospaced
             #endif
+
         @unknown default:
             return nil
         }
@@ -459,6 +507,15 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .body.monospaced().weight(.bold))
             }
 
+            #if canImport(FoundationModels) // Xcode 26
+            if #available(iOS 26.0, macOS 26.0,  *) {
+                FontPreview(font: .body)
+                    .monospaced()
+
+                FontPreview(font: .body.monospaced(true))
+            }
+            #endif
+
             FontPreview(font: .body.monospacedDigit())
 
             if #available(iOS 16.0, macOS 13.0, *) {
@@ -470,7 +527,7 @@ struct Font_Previews: PreviewProvider {
                     .underline()
             }
 
-            if #available(iOS 16.0,macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0,  *) {
                 FontPreview(font: .body)
                     .kerning(3)
             }
@@ -479,10 +536,18 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .system(.body, design: .rounded, weight: .semibold))
             }
 
-            if #available(iOS 16.0,macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0,  *) {
                 FontPreview(font: .body)
                     .fontWidth(.compressed)
             }
+
+            #if canImport(FoundationModels) // Xcode 26
+            if #available(iOS 26.0, macOS 26.0,  *) {
+                FontPreview(font: .body.scaled(by: 1.1).scaled(by: 1.2))
+
+                FontPreview(font: .body.pointSize(22))
+            }
+            #endif
         }
     }
 
@@ -493,8 +558,8 @@ struct Font_Previews: PreviewProvider {
             VStack {
                 Text("Hello, World 123")
 
-                EnvironmentValueReader(\.font) { font in
-                    if let font = font?.toPlatformValue() {
+                EnvironmentValueReader(\.self) { env in
+                    if let font = env.font?.toPlatformValue(in: env) {
                         Text("Hello, World 123")
                             .font(Font(font))
                     } else {

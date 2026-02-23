@@ -12,7 +12,8 @@ public struct VariadicViewHostingControllers<
     Modifier: VariadicViewElementModifier
 >: RandomAccessCollection, Sequence {
 
-    public typealias ViewControllerType = HostingController<VariadicViewElementBody<ID, Modifier>>
+    public typealias Content = VariadicViewElementBody<ID, Modifier>
+    public typealias ViewControllerType = HostingController<Content>
 
     private struct StorageElement: Equatable {
         var id: ID?
@@ -20,17 +21,30 @@ public struct VariadicViewHostingControllers<
     }
     private var elements: [StorageElement] = []
     private var modifier: Modifier
+    private var makeHostingController: (@MainActor (Content) -> ViewControllerType)?
 
     public var viewControllers: [ViewControllerType] {
         elements.map({ $0.viewController })
     }
 
-    public init(id: ID.Type = ID.self) where Modifier == VariadicViewElementEmptyModifier {
-        self.modifier = VariadicViewElementEmptyModifier()
+    public init(
+        id: ID.Type = ID.self,
+        makeHostingController: (@MainActor (Content) -> ViewControllerType)? = nil
+    ) where Modifier == VariadicViewElementEmptyModifier {
+        self.init(
+            id: id,
+            modifier: VariadicViewElementEmptyModifier(),
+            makeHostingController: makeHostingController
+        )
     }
 
-    public init(id: ID.Type = ID.self, modifier: Modifier) {
+    public init(
+        id: ID.Type = ID.self,
+        modifier: Modifier,
+        makeHostingController: (@MainActor (Content) -> ViewControllerType)? = nil
+    ) {
         self.modifier = modifier
+        self.makeHostingController = makeHostingController
     }
 
     // MARK: - Selection
@@ -52,7 +66,9 @@ public struct VariadicViewHostingControllers<
     @MainActor
     public mutating func updateViewControllers(
         selected: ID? = nil,
-        content: VariadicView
+        content: VariadicView,
+        transaction: Transaction,
+        update: (Int, ViewControllerType, VariadicView.Element) -> Void = { _, _, _ in }
     ) -> Bool {
         var elements = elements
         elements.reserveCapacity(content.count)
@@ -70,36 +86,23 @@ public struct VariadicViewHostingControllers<
             )
             if elements.count > index {
                 if elements[index].viewController.content.element.id == child.id {
-                    elements[index].viewController.content = content
+                    elements[index].viewController.update(content: content, transaction: transaction)
                 } else {
-                    let hostingController = HostingController(
-                        content: content
-                    )
-                    #if os(iOS) || os(tvOS) || os(visionOS)
-                    hostingController.view.backgroundColor = nil
-                    #else
-                    hostingController.view.layer?.backgroundColor = nil
-                    #endif
+                    let hostingController = initHostingController(content: content)
                     elements[index] = StorageElement(
                         id: id,
                         viewController: hostingController
                     )
                 }
             } else {
-                let hostingController = HostingController(
-                    content: content
-                )
-                #if os(iOS) || os(tvOS) || os(visionOS)
-                hostingController.view.backgroundColor = nil
-                #else
-                hostingController.view.layer?.backgroundColor = nil
-                #endif
+                let hostingController = initHostingController(content: content)
                 let element = StorageElement(
                     id: id,
                     viewController: hostingController
                 )
                 elements.append(element)
             }
+            update(index, elements[index].viewController, child)
         }
 
         if self.elements != elements {
@@ -107,6 +110,22 @@ public struct VariadicViewHostingControllers<
             return true
         }
         return false
+    }
+
+    @MainActor
+    private func initHostingController(content: Content) -> ViewControllerType {
+        if let makeHostingController {
+            return makeHostingController(content)
+        }
+        let hostingController = HostingController(
+            content: content
+        )
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        hostingController.view.backgroundColor = nil
+        #else
+        hostingController.view.layer?.backgroundColor = nil
+        #endif
+        return hostingController
     }
 
     // MARK: Sequence

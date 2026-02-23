@@ -12,6 +12,11 @@ public typealias PlatformHostingView<Content: View> = NSHostingView<Content>
 public typealias PlatformHostingView<Content: View> = _UIHostingView<Content>
 #endif
 
+public protocol AnyHostingView: PlatformView {
+
+    func render()
+}
+
 @available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
 open class HostingView<
     Content: View
@@ -249,6 +254,13 @@ open class HostingView<
         }
     }
     #endif
+}
+
+extension PlatformHostingView: AnyHostingView {
+
+    public func render() {
+        _renderForTest(interval: 1 / 60)
+    }
 }
 
 #if os(iOS) || os(tvOS) || os(visionOS)

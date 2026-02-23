@@ -27,7 +27,6 @@ extension ForEach {
         }
     }
 
-
     @inlinable
     public init(
         _ range: ClosedRange<Int>,
@@ -35,6 +34,28 @@ extension ForEach {
     ) where Data == ClosedRange<Int>, ID == Int, Content: View {
         self.init(range, id: \.self) { index in
             content(index)
+        }
+    }
+
+    @_disfavoredOverload
+    @inlinable
+    public init(
+        _ elements: Data,
+        @ViewBuilder content: @escaping (Data.Element) -> Content
+    ) where Data.Element: Hashable, ID == Data.Element, Content: View {
+        self.init(elements, id: \.self) { element in
+            content(element)
+        }
+    }
+
+    @inlinable
+    public init<_Data: RandomAccessCollection>(
+        _ data: _Data,
+        @ViewBuilder content: @escaping (_Data.Index, _Data.Element) -> Content
+    ) where _Data.Element: Hashable, Data == Array<(_Data.Index, _Data.Element)>, ID == _Data.Element, Content: View {
+        let elements = Array(zip(data.indices, data))
+        self.init(elements, id: \.1) { index, element in
+            content(index, element)
         }
     }
 
@@ -107,6 +128,14 @@ struct ForEach_Previews: PreviewProvider {
 
             ForEach([Model()]) { index, model in
                 Text("\(index): \(model.id)")
+            }
+
+            ForEach(["One", "Two", "Three"]) { string in
+                Text(string)
+            }
+
+            ForEach(["One", "Two", "Three"]) { index, string in
+                Text("\(index). \(string)")
             }
         }
     }

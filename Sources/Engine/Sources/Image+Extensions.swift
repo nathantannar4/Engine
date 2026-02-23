@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import os.log
 
 extension Image {
 
@@ -82,6 +83,7 @@ private enum ImageProvider {
             self = .cg(image as! CGImage, scale, orientation)
 
         default:
+            os_log(.error, log: .default, "Failed to resolve Image provider %{public}@. Please file an issue.", className)
             return nil
         }
     }
@@ -144,6 +146,7 @@ private enum ImageProvider {
             }
             return nil
             #endif
+
         case let .named(name, bundle):
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             return UIImage(named: name, in: bundle, with: nil)
@@ -153,8 +156,10 @@ private enum ImageProvider {
             }
             return NSImage(named: name)
             #endif
+
         case let .image(image):
             return image
+
         case let .cg(image, scale, orientation):
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             let orientation: UIImage.Orientation = {
