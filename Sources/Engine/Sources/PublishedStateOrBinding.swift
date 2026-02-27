@@ -58,6 +58,7 @@ public struct PublishedStateOrBinding<Value>: DynamicProperty {
         }
     }
 
+    @inlinable
     public var publisher: PublishedState<Value>.Publisher? {
         switch storage {
         case .published(let state):

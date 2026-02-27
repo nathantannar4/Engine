@@ -6,7 +6,6 @@ import SwiftUI
 
 /// A property wrapper that reads a value from a view's environment,
 /// if it was not initialized with a constant value.
-@MainActor @preconcurrency
 @propertyWrapper
 @frozen
 public struct EnvironmentOrValue<Value>: DynamicProperty {
@@ -30,6 +29,7 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
         self.storage = .environment(.init(keyPath))
     }
 
+    @inlinable
     public var wrappedValue: Value {
         get {
             switch storage {
@@ -44,6 +44,7 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
         }
     }
 
+    @inlinable
     public var isValue: Bool {
         switch storage {
         case .environment:
@@ -53,6 +54,9 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
         }
     }
 }
+
+extension EnvironmentOrValue: Sendable where Value: Sendable { }
+extension EnvironmentOrValue.Storage: Sendable where Value: Sendable { }
 
 // MARK: - Previews
 

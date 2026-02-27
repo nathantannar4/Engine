@@ -57,8 +57,17 @@ public struct VariadicViewHostingControllers<
         elements.firstIndex(where: { $0.id == id })
     }
 
+    public func index(for viewController: PlatformViewController) -> Index? {
+        elements.firstIndex(where: { $0.viewController == viewController })
+    }
+
     public func id(for index: Index) -> ID? {
         elements[index].id
+    }
+
+    public func id(for viewController: PlatformViewController) -> ID? {
+        guard let index = index(for: viewController) else { return nil }
+        return id(for: index)
     }
 
     /// Returns `true` if any of the underlying view controllers were added or removed

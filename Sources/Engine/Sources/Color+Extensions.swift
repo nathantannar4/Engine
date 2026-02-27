@@ -58,6 +58,10 @@ extension Color {
         in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
     ) -> PlatformRepresentable {
         func resolve(provider: Any) -> PlatformRepresentable {
+            if let color = provider as? PlatformRepresentable {
+                return color
+            }
+
             let className = String(describing: type(of: provider))
             switch className {
             case "OpacityColor":
@@ -88,10 +92,20 @@ extension Color {
                 #else
                 return NSColor(named: name, bundle: bundle) ?? .resolved(self, in: environment())
                 #endif
-            default:
-                if let color = provider as? PlatformRepresentable {
-                    return color
+
+            case "Color":
+                return .resolved(self, in: environment())
+
+            case "UIKitPlatformColorProvider", "AppKitPlatformColorProvider":
+                let mirror = Mirror(reflecting: provider)
+                guard
+                    let color = mirror.descendant("platformColor") as? PlatformRepresentable
+                else {
+                    return .resolved(self, in: environment())
                 }
+                return color
+
+            default:
                 os_log(.error, log: .default, "Failed to resolve Color provider %{public}@. Please file an issue.", className)
                 return .resolved(self, in: environment())
             }

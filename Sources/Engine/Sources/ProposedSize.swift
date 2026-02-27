@@ -32,17 +32,6 @@ public struct ProposedSize: Equatable, Sendable {
         self.init(width: proposedSize.width, height: proposedSize.height)
     }
 
-    @MainActor @preconcurrency
-    public func toCoreGraphics() -> CGSize {
-        #if os(iOS) || os(tvOS) || os(visionOS)
-        return CGSize(width: width ?? UIView.noIntrinsicMetric, height: height ?? UIView.noIntrinsicMetric)
-        #elseif os(watchOS)
-        return CGSize(width: width ?? -1, height: height ?? -1)
-        #elseif os(macOS)
-        return CGSize(width: width ?? NSView.noIntrinsicMetric, height: height ?? NSView.noIntrinsicMetric)
-        #endif
-    }
-
     public func replacingUnspecifiedDimensions(by size: CGSize = CGSize(width: 10, height: 10)) -> CGSize {
         return CGSize(width: width ?? size.width, height: height ?? size.height)
     }
