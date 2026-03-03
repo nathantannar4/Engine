@@ -19,6 +19,10 @@ let package = Package(
             targets: ["Engine"]
         ),
         .library(
+            name: "EngineExtensions",
+            targets: ["EngineExtensions"]
+        ),
+        .library(
             name: "EngineCore",
             targets: ["EngineCore"]
         ),
@@ -39,6 +43,12 @@ let package = Package(
             name: "Engine",
             dependencies: [
                 "EngineCore",
+            ]
+        ),
+        .target(
+            name: "EngineExtensions",
+            dependencies: [
+                "Engine",
             ]
         ),
         .target(

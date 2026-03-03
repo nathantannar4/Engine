@@ -3,21 +3,21 @@
 //
 
 import SwiftUI
+import Engine
 
-@available(iOS 14.0, macOS 11.0, tvOS 17.0, *)
-@available(watchOS, unavailable)
-public struct AnyMenuStyle: MenuStyle {
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+public struct AnyLabeledContentStyle: LabeledContentStyle {
 
-    var style: any MenuStyle
+    var style: any LabeledContentStyle
 
-    public init<S: MenuStyle>(_ style: S) {
+    public init<S: LabeledContentStyle>(_ style: S) {
         self.style = style
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        func project<S: MenuStyle>(_ style: S) -> some View {
+        func project<S: LabeledContentStyle>(_ style: S) -> some View {
             AnyView(
-                AnyMenuStyleBody(
+                AnyLabeledContentStyleBody(
                     style: style,
                     configuration: configuration
                 )
@@ -27,9 +27,8 @@ public struct AnyMenuStyle: MenuStyle {
     }
 }
 
-@available(iOS 14.0, macOS 11.0, tvOS 17.0, *)
-@available(watchOS, unavailable)
-private struct AnyMenuStyleBody<S: MenuStyle>: View {
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+private struct AnyLabeledContentStyleBody<S: LabeledContentStyle>: View {
     var style: S
     var configuration: S.Configuration
 
@@ -40,16 +39,15 @@ private struct AnyMenuStyleBody<S: MenuStyle>: View {
 
 // MARK: - Previews
 
-@available(iOS 15.0, macOS 12.0, tvOS 17.0, *)
-@available(watchOS, unavailable)
-struct AnyMenuStyle_Previews: PreviewProvider {
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+struct AnyLabeledContentStyle_Previews: PreviewProvider {
     struct Preview: View {
         @State var flag = false
 
         var body: some View {
             VStack {
-                Menu {
-                    Button("Action") {
+                LabeledContent {
+                    Button("Content") {
                         withAnimation {
                             flag.toggle()
                         }
@@ -57,17 +55,16 @@ struct AnyMenuStyle_Previews: PreviewProvider {
                 } label: {
                     Text("Label")
                 }
-                .menuStyle(flag ? AnyMenuStyle(.automatic) : AnyMenuStyle(PreviewMenuStyle()))
+                .labeledContentStyle(flag ? AnyLabeledContentStyle(PreviewLabeledContentStyle()) : AnyLabeledContentStyle(.automatic))
             }
         }
     }
 
-    struct PreviewMenuStyle: MenuStyle {
+    struct PreviewLabeledContentStyle: LabeledContentStyle {
         func makeBody(configuration: Configuration) -> some View {
-            Menu(configuration) { label in
-                label
-                    .padding(8)
-                    .border(Color.blue)
+            HStack {
+                configuration.label
+                configuration.content
             }
         }
     }

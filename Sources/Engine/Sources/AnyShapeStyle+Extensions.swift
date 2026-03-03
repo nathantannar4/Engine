@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import os.log
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension AnyShapeStyle {
@@ -25,6 +26,7 @@ extension AnyShapeStyle {
                 }
                 return resolved
             } else {
+                os_log(.error, log: .default, "Failed to resolve AnyShapeStyle provider %{public}@. Please file an issue.", className)
                 return nil
             }
         }

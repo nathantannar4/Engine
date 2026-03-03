@@ -10,12 +10,12 @@ extension Color {
     /// Transforms SwiftUI `Color` to a non-bridged `CGColor`
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public func toCGColor(
-        in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> CGColor {
         if let cgColor = cgColor {
             return cgColor
-        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            return resolve(in: environment()).cgColor
+        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *), let environment = environment() {
+            return resolve(in: environment).cgColor
         } else {
             return toPlatformValue(in: environment()).cgColor
         }
@@ -25,7 +25,7 @@ extension Color {
     /// Transforms SwiftUI `Color` to a non-bridged `UIColor`
     @available(iOS 14.0, tvOS 14.0, watchOS 7.0, *)
     public func toUIColor(
-        in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> UIColor {
         toPlatformValue(in: environment())
     }
@@ -35,7 +35,7 @@ extension Color {
     /// Transforms SwiftUI `Color` to a non-bridged `NSColor`
     @available(macOS 11.0, *)
     public func toNSColor(
-        in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> NSColor {
         toPlatformValue(in: environment())
     }
@@ -55,7 +55,7 @@ extension Color {
     ///
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     func toPlatformValue(
-        in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable {
         func resolve(provider: Any) -> PlatformRepresentable {
             if let color = provider as? PlatformRepresentable {
@@ -93,7 +93,7 @@ extension Color {
                 return NSColor(named: name, bundle: bundle) ?? .resolved(self, in: environment())
                 #endif
 
-            case "Color":
+            case "Color", "SystemColorType":
                 return .resolved(self, in: environment())
 
             case "UIKitPlatformColorProvider", "AppKitPlatformColorProvider":
@@ -126,20 +126,23 @@ extension Color.PlatformRepresentable {
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     static func resolved(
         _ color: Color,
-        in environment: @autoclosure () -> EnvironmentValues = EnvironmentValues()
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> Color.PlatformRepresentable {
         #if os(iOS) || os(tvOS) || os(visionOS)
-        return UIColor { [environment = environment()] traitCollection in
-            var environment = environment
-            if let colorScheme = ColorScheme(traitCollection.userInterfaceStyle) {
-                environment.colorScheme = colorScheme
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *), let environment = environment() {
+            return UIColor { [environment] traitCollection in
+                var environment = environment
+                if let colorScheme = ColorScheme(traitCollection.userInterfaceStyle) {
+                    environment.colorScheme = colorScheme
+                }
+                if let colorSchemeContrast = ColorSchemeContrast(traitCollection.accessibilityContrast) {
+                    environment._colorSchemeContrast = colorSchemeContrast
+                }
+                let cgColor = color.resolve(in: environment).cgColor
+                return UIColor(cgColor: cgColor)
             }
-            if let colorSchemeContrast = ColorSchemeContrast(traitCollection.accessibilityContrast) {
-                environment._colorSchemeContrast = colorSchemeContrast
-            }
-            let resolved = color.toCGColor(in: environment)
-            return UIColor(cgColor: resolved)
         }
+        return UIColor(color)
         #elseif os(watchOS)
         return UIColor(color)
         #else
