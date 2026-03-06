@@ -53,7 +53,7 @@ public struct UpdatePhase: @preconcurrency DynamicProperty {
             self.phase = 0
         }
 
-        mutating func update() {
+        public mutating func update() {
             phase = phase &+ 1
         }
     }

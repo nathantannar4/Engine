@@ -4,6 +4,48 @@
 
 import SwiftUI
 
+extension Optional {
+
+    @inlinable
+    public init<Value>(
+        _ value: Value?,
+        @ViewBuilder content: (Value) -> Wrapped
+    ) where Self == Optional<Wrapped>, Wrapped: View {
+        switch value {
+        case .some(let value):
+            self = .some(content(value))
+        case .none:
+            self = .none
+        }
+    }
+
+    @inlinable
+    @MainActor @preconcurrency
+    public init<Value>(
+        _ value: Binding<Value?>,
+        @ViewBuilder content: (Value) -> Wrapped
+    ) where Self == Optional<Wrapped>, Wrapped: View {
+        if let value = value.wrappedValue {
+            self = .some(content(value))
+        } else {
+            self = .none
+        }
+    }
+
+    @inlinable
+    @MainActor @preconcurrency
+    public init<Value>(
+        _ value: Binding<Value?>,
+        @ViewBuilder content: (Binding<Value>) -> Wrapped
+    ) where Self == Optional<Wrapped>, Wrapped: View {
+        if let value = value.unwrap() {
+            self = .some(content(value))
+        } else {
+            self = .none
+        }
+    }
+}
+
 /// A view maps an `Optional` value to it's `Content` or `Placeholder`.
 @frozen
 public struct OptionalAdapter<
@@ -113,6 +155,10 @@ extension OptionalAdapter where Placeholder == EmptyView {
 struct OptionalAdapter_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
+            Optional(Optional.some("Hello, World")) { value in
+                Text(value)
+            }
+
             OptionalAdapter(Optional.some("Hello, World")) { value in
                 Text(value)
             }

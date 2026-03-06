@@ -85,7 +85,7 @@ open class ViewControllerAdapter<
         context: Representable.Context
     ) {
         let hostingController = viewController as! HostingController<Content>
-        hostingController.content = content
+        hostingController.update(content: content, transaction: context.transaction)
     }
 
     open func transformViewControllerEnvironment(
@@ -222,6 +222,7 @@ struct ViewControllerAdapter_Previews: PreviewProvider {
         VStack {
             ViewControllerAdapterPreview {
                 /// Renders into a `HostingController`
+                Text("Hello, World")
             }
 
             ViewControllerAdapterPreview {
@@ -232,13 +233,17 @@ struct ViewControllerAdapter_Previews: PreviewProvider {
     }
 
     struct ViewControllerPreview: UIViewControllerRepresentable {
-        func makeUIViewController(context: Context) -> UIViewController {
+        func makeUIViewController(
+            context: Context
+        ) -> UIViewController {
             let uiViewController = UIViewController()
-            uiViewController.view.backgroundColor = .red
             return uiViewController
         }
 
-        func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        func updateUIViewController(
+            _ uiViewController: UIViewController,
+            context: Context
+        ) {
 
         }
     }
@@ -250,18 +255,20 @@ struct ViewControllerAdapter_Previews: PreviewProvider {
             self.content = content()
         }
 
-        func makeUIView(context: Context) -> UIView {
-            context.coordinator.adapter = ViewControllerAdapter(
+        func makeUIView(
+            context: Context
+        ) -> UIView {
+            context.coordinator.adapter = Adapter(
                 content: content,
                 context: context
             )
-            if context.coordinator.adapter.viewController.view.backgroundColor == .systemBackground {
-                context.coordinator.adapter.viewController.view.backgroundColor = .green
-            }
             return context.coordinator.adapter.viewController.view
         }
 
-        func updateUIView(_ uiView: UIView, context: Context) {
+        func updateUIView(
+            _ uiView: UIView,
+            context: Context
+        ) {
             context.coordinator.adapter.updateViewController(
                 content: content,
                 context: context
@@ -273,7 +280,25 @@ struct ViewControllerAdapter_Previews: PreviewProvider {
         }
 
         class Coordinator {
-            var adapter: ViewControllerAdapter<Content, ViewControllerAdapterPreview<Content>>!
+            var adapter: Adapter!
+        }
+
+        class Adapter: ViewControllerAdapter<Content, ViewControllerAdapterPreview<Content>> {
+
+            override func makeHostingController(
+                content: Content,
+                context: ViewControllerAdapterPreview<Content>.Context
+            ) -> PlatformViewController {
+                let vc = HostingController(content: content)
+                vc.view.backgroundColor = .systemGreen
+                return vc
+            }
+
+            override func updateViewController(
+                context: ViewControllerAdapter_Previews.ViewControllerAdapterPreview<Content>.Context
+            ) {
+                viewController.view.backgroundColor = .systemRed
+            }
         }
     }
 }

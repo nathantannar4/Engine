@@ -10,12 +10,7 @@ extension EnvironmentValues {
     /// The value for the ``.labelsHidden(_)`` modifier
     public var labelsHidden: Bool {
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            enum Visibility {
-                case automatic
-                case visible
-                case hidden
-            }
-            return self["LabelsVisibilityKey", default: Visibility.automatic] == .hidden
+            return labelsVisibility == .hidden
         }
         return self["LabelsHiddenKey", default: false]
     }
@@ -26,10 +21,11 @@ extension EnvironmentValues {
         self["ForegroundStyleKey", default: AnyShapeStyle(.foreground)]
     }
 
-    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public var foregroundColor: Color? {
-        if let foregroundStyle = self["ForegroundStyleKey", as: AnyShapeStyle.self] {
-            return foregroundStyle.color
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+            let foregroundStyle = self["ForegroundStyleKey", as: AnyShapeStyle.self]
+        {
+            return foregroundStyle.color(in: self)
         }
         return self["ForegroundColorKey"]
     }
