@@ -39,23 +39,13 @@ extension ForEach {
 
     @_disfavoredOverload
     @inlinable
-    public init(
-        _ elements: Data,
-        @ViewBuilder content: @escaping (Data.Element) -> Content
-    ) where Data.Element: Hashable, ID == Data.Element, Content: View {
-        self.init(elements, id: \.self) { element in
-            content(element)
-        }
-    }
-
-    @inlinable
     public init<_Data: RandomAccessCollection>(
         _ data: _Data,
-        @ViewBuilder content: @escaping (_Data.Index, _Data.Element) -> Content
-    ) where _Data.Element: Hashable, Data == Array<(_Data.Index, _Data.Element)>, ID == _Data.Element, Content: View {
+        @ViewBuilder content: @escaping (_Data.Element) -> Content
+    ) where Data == Array<(_Data.Index, _Data.Element)>, ID == _Data.Index, Content: View {
         let elements = Array(zip(data.indices, data))
-        self.init(elements, id: \.1) { index, element in
-            content(index, element)
+        self.init(elements, id: \.0) { index, element in
+            content(element)
         }
     }
 
@@ -126,7 +116,11 @@ struct ForEach_Previews: PreviewProvider {
                 Text("\(index): \(number)")
             }
 
-            ForEach([Model()]) { index, model in
+            ForEach([Model(), Model()]) { model in
+                Text("\(model.id)")
+            }
+
+            ForEach([Model(), Model()]) { index, model in
                 Text("\(index): \(model.id)")
             }
 
@@ -136,6 +130,18 @@ struct ForEach_Previews: PreviewProvider {
 
             ForEach(["One", "Two", "Three"]) { index, string in
                 Text("\(index). \(string)")
+            }
+
+            HStack {
+                ForEach([Color.red, Color.black, Color.yellow]) { color in
+                    Circle()
+                        .fill(color)
+                        .frame(width: 12, height: 12)
+                }
+            }
+
+            ForEach([VerticalAlignment.top, .center, .bottom]) { alignment in
+                Text(verbatim: "\(alignment)")
             }
         }
     }
