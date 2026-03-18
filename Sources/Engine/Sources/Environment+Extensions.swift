@@ -41,14 +41,14 @@ extension EnvironmentValues {
         self["AccentColorKey", default: Color.accentColor]
     }
 
-    /// The value for the ``.underlineStyle(_)`` modifier
-    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    /// The value for the ``.underline(_)`` modifier
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var underlineStyle: Text.LineStyle? {
         self["UnderlineStyleKey"]
     }
 
     /// The value for the ``.strikethrough(_)`` modifier
-    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var strikethroughStyle: Text.LineStyle? {
         self["StrikethroughStyleKey"]
     }
@@ -74,7 +74,7 @@ extension EnvironmentValues {
     /// The value for the ``.lineLimit(_, reservesSpace: Bool)`` modifier
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var lowerLineLimit: Int? {
-        self["DefaultBaselineOffsetKey"]
+        self["LowerLineLimitKey"]
     }
 
     /// The value for the ``.textScale(_)`` modifier
@@ -100,13 +100,28 @@ extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     /// The value for the ``.textContentType(_)`` modifier
-    @available(iOS 13.0, tvOS 13.0, *)
     @available(macOS, unavailable)
     @available(watchOS, unavailable)
     public var textContentType: UITextContentType? {
-        self["TextContentTypeKey"]
+        let rawValue = self["TextContentTypeKey", as: UITextContentType.RawValue.self]
+        return rawValue.map({ UITextContentType(rawValue: $0) })
     }
     #endif
+
+    /// The value for the display corner radius
+    public var displayCornerRadius: CGFloat? {
+        self["DisplayCornerRadiusKey"]
+    }
+
+    /// The value for the color scheme of the system
+    public var systemColorScheme: ColorScheme {
+        self["SystemColorSchemeKey", default: .light]
+    }
+
+    /// The value for the ``.preferredColorScheme(_)`` modifier
+    public var preferredColorScheme: ColorScheme? {
+        self["ExplicitPreferredColorSchemeKey"]
+    }
 }
 
 // MARK: - Previews
@@ -130,7 +145,7 @@ struct EnvironmentValues_Previews: PreviewProvider {
                     .fill(foregroundStyle)
                     .fixedSize()
             }
-            .foregroundStyle(.red)
+            .foregroundStyle(.green)
 
             EnvironmentValuePreview(keyPath: \.foregroundStyle) {
                 Text("Hello, World")
@@ -139,7 +154,7 @@ struct EnvironmentValues_Previews: PreviewProvider {
                     .fill(foregroundStyle)
                     .fixedSize()
             }
-            .foregroundStyle(.red)
+            .foregroundStyle(.green)
 
             EnvironmentValuePreview(keyPath: \.foregroundColor) {
                 Text("Hello, World")
@@ -148,7 +163,7 @@ struct EnvironmentValues_Previews: PreviewProvider {
                     .fill(foregroundColor ?? .black)
                     .fixedSize()
             }
-            .foregroundStyle(.red)
+            .foregroundStyle(.green)
 
             EnvironmentValuePreview(keyPath: \.tint) {
                 Button("Action") { }
@@ -157,16 +172,115 @@ struct EnvironmentValues_Previews: PreviewProvider {
                     .fill(foregroundStyle)
                     .fixedSize()
             }
-            .tint(.purple)
+            .tint(.green)
 
-            EnvironmentValuePreview(keyPath: \.minimumScaleFactor) {
-                Text("Hello, World")
-                    .frame(width: 50)
-            } content: { minimumScaleFactor in
-                Text(minimumScaleFactor.description)
+            EnvironmentValuePreview(keyPath: \.accentColor) {
+                Button("Action") { }
+            } content: { foregroundStyle in
+                Circle()
+                    .fill(foregroundStyle)
+                    .fixedSize()
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
+            .accentColor(.green)
+
+            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                EnvironmentValuePreview(keyPath: \.underlineStyle) {
+                    Text("Underline")
+                } content: { underlineStyle in
+                    Text(underlineStyle.debugDescription)
+                }
+                .underline()
+
+                EnvironmentValuePreview(keyPath: \.strikethroughStyle) {
+                    Text("Strikethrough")
+                } content: { strikethroughStyle in
+                    Text(strikethroughStyle.debugDescription)
+                }
+                .strikethrough()
+
+                EnvironmentValuePreview(keyPath: \.kerning) {
+                    Text("Kerning")
+                } content: { kerning in
+                    Text(kerning, format: .number)
+                }
+                .kerning(10)
+
+                EnvironmentValuePreview(keyPath: \.tracking) {
+                    Text("Tracking")
+                } content: { tracking in
+                    Text(tracking, format: .number)
+                }
+                .tracking(10)
+
+                EnvironmentValuePreview(keyPath: \.baselineOffset) {
+                    Text("Baseline Offset")
+                } content: { baselineOffset in
+                    Text(baselineOffset, format: .number)
+                }
+                .baselineOffset(10)
+
+                EnvironmentValuePreview(keyPath: \.lowerLineLimit) {
+                    Text("Line Limit")
+                } content: { lowerLineLimit in
+                    Text(lowerLineLimit ?? -1, format: .number)
+                }
+                .lineLimit(2...3)
+            }
+
+
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+                EnvironmentValuePreview(keyPath: \.textScale) {
+                    Text("Hello, World")
+                } content: { textScale in
+                    Text(verbatim: "\(textScale)")
+                }
+                .textScale(.secondary)
+            }
+
+            /// The value for the ``.imageScale(_)`` modifier
+            if #available(iOS 13.0, macOS 11.0, tvOS 13.0, watchOS 6.0, *) {
+                EnvironmentValuePreview(keyPath: \.imageScale) {
+                    Image(systemName: "apple.logo")
+                } content: { imageScale in
+                    Text(verbatim: "\(imageScale.debugDescription)")
+                }
+                .imageScale(.large)
+            }
+
+            #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+            /// The value for the ``.textInputAutocapitalization(_)`` modifier
+            if #available(iOS 15.0, tvOS 15.0, watchOS 8.0, *) {
+                EnvironmentValuePreview(keyPath: \.textInputAutocapitalization) {
+                    TextField("Label", text: .constant(""))
+                        .fixedSize()
+                } content: { textInputAutocapitalization in
+                    Text(verbatim: "\(textInputAutocapitalization)")
+                }
+                .textInputAutocapitalization(.characters)
+            }
+            #endif
+
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            EnvironmentValuePreview(keyPath: \.textContentType) {
+                TextField("Label", text: .constant(""))
+                    .fixedSize()
+            } content: { textContentType in
+                Text(textContentType?.rawValue)
+            }
+            .textContentType(.name)
+            #endif
+
+            EnvironmentValuePreview(keyPath: \.displayCornerRadius) {
+                EmptyView()
+            } content: { displayCornerRadius in
+                Text(displayCornerRadius ?? -1, format: .number)
+            }
+
+            EnvironmentValuePreview(keyPath: \.systemColorScheme) {
+                EmptyView()
+            } content: { systemColorScheme in
+                Text(verbatim: "\(systemColorScheme)")
+            }
         }
     }
 

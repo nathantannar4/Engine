@@ -105,7 +105,7 @@ public struct LayoutThatFits: Layout {
     ) {
         var stop = false
         var index = 0
-        while !stop {
+        while !stop, layouts.count > index {
             stop = index == layouts.count - 1
             accessor(&stop, &cache.caches[index], layouts[index])
             index += 1

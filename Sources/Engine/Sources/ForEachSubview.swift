@@ -51,8 +51,7 @@ public struct ForEachSubview<
     }
 
     public var body: some View {
-        let subviews = Array(zip(source.indices, source))
-        ForEach(subviews, id: \.1.id) { index, element in
+        ForEach(source) { index, element in
             content(index, element)
         }
     }

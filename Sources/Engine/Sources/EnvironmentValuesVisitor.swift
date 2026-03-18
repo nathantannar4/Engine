@@ -33,8 +33,8 @@ extension EnvironmentValues {
     public subscript<Value>(
         _ key: String,
         as _: Value.Type = Value.self
-    ) -> Value? {
-        value(for: key, as: Value.self)
+    ) -> Optional<Value> {
+        value(for: key, as: Optional<Value>.self, default: nil)
     }
 
     /// Visit the `EnvironmentKey` type that matches the key
@@ -64,15 +64,16 @@ extension EnvironmentValues {
         as _: Value.Type = Value.self,
         default defaultValue: @autoclosure () -> Value
     ) -> Value {
-        value(for: key, as: Value.self) ?? defaultValue()
+        value(for: key, as: Value.self, default: defaultValue())
     }
 
     /// Visit the `EnvironmentKey` type that matches the key to get the value
     public func value<Value>(
         for key: String,
-        as _: Value.Type = Value.self
-    ) -> Value? {
-        visit("EnvironmentPropertyKey<\(key)>") { conformance in
+        as _: Value.Type = Value.self,
+        default defaultValue: @autoclosure () -> Value
+    ) -> Value {
+        visit("EnvironmentPropertyKey<\(key)>", default: defaultValue()) { conformance in
             conformance.value(in: self, as: Value.self)
         }
     }
@@ -85,19 +86,19 @@ extension EnvironmentValues {
         _ value: Value,
         for key: String
     ) -> Bool {
-        let didSet = visit("EnvironmentPropertyKey<\(key)>") { conformance in
+        visit("EnvironmentPropertyKey<\(key)>", default: false) { conformance in
             conformance.setValue(value, in: &self)
         }
-        return didSet ?? false
     }
 
-    fileprivate func visit<Result>(
+    fileprivate func visit<Value>(
         _ key: String,
-        body: (ProtocolConformance<EnvironmentKeyProtocolDescriptor>) -> Result?
-    ) -> Result? {
+        default defaultValue: @autoclosure () -> Value,
+        body: (ProtocolConformance<EnvironmentKeyProtocolDescriptor>) -> Value?
+    ) -> Value {
 
         if let conformance = EnvironmentKeyLookupCache.shared[key] {
-            return body(conformance)
+            return body(conformance) ?? defaultValue()
         }
 
         var ptr = plist.elements
@@ -114,14 +115,14 @@ extension EnvironmentValues {
                     let environmentKey = swift_getStructGenerics(for: p.keyType)?.first,
                     let conformance = EnvironmentKeyProtocolDescriptor.conformance(of: environmentKey)
                 else {
-                    return nil
+                    return defaultValue()
                 }
                 EnvironmentKeyLookupCache.shared[key] = conformance
-                return body(conformance)
+                return body(conformance) ?? defaultValue()
             }
             ptr = p.after
         }
-        return nil
+        return defaultValue()
     }
 }
 
@@ -242,7 +243,7 @@ public struct _EnvironmentValuesLogModifier: ViewModifier {
                     var ptr = environment.plist.elements
                     while let p = ptr {
                         let keyType = _typeName(p.keyType, qualified: false)
-                        let value = environment.visit(keyType) { conformance in
+                        let value = environment.visit(keyType, default: nil) { conformance in
                             conformance.value(in: environment, as: Any.self)
                         }
                         message += """

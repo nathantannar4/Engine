@@ -79,7 +79,7 @@ public struct VariadicViewVisitor<
     @inlinable
     public init(
         layout: Layout,
-        @ViewBuilder source: () -> Source,
+        @ViewBuilder source: () -> Source
     ) {
         self.init(source: source(), layout: layout)
     }
@@ -209,7 +209,7 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
 
         private struct AnyTraitVisitor<T>: ViewTraitKeyVisitor {
             var element: _VariadicView.Children.Element
-            var value: T!
+            var value: T?
 
             mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
                 value = element[Key.self] as? T
@@ -421,7 +421,7 @@ public struct VariadicSectionView: View, Identifiable {
         }
     }
 
-    public nonisolated(unsafe) var id: AnyHashable
+    public internal(set) nonisolated(unsafe) var id: AnyHashable
     public var header: Header
     public var content: Content
     public var footer: Footer

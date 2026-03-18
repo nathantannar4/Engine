@@ -19,6 +19,12 @@ extension Text {
         Text("\n")
     }
 
+    @inlinable
+    @inline(__always)
+    public init(ellipsis key: LocalizedStringKey) {
+        self = Text(key) + Text("…")
+    }
+
     @_disfavoredOverload
     public init?<S: StringProtocol>(_ content: S?) {
         guard let content, !content.isEmpty else { return nil }
@@ -295,9 +301,9 @@ extension Text {
                 return font
             }()
             attributes.swiftUI.foregroundColor = foregroundColor ?? environment.foregroundColor
-            attributes.swiftUI.underlineStyle = underlineStyle?.toSwiftUI() ?? environment.underlineStyle
-            attributes.swiftUI.strikethroughStyle = strikethroughStyle?.toSwiftUI() ?? environment.strikethroughStyle
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                attributes.swiftUI.underlineStyle = underlineStyle?.toSwiftUI() ?? environment.underlineStyle
+                attributes.swiftUI.strikethroughStyle = strikethroughStyle?.toSwiftUI() ?? environment.strikethroughStyle
                 attributes.kern = kerning ?? environment.kerning
                 attributes.tracking = tracking ?? environment.tracking
                 attributes.baselineOffset = baselineOffset ?? environment.baselineOffset
@@ -398,7 +404,7 @@ extension Text {
                 if let underlineStyle = self.underlineStyle {
                     return underlineStyle.style
                 }
-                if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let underlineStyle = environment.underlineStyle
                 {
                     return NSUnderlineStyle(underlineStyle)
@@ -410,7 +416,7 @@ extension Text {
                 if let color = self.underlineStyle?.color {
                     return color.toPlatformValue()
                 }
-                if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let underlineStyle = environment.underlineStyle,
                     let color = LineStyle(lineStyle: underlineStyle).color
                 {
@@ -422,7 +428,7 @@ extension Text {
                 if let strikethroughStyle = self.strikethroughStyle {
                     return strikethroughStyle.style
                 }
-                if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                    let strikethroughStyle = environment.strikethroughStyle
                 {
                     return NSUnderlineStyle(strikethroughStyle)
@@ -434,7 +440,7 @@ extension Text {
                 if let color = self.strikethroughStyle?.color {
                     return color.toPlatformValue()
                 }
-                if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let strikethroughStyle = environment.strikethroughStyle,
                     let color = LineStyle(lineStyle: strikethroughStyle).color
                 {
@@ -738,6 +744,8 @@ struct Text_Previews: PreviewProvider {
             if Text(Optional<String>.none) == nil {
                 Text(verbatim: "Nil")
             }
+
+            Text(ellipsis: "Search")
         }
     }
 }

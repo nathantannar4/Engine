@@ -20,7 +20,7 @@ import SwiftUI
 ///
 /// > Important: When using a configuration that has an ``ViewAlias``'s you cannot use
 /// your ``ViewStyledView``. You will need to create  a new view that uses the ``ViewStyledView``
-/// in it's `Body` in addition to defining the type-erased view parameters with ``View/viewAlias(_:source:)``
+/// in its `Body` in addition to defining the type-erased view parameters with ``View/viewAlias(_:source:)``
 ///
 /// > Tip: You can use the ``@StyledView`` macro to automate the creation of a styled view for any `View`
 ///

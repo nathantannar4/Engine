@@ -105,12 +105,12 @@ extension StyleContext where Self == FormStyleContext {
 
 public struct GroupedFormStyleContext: StyleContext { }
 extension StyleContext where Self == GroupedFormStyleContext {
-    public static var form: GroupedFormStyleContext { .init() }
+    public static var groupedForm: GroupedFormStyleContext { .init() }
 }
 
 public struct ColumnsFormStyleContext: StyleContext { }
 extension StyleContext where Self == ColumnsFormStyleContext {
-    public static var form: ColumnsFormStyleContext { .init() }
+    public static var columnsForm: ColumnsFormStyleContext { .init() }
 }
 
 
@@ -159,9 +159,10 @@ extension StyleContext {
     }
 
     static func contains(typeName: String) -> Bool {
-        if typeName.hasPrefix("TupleStyleContext<(") {
-            // TupleStyleContext<( = 19 >) = -2
-            let typeNames = typeName[typeName.index(typeName.startIndex, offsetBy: 19)..<typeName.index(typeName.endIndex, offsetBy: -2)]
+        let prefix = "TupleStyleContext<("
+        let suffix = ")>"
+        if typeName.hasPrefix(prefix), typeName.hasSuffix(suffix) {
+            let typeNames = typeName[typeName.index(typeName.startIndex, offsetBy: prefix.count)..<typeName.index(typeName.endIndex, offsetBy: -suffix.count)]
                 .components(separatedBy: ", ")
                 .filter { $0 != "NoStyleContext" }
             return typeNames.contains(where: {
@@ -313,6 +314,26 @@ struct StyleContext_Previews: PreviewProvider {
                 predicate: PreviewStyleContext()
             )
             .styleContext(PreviewStyleContext())
+
+            PreviewCustomView {
+                Text("Hello, World")
+            }
+            .styledViewStyle(
+                PreviewCustomViewBody.self,
+                style: BorderedPreviewCustomViewStyle(),
+                predicate: .scrollView
+            )
+
+            ScrollView {
+                PreviewCustomView {
+                    Text("Hello, World")
+                }
+                .styledViewStyle(
+                    PreviewCustomViewBody.self,
+                    style: BorderedPreviewCustomViewStyle(),
+                    predicate: .scrollView
+                )
+            }
         }
     }
 }

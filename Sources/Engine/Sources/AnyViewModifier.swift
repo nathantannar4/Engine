@@ -36,12 +36,18 @@ extension View {
         _ collection: C,
         makeModifier: (C.Element) -> Modifier
     ) -> some View {
-        let modifier = collection.reduce(
-            into: AnyViewModifier(EmptyModifier())
-        ) { modifier, value in
-            modifier = modifier.concat(makeModifier(value))
+        switch collection.count {
+        case 0:
+            return modifier(AnyViewModifier(EmptyModifier()))
+        default:
+            let modifier = collection.dropFirst().reduce(
+                into: AnyViewModifier(makeModifier(collection[collection.startIndex]))
+            ) { modifier, value in
+                modifier = modifier.concat(makeModifier(value))
+            }
+            return self.modifier(modifier)
         }
-        return self.modifier(modifier)
+
     }
 }
 
