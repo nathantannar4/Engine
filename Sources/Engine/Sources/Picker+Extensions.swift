@@ -76,6 +76,29 @@ extension Picker {
         }
     }
 
+    public init<
+        _SelectionValue: Hashable,
+        ValueLabel: View,
+        CurrentValueLabel: View
+    >(
+        sources: [_SelectionValue],
+        selection: Binding<SelectionValue>,
+        @ViewBuilder content: (_SelectionValue) -> ValueLabel,
+        @ViewBuilder label: () -> Label,
+        @ViewBuilder currentValueLabel: (SelectionValue) -> CurrentValueLabel,
+    ) where SelectionValue == Optional<_SelectionValue>, Content == ForEach<Array<(_SelectionValue, ValueLabel)>, _SelectionValue, ValueLabel> {
+        let labels = sources.map { content($0) }
+        self.init(selection: selection) {
+            ForEach(Array(zip(sources, labels)), id: \.0) { source, label in
+                label
+            }
+        } label: {
+            label()
+        } currentValueLabel: {
+            currentValueLabel(selection.wrappedValue)
+        }
+    }
+
     @MainActor
     public init<
         _SelectionValue: Hashable,

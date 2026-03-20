@@ -7,8 +7,7 @@ import SwiftUI
 @frozen
 public struct ShapeAdapter<S: Shape>: Shape {
 
-    @usableFromInline
-    var shape: S
+    public var shape: S
 
     public var animatableData: S.AnimatableData {
         get { shape.animatableData }
@@ -40,6 +39,15 @@ public struct ShapeAdapter<S: Shape>: Shape {
     }
 }
 
+extension ShapeAdapter: InsettableShape where S: InsettableShape {
+
+    public nonisolated func inset(
+        by amount: CGFloat
+    ) -> S.InsetShape {
+        shape.inset(by: amount)
+    }
+}
+
 // MARK: - Previews
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
@@ -53,10 +61,23 @@ struct ShapeAdapter_Previews: PreviewProvider {
 
         var body: some View {
             VStack {
-                ShapeAdapter {
-                    Circle()
+                HStack {
+                    ShapeAdapter {
+                        Circle()
+                    }
+                    .fill(Color.red)
+
+                    ShapeAdapter {
+                        Circle()
+                    }
+                    .inset(by: 12)
+                    .fill(Color.red)
+
+                    ShapeAdapter {
+                        Circle()
+                    }
+                    .strokeBorder(Color.red)
                 }
-                .fill(Color.red)
 
                 ShapeAdapter {
                     Rectangle()
@@ -67,7 +88,6 @@ struct ShapeAdapter_Previews: PreviewProvider {
                     RoundedRectangle(cornerRadius: 12)
                 }
                 .fill(Color.red)
-
 
                 ShapeAdapter {
                     RoundedRectangle(cornerRadius: isCircle ? 25 : 0)

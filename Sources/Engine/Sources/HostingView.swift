@@ -151,6 +151,20 @@ open class HostingView<
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
+        let fittingSize = proposal
+            .replacingUnspecifiedDimensions(
+                by: CGSize(
+                    width: CGFloat.infinity,
+                    height: CGFloat.infinity
+                )
+            )
+        let size = sizeThatFits(fittingSize)
+        return size
+    }
+    #endif
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
     open override func layoutSubviews() {
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate, 
             UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false

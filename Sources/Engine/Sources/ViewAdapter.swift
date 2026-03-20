@@ -8,8 +8,7 @@ import SwiftUI
 @frozen
 public struct ViewAdapter<Content: View>: PrimitiveView {
 
-    @usableFromInline
-    var content: Content
+    public var content: Content
 
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
