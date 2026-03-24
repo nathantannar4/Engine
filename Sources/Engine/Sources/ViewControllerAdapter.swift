@@ -8,7 +8,6 @@ import EngineCore
 #if !os(watchOS)
 
 /// An adapter that converts a generic ``View`` into a view controller
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
 @MainActor @preconcurrency
 open class ViewControllerAdapter<
     Content: View,

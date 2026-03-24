@@ -102,35 +102,21 @@ private struct TestRepresentableVisitor<ExpectedContent: View>: ViewVisitor {
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
-    @available(iOS 13.0, tvOS 13.0, *)
-    @available(macOS, unavailable)
-    @available(watchOS, unavailable)
     mutating func visit<Content: UIViewRepresentable>(type: Content.Type) {
         XCTAssertNil(output)
         output = ExpectedContent.self == Content.self
     }
 
-    @available(iOS 13.0, tvOS 13.0, *)
-    @available(macOS, unavailable)
-    @available(watchOS, unavailable)
     mutating func visit<Content: UIViewControllerRepresentable>(type: Content.Type) {
         XCTAssertNil(output)
         output = ExpectedContent.self == Content.self
     }
     #elseif os(macOS)
-    @available(macOS 10.15, *)
-    @available(iOS, unavailable)
-    @available(tvOS, unavailable)
-    @available(watchOS, unavailable)
     mutating func visit<Content: NSViewRepresentable>(type: Content.Type) {
         XCTAssertNil(output)
         output = ExpectedContent.self == Content.self
     }
 
-    @available(macOS 10.15, *)
-    @available(iOS, unavailable)
-    @available(tvOS, unavailable)
-    @available(watchOS, unavailable)
     mutating func visit<Content: NSViewControllerRepresentable>(type: Content.Type) {
         XCTAssertNil(output)
         output = ExpectedContent.self == Content.self

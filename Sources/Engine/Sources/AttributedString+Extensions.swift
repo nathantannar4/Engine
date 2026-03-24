@@ -45,19 +45,26 @@ extension AttributedString {
     #endif
 
     static let attachment: AttributedString = {
-        AttributedString("\(Character(UnicodeScalar(NSTextAttachment.character)!))")
+        #if os(macOS)
+        return AttributedString("\u{FFFC}")
+        #else
+        return AttributedString("\(Character(UnicodeScalar(NSTextAttachment.character)!))")
+        #endif
     }()
 
     static func attachment(attributes: AttributeContainer) -> AttributedString {
-        AttributedString(
+        #if os(macOS)
+        return AttributedString("\u{FFFC}", attributes: attributes)
+        #else
+        return AttributedString(
             "\(Character(UnicodeScalar(NSTextAttachment.character)!))",
             attributes: attributes
         )
+        #endif
     }
 }
 
 #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
-
 @available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, *)
 private class HostingTextAttachment<Content: View>: NSTextAttachment, @unchecked Sendable {
 
@@ -148,7 +155,6 @@ private class HostingTextAttachmentViewProvider<Content: View>: NSTextAttachment
         }
     }
 }
-
 #endif
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -161,26 +167,26 @@ extension AttributeContainer {
     ) -> AttributeContainer {
         var attributes = self
         if let font = attributes.swiftUI.font, attributes.uiKit.font == nil {
-            attributes.uiKit.font = font.toUIFont()
+            attributes.uiKit.font = font.toUIFont(in: environment)
         }
         if let foregroundColor = attributes.swiftUI.foregroundColor, attributes.uiKit.foregroundColor == nil {
-            attributes.uiKit.foregroundColor = foregroundColor.toUIColor()
+            attributes.uiKit.foregroundColor = foregroundColor.toUIColor(in: environment)
         }
         if let backgroundColor = attributes.swiftUI.backgroundColor, attributes.uiKit.backgroundColor == nil {
-            attributes.uiKit.backgroundColor = backgroundColor.toUIColor()
+            attributes.uiKit.backgroundColor = backgroundColor.toUIColor(in: environment)
         }
         if let strikethroughStyle = attributes.swiftUI.strikethroughStyle {
             attributes.uiKit.strikethroughStyle = NSUnderlineStyle(strikethroughStyle)
             let color = Mirror(reflecting: strikethroughStyle).descendant("color") as? Color
             if let color {
-                attributes.uiKit.strikethroughColor = color.toUIColor()
+                attributes.uiKit.strikethroughColor = color.toUIColor(in: environment)
             }
         }
         if let underlineStyle = attributes.swiftUI.underlineStyle {
             attributes.uiKit.underlineStyle = NSUnderlineStyle(underlineStyle)
             let color = Mirror(reflecting: underlineStyle).descendant("color") as? Color
             if let color {
-                attributes.uiKit.underlineColor = color.toUIColor()
+                attributes.uiKit.underlineColor = color.toUIColor(in: environment)
             }
         }
         if let kern = attributes.swiftUI.kern {
@@ -204,26 +210,26 @@ extension AttributeContainer {
     ) -> AttributeContainer {
         var attributes = self
         if let font = attributes.swiftUI.font, attributes.appKit.font == nil {
-            attributes.appKit.font = font.toNSFont()
+            attributes.appKit.font = font.toNSFont(in: environment)
         }
         if let foregroundColor = attributes.swiftUI.foregroundColor, attributes.appKit.foregroundColor == nil {
-            attributes.appKit.foregroundColor = foregroundColor.toNSColor()
+            attributes.appKit.foregroundColor = foregroundColor.toNSColor(in: environment)
         }
         if let backgroundColor = attributes.swiftUI.backgroundColor, attributes.appKit.backgroundColor == nil {
-            attributes.appKit.backgroundColor = backgroundColor.toNSColor()
+            attributes.appKit.backgroundColor = backgroundColor.toNSColor(in: environment)
         }
         if let strikethroughStyle = attributes.swiftUI.strikethroughStyle {
             attributes.appKit.strikethroughStyle = NSUnderlineStyle(strikethroughStyle)
             let color = Mirror(reflecting: strikethroughStyle).descendant("color") as? Color
             if let color {
-                attributes.appKit.strikethroughColor = color.toNSColor()
+                attributes.appKit.strikethroughColor = color.toNSColor(in: environment)
             }
         }
         if let underlineStyle = attributes.swiftUI.underlineStyle {
             attributes.appKit.underlineStyle = NSUnderlineStyle(underlineStyle)
             let color = Mirror(reflecting: underlineStyle).descendant("color") as? Color
             if let color {
-                attributes.appKit.underlineColor = color.toNSColor()
+                attributes.appKit.underlineColor = color.toNSColor(in: environment)
             }
         }
         if let kern = attributes.swiftUI.kern {

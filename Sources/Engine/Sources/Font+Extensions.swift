@@ -16,53 +16,35 @@ extension Font {
     #endif
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
-    @available(iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-    public func toUIFont() -> UIFont? {
-        toPlatformValue()
-    }
-
     public func toUIFont(
-        in environment: @autoclosure () -> EnvironmentValues
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> UIFont? {
         toPlatformValue(in: environment())
     }
     #endif
 
     #if os(macOS)
-    @available(macOS 10.15, *)
-    public func toNSFont() -> NSFont? {
-        toPlatformValue()
-    }
-
-    @available(macOS 10.15, *)
     public func toNSFont(
-        in environment: @autoclosure () -> EnvironmentValues
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> NSFont? {
         toPlatformValue(in: environment())
     }
     #endif
 
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
     func toPlatformValue(
-        in environment: @autoclosure () -> EnvironmentValues
+        in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
         #if canImport(FoundationModels) // Xcode 26
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
-            let context = environment().fontResolutionContext
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *), let environment = environment() {
+            let context = environment.fontResolutionContext
             let resolved = resolve(in: context)
             return resolved.ctFont as PlatformRepresentable
         }
         #endif
-        return toPlatformValue()
-    }
-
-    @available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
-    func toPlatformValue() -> PlatformRepresentable? {
-        return FontProvider(for: self)?.resolved()
+        return FontProvider(for: self)?.resolved(in: environment())
     }
 }
 
-@available(iOS 13.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 private enum FontProvider {
     case system(size: CGFloat, weight: Font.Weight?, design: Font.Design?)
     case textStyle(Font.TextStyle, weight: Font.Weight?, design: Font.Design?)
@@ -203,7 +185,9 @@ private enum FontProvider {
         }
     }
 
-    func resolved() -> Font.PlatformRepresentable? {
+    func resolved(
+        in environment: @autoclosure () -> EnvironmentValues? = nil
+    ) -> Font.PlatformRepresentable? {
         switch self {
         case let .system(size, weight, design):
             let font: Font.PlatformRepresentable
@@ -224,9 +208,17 @@ private enum FontProvider {
             else {
                 return nil
             }
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            let traitCollection = environment()?.traitCollectionForFontResolution()
+            var font = Font.PlatformRepresentable.preferredFont(
+                forTextStyle: textStyle,
+                compatibleWith: traitCollection
+            )
+            #else
             var font = Font.PlatformRepresentable.preferredFont(
                 forTextStyle: textStyle
             )
+            #endif
             if let weight, let weight = Font.PlatformRepresentable.Weight(weight) {
                 font = font.with(weight: weight) ?? font
             }
@@ -242,6 +234,59 @@ private enum FontProvider {
             return font
         }
     }
+}
+
+extension EnvironmentValues {
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    func traitCollectionForFontResolution() -> UITraitCollection {
+        let traits: [UITraitCollection?] = [
+            {
+                let preferredContentSizeCategory: UIContentSizeCategory? = {
+                    if #available(iOS 15.0, tvOS 15.0, *) {
+                        return UIContentSizeCategory(dynamicTypeSize)
+                    } else if #available(iOS 14.0, tvOS 14.0, *) {
+                        return UIContentSizeCategory(sizeCategory)
+                    }
+                    switch sizeCategory {
+                    case .extraSmall: return .extraSmall
+                    case .small: return .small
+                    case .medium: return .medium
+                    case .large: return .large
+                    case .extraLarge: return .extraLarge
+                    case .extraExtraLarge: return .extraExtraLarge
+                    case .extraExtraExtraLarge: return .extraExtraExtraLarge
+                    case .accessibilityMedium: return .accessibilityMedium
+                    case .accessibilityLarge: return .accessibilityLarge
+                    case .accessibilityExtraLarge: return .accessibilityExtraLarge
+                    case .accessibilityExtraExtraLarge: return .accessibilityExtraExtraLarge
+                    case .accessibilityExtraExtraExtraLarge: return .accessibilityExtraExtraExtraLarge
+                    @unknown default: return nil
+                    }
+                }()
+                return preferredContentSizeCategory.map {
+                    UITraitCollection(preferredContentSizeCategory: $0)
+                }
+            }(),
+            {
+                let legibilityWeight = legibilityWeight.flatMap { legibilityWeight in
+                    if #available(iOS 14.0, tvOS 14.0, *) {
+                        return UILegibilityWeight(legibilityWeight)
+                    }
+                    switch legibilityWeight {
+                    case .regular: return .regular
+                    case .bold: return .bold
+                    @unknown default: return nil
+                    }
+                }
+                return legibilityWeight.map {
+                    UITraitCollection(legibilityWeight: $0)
+                }
+            }()
+        ]
+        return UITraitCollection(traitsFrom: traits.compactMap({ $0 }))
+    }
+    #endif
 }
 
 fileprivate extension Font.PlatformRepresentable {

@@ -386,16 +386,16 @@ extension Text {
                 if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), isMonospaced {
                     font = font.monospaced()
                 }
-                return font.toPlatformValue()
+                return font.toPlatformValue(in: environment)
             }()
             let foregroundColor: Color.PlatformRepresentable? = {
                 if let foregroundColor = self.foregroundColor {
-                    return foregroundColor.toPlatformValue()
+                    return foregroundColor.toPlatformValue(in: environment)
                 }
                 if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
                     let foregroundColor = environment.foregroundColor
                 {
-                    return foregroundColor.toPlatformValue()
+                    return foregroundColor.toPlatformValue(in: environment)
                 }
                 return nil
             }()
@@ -414,13 +414,13 @@ extension Text {
             attributes[.underlineStyle] = underlineStyle?.rawValue
             attributes[.underlineColor] = {
                 if let color = self.underlineStyle?.color {
-                    return color.toPlatformValue()
+                    return color.toPlatformValue(in: environment)
                 }
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let underlineStyle = environment.underlineStyle,
                     let color = LineStyle(lineStyle: underlineStyle).color
                 {
-                    return color.toPlatformValue()
+                    return color.toPlatformValue(in: environment)
                 }
                 return foregroundColor
             }()
@@ -438,13 +438,13 @@ extension Text {
             attributes[.strikethroughStyle] = strikethroughStyle?.rawValue
             attributes[.strikethroughColor] = {
                 if let color = self.strikethroughStyle?.color {
-                    return color.toPlatformValue()
+                    return color.toPlatformValue(in: environment)
                 }
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                     let strikethroughStyle = environment.strikethroughStyle,
                     let color = LineStyle(lineStyle: strikethroughStyle).color
                 {
-                    return color.toPlatformValue()
+                    return color.toPlatformValue(in: environment)
                 }
                 return foregroundColor
             }()
@@ -516,8 +516,8 @@ extension Text {
                     case .image(let image):
                         let attributeContainer = element.attributes.attributeContainer
                         var attributedString = AttributedString.attachment(attributes: attributeContainer)
-                        #if os(iOS) || os(tvOS) || os(visionOS)
-                        if let image = image.toUIImage() {
+                        if let image = image.toPlatformValue(in: element.attributes.environment) {
+                            #if os(iOS) || os(tvOS) || os(visionOS)
                             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                                let baselineOffset = attributeContainer.swiftUI.baselineOffset,
                                baselineOffset != 0
@@ -530,14 +530,12 @@ extension Text {
                                     image: image
                                 )
                             }
-                        }
-                        #elseif os(macOS)
-                        if let image = image.toNSImage() {
+                            #elseif os(macOS)
                             let attachment = NSTextAttachment()
                             attachment.image = image
                             attributedString.attachment = attachment
+                            #endif
                         }
-                        #endif
                         return attributedString
                     }
 

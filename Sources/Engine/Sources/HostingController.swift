@@ -18,7 +18,6 @@ public protocol AnyHostingController: PlatformViewController {
     func render()
 }
 
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)
 open class HostingController<
     Content: View
 >: PlatformHostingController<Content> {
