@@ -9,6 +9,31 @@ public typealias ConditionalShape<TrueShape: Shape, FalseShape: Shape> = Conditi
 
 extension ConditionalShape: Shape {
 
+    public var animatableData: AnyAnimatableData {
+        get {
+            switch storage {
+            case .trueContent(let shape):
+                return AnyAnimatableData(shape.animatableData)
+            case .falseContent(let shape):
+                return AnyAnimatableData(shape.animatableData)
+            }
+        }
+        set {
+            switch storage {
+            case .trueContent(var shape):
+                if let newValue = newValue.as(TrueContent.AnimatableData.self) {
+                    shape.animatableData = newValue
+                    storage = .trueContent(shape)
+                }
+            case .falseContent(var shape):
+                if let newValue = newValue.as(FalseContent.AnimatableData.self) {
+                    shape.animatableData = newValue
+                    storage = .falseContent(shape)
+                }
+            }
+        }
+    }
+
     public func path(in rect: CGRect) -> Path {
         switch storage {
         case .trueContent(let shape):
@@ -23,7 +48,7 @@ extension ConditionalShape: Shape {
         if TrueContent.role == FalseContent.role {
             return TrueContent.role
         }
-        return EmptyShape.role
+        return .fill
     }
 
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)

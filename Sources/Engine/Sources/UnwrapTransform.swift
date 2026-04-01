@@ -32,4 +32,12 @@ extension Binding {
             }
         )
     }
+
+    @inlinable
+    @MainActor @preconcurrency
+    public subscript<T>(
+        default defaultValue: T
+    ) -> Binding<T> where Value == T? {
+        unwrap(defaultValue)
+    }
 }

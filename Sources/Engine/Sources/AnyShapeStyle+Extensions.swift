@@ -36,6 +36,7 @@ extension AnyShapeStyle {
                 }
             }
             case hierarchical(HierarchicalLevel, ResolvedStyle.Kind?)
+            case tuple(AnyShapeStyle, AnyShapeStyle, AnyShapeStyle?)
             case foreground
             case background
             case selection
@@ -46,7 +47,7 @@ extension AnyShapeStyle {
             case fill
             case windowBackground
 
-            func color(in environment: EnvironmentValues) -> Color? {
+            func color(in environment: EnvironmentValues, level: Int = 0) -> Color? {
                 switch self {
                 case .color(let color):
                     return color
@@ -57,8 +58,18 @@ extension AnyShapeStyle {
                     }
                     return kind?.color(in: environment)?.opacity(level.opacity)
 
+                case .tuple(let primary, let secondary, let tertiary):
+                    switch level {
+                    case 0:
+                        return primary.color(in: environment)
+                    case 1:
+                        return secondary.color(in: environment)
+                    default:
+                        return tertiary?.color(in: environment)
+                    }
+
                 case .tint:
-                    if let resolvedTint = environment.tint.resolve(in: environment) {
+                    if let resolvedTint = environment.tintStyle.resolve(in: environment) {
                         if case .tint = resolvedTint.kind {
                             return nil
                         }
@@ -96,14 +107,19 @@ extension AnyShapeStyle {
         public var blendMode: BlendMode = .normal
     }
 
-    public func color(in environment: EnvironmentValues) -> Color? {
+    public func color(in environment: EnvironmentValues, level: Int = 0) -> Color? {
         guard
             let style = resolve(in: environment),
-            let color = style.kind.color(in: environment)
+            let color = style.kind.color(in: environment, level: level)
         else {
             return nil
         }
         return color.opacity(style.opacity)
+    }
+
+    public func blendMode(in environment: EnvironmentValues) -> BlendMode? {
+        let style = resolve(in: environment)
+        return style?.blendMode
     }
 
     public func resolve(in environment: EnvironmentValues) -> ResolvedStyle? {
@@ -155,6 +171,20 @@ extension AnyShapeStyle {
                    let level = ResolvedStyle.Kind.HierarchicalLevel(rawValue: Int(rawValue))
                 {
                     return ResolvedStyle(kind: .hierarchical(level, nil))
+                }
+            } else if className.hasPrefix("ShapeStylePair") || className.hasPrefix("ShapeStyleTriple") {
+                let mirror = Mirror(reflecting: provider)
+                if let primary = mirror.descendant("primary") as? AnyShapeStyle,
+                   let secondary = mirror.descendant("secondary") as? AnyShapeStyle
+                {
+                    let tertiary = mirror.descendant("tertiary") as? AnyShapeStyle
+                    return ResolvedStyle(
+                        kind: .tuple(
+                            primary,
+                            secondary,
+                            tertiary
+                        )
+                    )
                 }
             } else if className.hasPrefix("ShapeStyleBox") {
                 let mirror = Mirror(reflecting: provider)
@@ -237,9 +267,11 @@ struct AnyShapeStyle_Previews: PreviewProvider {
 
     struct StyleColorPreview<S: ShapeStyle>: View {
         var style: AnyShapeStyle
+        var level: Int
 
-        init(style: S) {
+        init(style: S, level: Int = 0) {
             self.style = AnyShapeStyle(style)
+            self.level = level
         }
 
         var body: some View {
@@ -249,7 +281,7 @@ struct AnyShapeStyle_Previews: PreviewProvider {
 
                 EnvironmentValueReader(\.self) { environment in
                     if let resolved = style.resolve(in: environment) {
-                        if let color = resolved.kind.color(in: environment) {
+                        if let color = resolved.kind.color(in: environment, level: level) {
                             Rectangle()
                                 .fill(color)
                                 .opacity(resolved.opacity)
@@ -264,7 +296,7 @@ struct AnyShapeStyle_Previews: PreviewProvider {
 
                 EnvironmentValueReader(\.self) { environment in
                     if let resolved = environment.foregroundStyle.resolve(in: environment) {
-                        if let color = resolved.kind.color(in: environment) {
+                        if let color = resolved.kind.color(in: environment, level: level) {
                             Rectangle()
                                 .fill(color)
                                 .opacity(resolved.opacity)
@@ -325,13 +357,30 @@ struct AnyShapeStyle_Previews: PreviewProvider {
             }
             .foregroundStyle(Color.blue)
 
+            EnvironmentValueReader(\.foregroundStyle) { style in
+                Group {
+                    StyleColorPreview(style: style)
+                    StyleColorPreview(style: style, level: 1)
+                }
+            }
+            .foregroundStyle(Color.red, Color.orange)
+
+            EnvironmentValueReader(\.foregroundStyle) { style in
+                Group {
+                    StyleColorPreview(style: style)
+                    StyleColorPreview(style: style, level: 1)
+                    StyleColorPreview(style: style, level: 2)
+                }
+            }
+            .foregroundStyle(Color.red, Color.orange, Color.yellow)
+
             StyleColorPreview(style: .foreground)
 
             StyleColorPreview(style: .foreground)
                 .foregroundStyle(Color.yellow)
 
             StyleColorPreview(style: .background)
-                .contrast(0.5)
+                .backgroundStyle(Color.green)
 
             StyleColorPreview(style: .background)
                 .backgroundStyle(Color.yellow)

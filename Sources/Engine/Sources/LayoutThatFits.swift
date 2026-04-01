@@ -205,7 +205,14 @@ extension LayoutThatFits {
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 @available(tvOS, unavailable)
 struct LayoutThatFits_Previews: PreviewProvider {
-    struct Preview: View {
+
+    static var previews: some View {
+        Preview1()
+        Preview2()
+        Preview3()
+    }
+
+    struct Preview1: View {
         @State private var width: CGFloat = 300
 
         var content: some View {
@@ -224,7 +231,13 @@ struct LayoutThatFits_Previews: PreviewProvider {
             VStack {
                 Slider(value: $width, in: 0...400)
 
-                LayoutThatFits(in: [.horizontal], _HStackLayout(spacing: nil), _VStackLayout(spacing: nil)).callAsFunction {
+                LayoutThatFits(
+                    in: [
+                        .horizontal
+                    ],
+                    _HStackLayout(spacing: nil),
+                    _VStackLayout(spacing: nil)
+                ) {
                     content
                 }
                 .frame(width: width)
@@ -237,7 +250,96 @@ struct LayoutThatFits_Previews: PreviewProvider {
         }
     }
 
-    static var previews: some View {
-        Preview()
+    struct Preview2: View {
+        var body: some View {
+            VStack {
+                LayoutThatFits(
+                    in: [
+                        .horizontal
+                    ],
+                    _HStackLayout(spacing: nil),
+                    _VStackLayout(spacing: nil)
+                ) {
+                    ForEach(6) { index in
+                        Text("Label \(index)")
+                    }
+                }
+
+                // Order matters
+                LayoutThatFits(
+                    in: [
+                        .horizontal
+                    ],
+                    _VStackLayout(spacing: nil),
+                    _HStackLayout(spacing: nil),
+                ) {
+                    ForEach(6) { index in
+                        Text("Label \(index)")
+                    }
+                }
+            }
+        }
+    }
+
+    struct Preview3: View {
+        var body: some View {
+            ScrollView {
+                LazyVStack {
+                    ForEach(20) { index in
+                        CellView(index: index)
+                    }
+                }
+            }
+        }
+
+        struct CellView: View {
+            var index: Int
+
+            var body: some View {
+                HStack(alignment: .top) {
+                    Color.blue
+                        .frame(width: 60, height: 60)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Caption")
+                            .font(.caption)
+
+                        Text("Title")
+                            .font(.headline)
+
+                        LayoutThatFits(
+                            in: [
+                                .horizontal
+                            ],
+                            _HStackLayout(alignment: .firstTextBaseline, spacing: 12),
+                            _VStackLayout(alignment: .leading, spacing: 6),
+                        ) {
+                            Label {
+                                Text("2:00 PM")
+                            } icon: {
+                                Image(systemName: "clock")
+                            }
+
+                            Label {
+                                Text("Stanley Park")
+                            } icon: {
+                                Image(systemName: "location")
+                            }
+
+                            if index.isMultiple(of: 2) {
+                                Label {
+                                    Text("Coming Soon")
+                                } icon: {
+                                    Image(systemName: "info")
+                                }
+                            }
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
     }
 }

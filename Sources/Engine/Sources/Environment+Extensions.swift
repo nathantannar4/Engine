@@ -32,8 +32,14 @@ extension EnvironmentValues {
 
     /// The value for the ``.tint(_)`` modifier
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    public var tint: AnyShapeStyle {
+    public var tintStyle: AnyShapeStyle {
         self["TintKey", default: AnyShapeStyle(.tint)]
+    }
+
+    /// The color for the ``.tint(_)`` modifier
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    public var tintColor: Color? {
+        tintStyle.color(in: self)
     }
 
     /// The value for the ``.accentColor(_)`` modifier
@@ -165,20 +171,29 @@ struct EnvironmentValues_Previews: PreviewProvider {
             }
             .foregroundStyle(.green)
 
-            EnvironmentValuePreview(keyPath: \.tint) {
+            EnvironmentValuePreview(keyPath: \.tintStyle) {
                 Button("Action") { }
-            } content: { foregroundStyle in
+            } content: { tintStyle in
                 Circle()
-                    .fill(foregroundStyle)
+                    .fill(tintStyle)
+                    .fixedSize()
+            }
+            .tint(.green)
+
+            EnvironmentValuePreview(keyPath: \.tintColor) {
+                Button("Action") { }
+            } content: { tintColor in
+                Circle()
+                    .fill(tintColor ?? .red)
                     .fixedSize()
             }
             .tint(.green)
 
             EnvironmentValuePreview(keyPath: \.accentColor) {
                 Button("Action") { }
-            } content: { foregroundStyle in
+            } content: { accentColor in
                 Circle()
-                    .fill(foregroundStyle)
+                    .fill(accentColor)
                     .fixedSize()
             }
             .accentColor(.green)

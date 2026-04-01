@@ -5,10 +5,15 @@
 import SwiftUI
 
 @frozen
-public struct InsetShape<S: Shape>: Shape, InsettableShape {
+public struct InsetShape<S: Shape>: Shape {
 
     public var shape: S
     public var insets: EdgeInsets
+
+    public var animatableData: EdgeInsets {
+        get { insets }
+        set { insets = newValue }
+    }
 
     @inlinable
     public init(shape: S, insets: EdgeInsets) {
@@ -26,15 +31,6 @@ public struct InsetShape<S: Shape>: Shape, InsettableShape {
         return shape.path(in: insetRect)
     }
 
-    public nonisolated func inset(by amount: CGFloat) -> InsetShape<S> {
-        var insets = insets
-        insets.top += amount
-        insets.bottom += amount
-        insets.leading += amount
-        insets.trailing += amount
-        return InsetShape(shape: shape, insets: insets)
-    }
-
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public static var role: ShapeRole {
         S.role
@@ -48,6 +44,20 @@ public struct InsetShape<S: Shape>: Shape, InsettableShape {
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public func sizeThatFits(_ proposal: ProposedViewSize) -> CGSize {
         shape.sizeThatFits(proposal)
+    }
+}
+
+extension InsetShape: InsettableShape {
+
+    public nonisolated func inset(
+        by amount: CGFloat
+    ) -> InsetShape<S> {
+        var insets = insets
+        insets.top += amount
+        insets.bottom += amount
+        insets.leading += amount
+        insets.trailing += amount
+        return InsetShape(shape: shape, insets: insets)
     }
 }
 
