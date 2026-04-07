@@ -91,7 +91,7 @@ extension UIView {
         changes: @escaping () -> Void,
         completion: (() -> Void)? = nil
     ) {
-        if #available(iOS 18.0, *), let animation {
+        if #available(iOS 18.0, visionOS 2.0, *), let animation {
             UIView.animate(
                 animation,
                 changes: changes,
@@ -218,7 +218,7 @@ struct Animation_Previews: PreviewProvider {
                         .animation(.linear(duration: 3), value: flag)
                 }
 
-                if #available(iOS 18.0, *) {
+                if #available(iOS 18.0, visionOS 2.0, *) {
                     HStack {
                         BuiltinViewRepresentable(backgroundColor: backgroundColor)
 
@@ -253,7 +253,7 @@ struct Animation_Previews: PreviewProvider {
         }
     }
 
-    @available(iOS 18.0, *)
+    @available(iOS 18.0, visionOS 2.0, *)
     struct BuiltinViewRepresentable: UIViewRepresentable {
         var backgroundColor: Color
 

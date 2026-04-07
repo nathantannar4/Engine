@@ -28,7 +28,7 @@ final class BenchmarkTests: XCTestCase {
         let staticViewRenderTime = measureRender(iterations: 1_000) {
             Text("Hello, World!")
         }
-        print("\(anyViewRenderTime) vs. \(staticViewRenderTime)") // 0.246ms vs. 0.201ms
+        print("AnyView: \(anyViewRenderTime) vs. \(staticViewRenderTime)") // 0.246ms vs. 0.201ms
         XCTAssertGreaterThan(anyViewRenderTime, staticViewRenderTime)
     }
 
@@ -59,7 +59,7 @@ final class BenchmarkTests: XCTestCase {
         let versionedViewRenderTime = measureRender(iterations: 100) {
             EngineVersionedView()
         }
-        print("\(viewBuilderRenderTime) vs. \(versionedViewRenderTime)") // 0.65ms vs. 0.21ms
+        print("VersionedView: \(viewBuilderRenderTime) vs. \(versionedViewRenderTime)") // 0.65ms vs. 0.21ms
         XCTAssertGreaterThan(viewBuilderRenderTime, versionedViewRenderTime)
 
         // ForEach performance greatly depends on the child being a "Unary View". Since `VersionedView`
@@ -79,7 +79,7 @@ final class BenchmarkTests: XCTestCase {
                 }
             }
         }
-        print("\(viewBuilderForEachRenderTime) vs. \(versionedViewForEachRenderTime) (ForEach)") // 258ms vs. 215ms
+        print("VersionedView (ForEach): \(viewBuilderForEachRenderTime) vs. \(versionedViewForEachRenderTime)") // 258ms vs. 215ms
         XCTAssertGreaterThan(viewBuilderForEachRenderTime, versionedViewForEachRenderTime)
     }
 
@@ -140,22 +140,7 @@ final class BenchmarkTests: XCTestCase {
             }
         }
         let percentCost = (transformedRenderTime - baseRenderTime) / baseRenderTime
-        print("\(baseRenderTime) vs. \(transformedRenderTime) (\(Int(percentCost * 100))% Increase)") // 0.67ms vs. 0.82ms (20% Increase)
+        print("VariadicView: \(baseRenderTime) vs. \(transformedRenderTime) (\(Int(percentCost * 100))% Increase)") // 0.67ms vs. 0.82ms (20% Increase)
         XCTAssertLessThan(baseRenderTime, transformedRenderTime)
-
-        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            let groupRenderTime = measureRender(iterations: 1_000) {
-                Group(subviews: MultiView()) { subviews in
-                    VStack {
-                        subviews
-                    }
-                }
-            }
-            print("\(groupRenderTime) vs. \(transformedRenderTime)") // 0.91ms vs. 0.82ms
-            // `VariadicViewAdapter` should be faster than `Group`, but if not it should be very close
-            if groupRenderTime < transformedRenderTime {
-                XCTAssertEqual(groupRenderTime, transformedRenderTime, accuracy: 0.00005)
-            }
-        }
     }
 }

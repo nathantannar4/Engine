@@ -93,7 +93,16 @@ extension Color {
                 return NSColor(named: name, bundle: bundle) ?? .resolved(self, in: environment())
                 #endif
 
-            case "Color", "SystemColorType":
+            case "Color", "SystemColorType", "ResolvedColorProvider":
+                if self == .clear {
+                    return .clear
+                }
+                if self == .white {
+                    return .white
+                }
+                if self == .black {
+                    return .black
+                }
                 return .resolved(self, in: environment())
 
             case "UIKitPlatformColorProvider", "AppKitPlatformColorProvider":

@@ -85,5 +85,14 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
+        .testTarget(
+            name: "EngineTestsBenchmarks",
+            dependencies: [
+                "Engine",
+                "EngineMacros",
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]
+        ),
     ]
 )

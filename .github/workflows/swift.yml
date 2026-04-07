@@ -16,6 +16,8 @@ jobs:
     - uses: actions/checkout@v5
     - name: Set up Xcode version
       run: sudo xcode-select -s /Applications/Xcode_16.4.app
+    - name: Show available schemes
+      run: xcodebuild -resolvePackageDependencies -list
     - name: Show available destinations
       run: xcodebuild -scheme Engine -showdestinations
     - name: Build for macOS
@@ -28,12 +30,20 @@ jobs:
       run: xcodebuild -scheme Engine -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 2 (49mm)' build
     - name: Build for tvOS
       run: xcodebuild -scheme Engine -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
+    - name: Build for visionOS
+      run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
+    - name: Test for macOS
+      run: xcodebuild -scheme EngineTests -destination 'platform=macOS' test
+    - name: Test for iOS
+      run: xcodebuild -scheme EngineTests -destination 'platform=iOS Simulator,name=iPhone 16' test
   build-26:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v5
     - name: Set up Xcode version
       run: sudo xcode-select -s /Applications/Xcode_26.2.app
+    - name: Show available schemes
+      run: xcodebuild -resolvePackageDependencies -list
     - name: Show available destinations
       run: xcodebuild -scheme Engine -showdestinations
     - name: Build for macOS
@@ -46,3 +56,9 @@ jobs:
       run: xcodebuild -scheme Engine -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 3 (49mm)' build
     - name: Build for tvOS
       run: xcodebuild -scheme Engine -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
+    - name: Build for visionOS
+      run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
+    - name: Test for macOS
+      run: xcodebuild -scheme EngineTests -destination 'platform=macOS' test
+    - name: Test for iOS
+      run: xcodebuild -scheme EngineTests -destination 'platform=iOS Simulator,name=iPhone 17' test

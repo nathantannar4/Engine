@@ -10,6 +10,7 @@ import SwiftUI
 public typealias PlatformView = NSView
 public typealias PlatformViewRepresentable = NSViewRepresentable
 public typealias PlatformViewControllerRepresentable = NSViewControllerRepresentable
+public typealias PlatformViewRepresentableProtocolDescriptor = NSViewRepresentableProtocolDescriptor
 public typealias PlatformViewControllerRepresentableProtocolDescriptor = NSViewControllerRepresentableProtocolDescriptor
 public typealias PlatformViewController = NSViewController
 extension PlatformViewControllerRepresentable {
@@ -19,6 +20,7 @@ extension PlatformViewControllerRepresentable {
 public typealias PlatformView = UIView
 public typealias PlatformViewRepresentable = UIViewRepresentable
 public typealias PlatformViewControllerRepresentable = UIViewControllerRepresentable
+public typealias PlatformViewRepresentableProtocolDescriptor = UIViewRepresentableProtocolDescriptor
 public typealias PlatformViewControllerRepresentableProtocolDescriptor = UIViewControllerRepresentableProtocolDescriptor
 public typealias PlatformViewController = UIViewController
 extension UIViewControllerRepresentable {

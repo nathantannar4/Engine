@@ -35,7 +35,7 @@ extension Font {
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
         #if canImport(FoundationModels) // Xcode 26
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *), let environment = environment() {
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *), let environment = environment() {
             let context = environment.fontResolutionContext
             let resolved = resolve(in: context)
             return resolved.ctFont as PlatformRepresentable
