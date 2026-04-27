@@ -116,6 +116,10 @@ struct ForEach_Previews: PreviewProvider {
                 Text("\(index): \(number)")
             }
 
+            ForEach(0...2, id: \.self) { number in
+                Text("\(number)")
+            }
+
             ForEach([Model(), Model()]) { model in
                 Text("\(model.id)")
             }

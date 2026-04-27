@@ -2,6 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
+import os.log
 import SwiftUI
 import EngineCore
 
@@ -28,6 +29,18 @@ extension Animation {
     public var speed: Double? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.speed
+    }
+
+    /// The repeat count of the animation, `.max` indicates forever
+    public var repeatCount: Int? {
+        guard let resolved = Resolved(animation: self) else { return nil }
+        return resolved.repeatCount
+    }
+
+    /// The flag indicating the animation should auto reverse
+    public var autoreverses: Bool? {
+        guard let resolved = Resolved(animation: self) else { return nil }
+        return resolved.autoreverses
     }
 
     /// The delay of the animation
@@ -101,7 +114,7 @@ extension Animation {
                     default:
                         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             guard animator is (any SwiftUI.CustomAnimation) else { return nil }
-                            let duration = Mirror(reflecting: animator).descendant("duration") as? TimeInterval
+                            let duration = try? swift_getFieldValue("duration", TimeInterval.self, animator)
                             return .custom(CustomAnimation(duration: duration))
                         }
                         return nil
@@ -140,49 +153,133 @@ extension Animation {
         public var timingCurve: TimingCurve
         public var delay: TimeInterval
         public var speed: Double
-
-        public init(
-            timingCurve: TimingCurve,
-            delay: TimeInterval,
-            speed: Double
-        ) {
-            self.timingCurve = timingCurve
-            self.delay = delay
-            self.speed = speed
-        }
+        public var repeatCount: Int
+        public var autoreverses: Bool
 
         public init?(animation: Animation) {
-            var animator: Any
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-                animator = animation.base
+            if animation == .default {
+                self.timingCurve = .default
+                self.delay = 0
+                self.speed = 1
+                self.repeatCount = 0
+                self.autoreverses = false
             } else {
-                guard let base = Mirror(reflecting: animation).descendant("base") else {
+                var animator: Any
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+                    animator = animation.base
+                } else {
+                    animator = animation
+                }
+                var delay: TimeInterval = 0
+                var speed: TimeInterval = 1
+                var repeatCount: Int = 0
+                var autoreverses = false
+                func getNext(animator: Any) -> Any? {
+                    if let next = try? swift_getFieldValue("base", Any.self, animator) {
+                        return next
+                    }
+                    if let next = try? swift_getFieldValue("_base", Any.self, animator) {
+                        return next
+                    }
+                    if let next = try? swift_getFieldValue("animation", Any.self, animator) {
+                        return next
+                    }
                     return nil
                 }
-                animator = base
-            }
-            var delay: TimeInterval = 0
-            var speed: TimeInterval = 1
-            var mirror = Mirror(reflecting: animator)
-            while let base = mirror.descendant("_base") ?? mirror.descendant("base") ?? mirror.descendant("animation") {
-                if let modifier = mirror.descendant("modifier") {
-                    mirror = Mirror(reflecting: modifier)
+                while let next = getNext(animator: animator) {
+                    if let modifier = try? swift_getFieldValue("modifier", Any.self, animator) {
+                        let name = String(describing: type(of: modifier))
+                        switch name {
+                        case "RepeatAnimation":
+                            if let r = try? swift_getFieldValue("repeatCount", Optional<Int>.self, modifier) {
+                                repeatCount += r
+                            } else {
+                                repeatCount = .max
+                            }
+                            if let a = try? swift_getFieldValue("autoreverses", Bool.self, modifier) {
+                                autoreverses = autoreverses || a
+                            }
+                        case "SpeedAnimation":
+                            if let s = try? swift_getFieldValue("speed", TimeInterval.self, modifier) {
+                                speed *= s
+                            }
+                        case "DelayAnimation":
+                            if let d = try? swift_getFieldValue("delay", TimeInterval.self, modifier) {
+                                delay += d
+                            }
+                        default:
+                            os_log(.error, log: .default, "Failed to resolve Animation modifier %{public}@. Please file an issue.", name)
+                        }
+                    }
+                    animator = next
                 }
-                if let d = mirror.descendant("delay") as? TimeInterval {
-                    delay += d
+                guard let timingCurve = TimingCurve(animator: animator) else {
+                    return nil
                 }
-                if let s = mirror.descendant("speed") as? TimeInterval {
-                    speed *= s
+                self.timingCurve = timingCurve
+                self.delay = delay
+                self.speed = speed
+                self.repeatCount = repeatCount
+                self.autoreverses = autoreverses
+            }
+        }
+    }
+}
+
+// MARK: - Previews
+
+struct AnimationResolved_Previews: PreviewProvider {
+    struct AnimationPreview: View {
+        var label: String
+        var animation: Animation
+
+        var body: some View {
+            HStack(alignment: .firstTextBaseline) {
+                Text(label)
+
+                VStack(alignment: .leading) {
+                    Text(verbatim: "Delay: \(animation.delay as Any)")
+                    Text(verbatim: "Speed: \(animation.speed as Any)")
+                    Text(verbatim: "Repeat Count: \(animation.repeatCount as Any)")
+                    Text(verbatim: "Autoreverses: \(animation.autoreverses as Any)")
+                    if let resolved = animation.resolved() {
+                        Text(verbatim: "Resolved: \(resolved.timingCurve)")
+                    }
                 }
-                animator = base
-                mirror = Mirror(reflecting: animator)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            guard let timingCurve = TimingCurve(animator: animator) else {
-                return nil
+        }
+    }
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
+    struct PreviewAnimation: CustomAnimation {
+        func animate<V>(value: V, time: TimeInterval, context: inout AnimationContext<V>) -> V? where V : VectorArithmetic {
+            return value
+        }
+    }
+
+    static var previews: some View {
+        ScrollView {
+            VStack {
+                AnimationPreview(label: "Default", animation: .default)
+                AnimationPreview(label: "Default Fast", animation: .default.speed(2))
+                AnimationPreview(label: "Default Faster", animation: .default.speed(2).speed(2))
+                AnimationPreview(label: "Default Slow", animation: .default.speed(0.5))
+                AnimationPreview(label: "Default Delayed", animation: .default.delay(1))
+                AnimationPreview(label: "Default Slow Delayed", animation: .default.delay(1).speed(0.5).delay(1))
+                AnimationPreview(label: "Default Repeat", animation: .default.repeatCount(1))
+                AnimationPreview(label: "Default Repeated", animation: .default.repeatForever(autoreverses: true))
+
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                    AnimationPreview(label: "PreviewAnimation", animation: .init(PreviewAnimation()).speed(2).delay(1))
+                }
+
+                AnimationPreview(label: "SpringAnimation", animation: .spring.speed(2).delay(1))
+
+                AnimationPreview(label: "FluidSpringAnimation", animation: .bouncy.speed(2).delay(1))
+
+                AnimationPreview(label: "BezierAnimation", animation: .easeInOut.speed(2).delay(1))
             }
-            self.timingCurve = timingCurve
-            self.delay = delay
-            self.speed = speed
         }
     }
 }

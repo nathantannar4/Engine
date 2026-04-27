@@ -65,10 +65,9 @@ extension Color {
             let className = String(describing: type(of: provider))
             switch className {
             case "OpacityColor":
-                let mirror = Mirror(reflecting: provider)
                 guard
-                    let opacity = mirror.descendant("opacity") as? Double,
-                    let base = mirror.descendant("base")
+                    let opacity = try? swift_getFieldValue("opacity", Double.self, provider),
+                    let base = try? swift_getFieldValue("base", Any.self, provider)
                 else {
                     return .resolved(self, in: environment())
                 }
@@ -76,13 +75,12 @@ extension Color {
                 return color.withAlphaComponent(opacity)
 
             case "NamedColor":
-                let mirror = Mirror(reflecting: provider)
                 guard
-                    let name = mirror.descendant("name") as? String
+                    let name = try? swift_getFieldValue("name", String.self, provider)
                 else {
                     return .resolved(self, in: environment())
                 }
-                let bundle = mirror.descendant("bundle") as? Bundle
+                let bundle = try? swift_getFieldValue("bundle", Bundle.self, provider)
                 #if os(iOS) || os(tvOS) || os(visionOS)
                 return UIColor { traits in
                     UIColor(named: name, in: bundle, compatibleWith: traits) ?? UIColor(self)
@@ -106,9 +104,8 @@ extension Color {
                 return .resolved(self, in: environment())
 
             case "UIKitPlatformColorProvider", "AppKitPlatformColorProvider":
-                let mirror = Mirror(reflecting: provider)
                 guard
-                    let color = mirror.descendant("platformColor") as? PlatformRepresentable
+                    let color = try? swift_getFieldValue("platformColor", PlatformRepresentable.self, provider)
                 else {
                     return .resolved(self, in: environment())
                 }
@@ -122,7 +119,10 @@ extension Color {
 
         // Need to extract the UIColor since because SwiftUI's UIColor init
         // from a Color does not work for dynamic colors when set on UIView's
-        guard let base = Mirror(reflecting: self).descendant("provider", "base") else {
+        guard
+            let provider = try? swift_getFieldValue("provider", Any.self, self),
+            let base = try? swift_getFieldValue("base", Any.self, provider)
+        else {
             return .resolved(self, in: environment())
         }
         return resolve(provider: base)
@@ -157,5 +157,56 @@ extension Color.PlatformRepresentable {
         #else
         return NSColor(color)
         #endif
+    }
+}
+
+// MARK: - Previews
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+struct Color_Previews: PreviewProvider {
+    struct ColorPreview: View {
+        var color: Color
+
+        @Environment(\.self) var environment
+
+        var body: some View {
+            HStack(spacing: 4) {
+                color
+                #if os(macOS)
+                Color(nsColor: color.toNSColor())
+                Color(nsColor: color.toNSColor(in: environment))
+                #else
+                Color(uiColor: color.toUIColor())
+                Color(uiColor: color.toUIColor(in: environment))
+                #endif
+            }
+            .frame(height: 20)
+        }
+    }
+
+    static var previews: some View {
+        VStack(spacing: 4) {
+            ColorPreview(color: .blue)
+            ColorPreview(color: .blue.opacity(0.3))
+            ColorPreview(color: Color(cgColor: .init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1)))
+            ColorPreview(color: Color("Named", bundle: .main))
+            #if os(macOS)
+            ColorPreview(color: Color(nsColor: .systemBlue))
+            ColorPreview(color: Color(nsColor: .systemBlue.withAlphaComponent(0.3)))
+            ColorPreview(color: Color(nsColor: .systemBlue).opacity(0.3))
+            #elseif !os(watchOS)
+            ColorPreview(color: Color(uiColor: .systemBlue))
+            ColorPreview(color: Color(uiColor: .systemBlue.withAlphaComponent(0.3)))
+            ColorPreview(color: Color(uiColor: .systemBlue).opacity(0.3))
+            ColorPreview(color: Color(uiColor: UIColor(dynamicProvider: { traits in
+                return .gray.withAlphaComponent(traits.userInterfaceStyle == .light ? 0.8 : 0.2)
+            })))
+            .environment(\.colorScheme, .light)
+            ColorPreview(color: Color(uiColor: UIColor(dynamicProvider: { traits in
+                return .gray.withAlphaComponent(traits.userInterfaceStyle == .light ? 0.8 : 0.2)
+            })))
+            .environment(\.colorScheme, .dark)
+            #endif
+        }
     }
 }

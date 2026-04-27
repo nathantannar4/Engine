@@ -177,15 +177,13 @@ extension AttributeContainer {
         }
         if let strikethroughStyle = attributes.swiftUI.strikethroughStyle {
             attributes.uiKit.strikethroughStyle = NSUnderlineStyle(strikethroughStyle)
-            let color = Mirror(reflecting: strikethroughStyle).descendant("color") as? Color
-            if let color {
+            if let color = try? swift_getFieldValue("color", Color.self, strikethroughStyle) {
                 attributes.uiKit.strikethroughColor = color.toUIColor(in: environment)
             }
         }
         if let underlineStyle = attributes.swiftUI.underlineStyle {
             attributes.uiKit.underlineStyle = NSUnderlineStyle(underlineStyle)
-            let color = Mirror(reflecting: underlineStyle).descendant("color") as? Color
-            if let color {
+            if let color = try? swift_getFieldValue("color", Color.self, underlineStyle) {
                 attributes.uiKit.underlineColor = color.toUIColor(in: environment)
             }
         }
@@ -220,15 +218,13 @@ extension AttributeContainer {
         }
         if let strikethroughStyle = attributes.swiftUI.strikethroughStyle {
             attributes.appKit.strikethroughStyle = NSUnderlineStyle(strikethroughStyle)
-            let color = Mirror(reflecting: strikethroughStyle).descendant("color") as? Color
-            if let color {
+            if let color = try? swift_getFieldValue("color", Color.self, strikethroughStyle) {
                 attributes.appKit.strikethroughColor = color.toNSColor(in: environment)
             }
         }
         if let underlineStyle = attributes.swiftUI.underlineStyle {
             attributes.appKit.underlineStyle = NSUnderlineStyle(underlineStyle)
-            let color = Mirror(reflecting: underlineStyle).descendant("color") as? Color
-            if let color {
+            if let color = try? swift_getFieldValue("color", Color.self, underlineStyle) {
                 attributes.appKit.underlineColor = color.toNSColor(in: environment)
             }
         }

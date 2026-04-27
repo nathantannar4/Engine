@@ -12,6 +12,14 @@ public struct ShapeBuilder {
         EmptyShape()
     }
 
+    public static func buildPartialBlock(
+        first: Void
+    ) -> EmptyShape { EmptyShape() }
+
+    public static func buildPartialBlock(
+        first: Never
+    ) -> EmptyShape { }
+
     public static func buildBlock<S: Shape>(
         _ shape: S
     ) -> S {

@@ -143,6 +143,12 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             self.element = element
         }
 
+        private struct CanonicalID: Hashable {
+            var index: Int32
+            var implicitID: Int32
+            var explicitID: AnyHashable?
+        }
+
         @frozen
         public struct ID: Hashable, @unchecked Sendable {
             var value: AnyHashable
@@ -152,10 +158,32 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
         }
 
         public func id<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
-            element.id(as: ID.self)
+            if let id = element.id(as: ID.self) {
+                return id
+            } else if ID.self == Int.self {
+                func project<T>(_ id: T) -> ID? {
+                    guard
+                        let index = try? swift_getFieldValue("_index", Int32.self, id),
+                        let implicitId = try? swift_getFieldValue("implicitID", Int32.self, id)
+                    else {
+                        return nil
+                    }
+                    if implicitId == 0 {
+                        return Int(index) as? ID
+                    }
+                    return Int(implicitId) as? ID
+                }
+                return _openExistential(element.id.base, do: project)
+            }
+            return nil
         }
 
-        @inlinable
+        public func index<ID: Hashable, C: Collection>(in collection: C) -> C.Index? where C.Element == ID {
+            guard let selection = id(as: ID.self) else { return nil }
+            let index = collection.firstIndex(where: { $0 == selection })
+            return index
+        }
+
         public func selection<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *),
                 let tag = tag(as: ID.self)
@@ -475,6 +503,20 @@ struct VariadicView_Previews: PreviewProvider {
         Group {
             ZStack {
                 VariadicViewAdapter {
+                    Text("Line 1")
+                    Text("Line 2")
+                } content: { source in
+                    VStack {
+                        ForEachSubview(source) { index, subview in
+                            Text(subview.id(as: Int.self)?.description ?? "nil")
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Implicit ID")
+
+            ZStack {
+                VariadicViewAdapter {
                     Text("Line 1").id("1")
                     Text("Line 2").id("2")
                 } content: { source in
@@ -506,6 +548,21 @@ struct VariadicView_Previews: PreviewProvider {
                 }
             }
             .previewDisplayName("ForEach")
+
+            ZStack {
+                VariadicViewAdapter {
+                    ForEach(PreviewCases.allCases, id: \.self) {
+                        Text($0.rawValue.description)
+                    }
+                } content: { source in
+                    VStack {
+                        ForEachSubview(source) { index, subview in
+                            Text(subview.index(in: PreviewCases.allCases)?.description ?? "nil")
+                        }
+                    }
+                }
+            }
+            .previewDisplayName("Index")
 
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
                 ZStack {

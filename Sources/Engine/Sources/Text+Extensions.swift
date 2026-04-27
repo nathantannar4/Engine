@@ -31,6 +31,17 @@ extension Text {
         self = Text(content)
     }
 
+    @_disfavoredOverload
+    public init?(
+        _ key: LocalizedStringKey?,
+        tableName: String? = nil,
+        bundle: Bundle? = nil,
+        comment: StaticString? = nil
+    ) {
+        guard let key else { return nil }
+        self = Text(key, tableName: tableName, bundle: bundle, comment: comment)
+    }
+
     /// Returns the verbatim value if the text stores a `String`
     public var verbatim: String? {
         guard
@@ -136,6 +147,12 @@ extension Text {
         }
         return _resolve(in: environment).storage.resolveNSAttributedString()
     }
+
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    public var attachment: Image? {
+        guard let storage else { return nil }
+        return try? swift_getFieldValue("image", Image.self, storage)
+    }
 }
 
 extension Text {
@@ -163,6 +180,24 @@ extension Text {
 
     private var layout: Text.TypeLayout {
         unsafeBitCast(self, to: Text.TypeLayout.self)
+    }
+
+    struct AttachmentTextStorageTypeLayout {
+        var metadata: (Any.Type, UInt)
+        var image: Image?
+    }
+
+    private var storageLayout: Text.TypeLayout {
+        unsafeBitCast(self, to: Text.TypeLayout.self)
+    }
+
+    private var storage: AnyObject? {
+        switch layout.storage {
+        case .verbatim:
+            return nil
+        case .anyTextStorage(let storage):
+            return storage
+        }
     }
 }
 
@@ -199,7 +234,7 @@ extension Text {
             @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
             init(lineStyle: Text.LineStyle) {
                 self.style = NSUnderlineStyle(lineStyle)
-                self.color = Mirror(reflecting: lineStyle).descendant("color") as? Color
+                self.color = try? swift_getFieldValue("color", Color.self, lineStyle)
             }
 
             @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -606,45 +641,44 @@ extension Text {
             case .rounded:
                 attributes.fontDesign = .rounded
             case .anyTextModifier(let modifier):
-                let mirror = Mirror(reflecting: modifier)
                 let className = String(describing: type(of: modifier))
                 switch className {
                 case "TextWidthModifier":
                     if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
-                        let width = mirror.descendant("width") as? CGFloat
+                        let width = try? swift_getFieldValue("width", CGFloat.self, modifier)
                     {
                         attributes.fontWidth = width
                     }
                 case "TextDesignModifier":
-                    if let design = mirror.descendant("design") as? Font.Design {
+                    if let design = try? swift_getFieldValue("design", Font.Design.self, modifier){
                         attributes.fontDesign = design
                     }
                 case "UnderlineTextModifier":
                     if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
-                        let lineStyle = mirror.descendant("lineStyle") as? Text.LineStyle
+                        let lineStyle = try? swift_getFieldValue("lineStyle", Text.LineStyle.self, modifier)
                     {
                         attributes.underlineStyle = .init(lineStyle: lineStyle)
                     }
                 case "BoldTextModifier":
-                    if let isActive = mirror.descendant("isActive") as? Bool {
+                    if let isActive = try? swift_getFieldValue("isActive", Bool.self, modifier) {
                         attributes.isBold = isActive
                     }
                 case "StrikethroughTextModifier":
                     if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
-                        let lineStyle = mirror.descendant("lineStyle") as? Text.LineStyle
+                        let lineStyle = try? swift_getFieldValue("lineStyle", Text.LineStyle.self, modifier)
                     {
                         attributes.strikethroughStyle = .init(lineStyle: lineStyle)
                     }
                 case "MonospacedTextModifier":
-                    if let isActive = mirror.descendant("isActive") as? Bool {
+                    if let isActive = try? swift_getFieldValue("isActive", Bool.self, modifier) {
                         attributes.isMonospaced = isActive
                     }
                 case "MonospacedDigitTextModifier":
                     attributes.isMonospacedDigit = true
                 case "TextScaleModifier":
                     if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *),
-                        let scale = mirror.descendant("scale") as? Text.Scale,
-                        mirror.descendant("isEnabled") as? Bool ?? true
+                        let scale = try? swift_getFieldValue("scale", Text.Scale.self, modifier),
+                        (try? swift_getFieldValue("isEnabled", Bool.self, modifier)) ?? true
                     {
                         attributes.scale = .init(scale: scale)
                     }
@@ -671,16 +705,15 @@ extension Text {
     }
 
     private func resolve(
-        storage: Any,
+        storage: AnyObject,
         attributes: ResolvedAttributes
     ) -> Resolved {
         let className = String(describing: type(of: storage))
         switch className {
         case "ConcatenatedTextStorage":
-            let mirror = Mirror(reflecting: storage)
             guard
-                let first = mirror.descendant("first") as? Text,
-                let second = mirror.descendant("second") as? Text
+                let first = try? swift_getFieldValue("first", Text.self, storage),
+                let second = try? swift_getFieldValue("second", Text.self, storage)
             else {
                 fallthrough
             }
@@ -692,7 +725,9 @@ extension Text {
             )
 
         case "AttachmentTextStorage":
-            guard let image = Mirror(reflecting: storage).descendant("image") as? Image else {
+            guard
+                let image = try? swift_getFieldValue("image", Image.self, storage)
+            else {
                 fallthrough
             }
             return Resolved(
@@ -727,7 +762,6 @@ extension NSTextAttachment: @unchecked Sendable { }
 
 // MARK: - Previews
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 struct Text_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
@@ -740,6 +774,13 @@ struct Text_Previews: PreviewProvider {
             }
 
             if Text(Optional<String>.none) == nil {
+                Text(verbatim: "Nil")
+            }
+
+            let optionalKey: LocalizedStringKey? = "Cancel"
+            Text(optionalKey)
+
+            if Text(Optional<LocalizedStringKey>.none) == nil {
                 Text(verbatim: "Nil")
             }
 

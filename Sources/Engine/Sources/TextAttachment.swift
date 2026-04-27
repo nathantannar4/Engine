@@ -12,7 +12,7 @@ extension Text {
     public init<S: StringProtocol, Content: View>(
         attachment: Content,
         environment: EnvironmentValues? = nil,
-        label: S
+        label: S?
     ) {
         self.init(
             attachment: attachment,

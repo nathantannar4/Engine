@@ -243,12 +243,7 @@ private func swift_getField_slow(
         var field = FieldReflectionMetadata()
         let fieldType = swift_reflectionMirror_recursiveChildMetadata(instanceType, index: i, fieldMetadata: &field)
         defer { field.dealloc?(field.name) }
-        guard
-            let name = field.name.map({ String(utf8String: $0) }),
-            name == key
-        else {
-            continue
-        }
+        guard field.name == key else { continue }
         let offset = swift_reflectionMirror_recursiveChildOffset(instanceType, index: i)
         return Field(type: fieldType, offset: offset)
     }
@@ -299,10 +294,15 @@ private struct Field {
 private typealias Dealloc = @convention(c) (UnsafePointer<CChar>?) -> Void
 
 private struct FieldReflectionMetadata {
-    let name: UnsafePointer<CChar>? = nil
+    let identifier: UnsafePointer<CChar>? = nil
     let dealloc: Dealloc? = nil
     let isStrong: Bool = false
     let isVar: Bool = false
+
+    var name: String? {
+        guard let identifier else { return nil }
+        return String(utf8String: identifier)
+    }
 }
 
 @_silgen_name("c_swift_isClassType")

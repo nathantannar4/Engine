@@ -30,6 +30,11 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
     }
 
     @inlinable
+    public init(_ value: Value?, _ keyPath: KeyPath<EnvironmentValues, Value>) {
+        self.storage = value.map({ .value($0) }) ?? .environment(.init(keyPath))
+    }
+
+    @inlinable
     public var wrappedValue: Value {
         get {
             switch storage {
@@ -79,9 +84,14 @@ struct EnvironmentOrValue_Previews: PreviewProvider {
 
                 ChildView(value: .init("Constant Value"))
 
+                ChildView(value: .init("Constant Value", \.test))
+
                 Text("Environment:")
 
                 ChildView(value: .init(\.test))
+                    .environment(\.test, "test")
+
+                ChildView(value: .init(nil, \.test))
                     .environment(\.test, "test")
             }
         }

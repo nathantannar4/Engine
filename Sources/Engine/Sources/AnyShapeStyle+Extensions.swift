@@ -127,8 +127,10 @@ extension AnyShapeStyle {
             let className = String(describing: type(of: provider))
             if className == "AnyShapeStyle" {
                 let mirror = Mirror(reflecting: provider)
-                if let provider = mirror.descendant("storage", "box") {
-                    return resolve(provider: provider)
+                if let provider = try? swift_getFieldValue("storage", Any.self, provider),
+                    let box = try? swift_getFieldValue("box", Any.self, provider)
+                {
+                    return resolve(provider: box)
                 }
             } else if className == "Color", let color = provider as? Color {
                 return ResolvedStyle(kind: .color(color))
@@ -138,13 +140,14 @@ extension AnyShapeStyle {
                 let color = unsafeBitCast(provider as AnyObject, to: Color.self)
                 return ResolvedStyle(kind: .color(color))
             } else if className == "AnyGradient" {
-                let mirror = Mirror(reflecting: provider)
-                if let provider = mirror.descendant("provider") {
+                if let provider = try? swift_getFieldValue("provider", Any.self, provider) {
                     return resolve(provider: provider)
                 }
             } else if className.hasPrefix("GradientBox") {
-                let mirror = Mirror(reflecting: provider)
-                if let provider = mirror.descendant("base", "color", "provider") {
+                if let base = try? swift_getFieldValue("base", Any.self, provider),
+                    let color = try? swift_getFieldValue("color", Any.self, base),
+                    let provider = try? swift_getFieldValue("provider", Any.self, color)
+                {
                     return resolve(provider: provider)
                 }
             } else if className == "ForegroundStyle" {
@@ -166,18 +169,16 @@ extension AnyShapeStyle {
             } else if className == "WindowBackgroundShapeStyle" {
                 return ResolvedStyle(kind: .windowBackground)
             } else if className == "HierarchicalShapeStyle" {
-                let mirror = Mirror(reflecting: provider)
-                if let rawValue = mirror.descendant("id") as? UInt32,
+                if let rawValue = try? swift_getFieldValue("id", Int32.self, provider),
                    let level = ResolvedStyle.Kind.HierarchicalLevel(rawValue: Int(rawValue))
                 {
                     return ResolvedStyle(kind: .hierarchical(level, nil))
                 }
             } else if className.hasPrefix("ShapeStylePair") || className.hasPrefix("ShapeStyleTriple") {
-                let mirror = Mirror(reflecting: provider)
-                if let primary = mirror.descendant("primary") as? AnyShapeStyle,
-                   let secondary = mirror.descendant("secondary") as? AnyShapeStyle
+                if let primary = try? swift_getFieldValue("primary", AnyShapeStyle.self, provider),
+                   let secondary = try? swift_getFieldValue("secondary", AnyShapeStyle.self, provider)
                 {
-                    let tertiary = mirror.descendant("tertiary") as? AnyShapeStyle
+                    let tertiary = try? swift_getFieldValue("tertiary", AnyShapeStyle.self, provider)
                     return ResolvedStyle(
                         kind: .tuple(
                             primary,
@@ -187,43 +188,38 @@ extension AnyShapeStyle {
                     )
                 }
             } else if className.hasPrefix("ShapeStyleBox") {
-                let mirror = Mirror(reflecting: provider)
-                if let provider = mirror.descendant("base") {
-                    return resolve(provider: provider)
+                if let base = try? swift_getFieldValue("base", Any.self, provider) {
+                    return resolve(provider: base)
                 }
             } else if className == "SystemColorsStyle" {
                 return ResolvedStyle(kind: .color(.primary))
             } else if className.hasPrefix("_OpacityShapeStyle") {
-                let mirror = Mirror(reflecting: provider)
-                if let opacity = mirror.descendant("opacity") as? Float,
-                    let provider = mirror.descendant("style"),
-                    var resolved = resolve(provider: provider)
+                if let opacity = try? swift_getFieldValue("opacity", Float.self, provider),
+                    let style = try? swift_getFieldValue("style", Any.self, provider),
+                    var resolved = resolve(provider: style)
                 {
                     resolved.opacity *= Double(opacity)
                     return resolved
                 }
             } else if className.hasPrefix("_BlendModeShapeStyle") {
-                let mirror = Mirror(reflecting: provider)
-                if let blendMode = mirror.descendant("blendMode") as? BlendMode,
-                   let provider = mirror.descendant("style"),
-                   var resolved = resolve(provider: provider)
+                if let blendMode = try? swift_getFieldValue("blendMode", BlendMode.self, provider),
+                    let style = try? swift_getFieldValue("style", Any.self, provider),
+                    var resolved = resolve(provider: style)
                 {
                     resolved.blendMode = blendMode
                     return resolved
                 }
             } else if className.hasPrefix("_ShadowShapeStyle") {
-                let mirror = Mirror(reflecting: provider)
-                if let provider = mirror.descendant("style"),
-                    let resolved = resolve(provider: provider)
+                if let style = try? swift_getFieldValue("style", Any.self, provider),
+                    let resolved = resolve(provider: style)
                 {
                     return resolved
                 }
             } else if className.hasPrefix("OffsetShapeStyle") {
-                let mirror = Mirror(reflecting: provider)
-                if let offset = mirror.descendant("offset") as? Int,
+                if let offset = try? swift_getFieldValue("offset", Int.self, provider),
                     let level = ResolvedStyle.Kind.HierarchicalLevel(rawValue: offset),
-                    let provider = mirror.descendant("base"),
-                    var resolved = resolve(provider: provider)
+                    let base = try? swift_getFieldValue("base", Any.self, provider),
+                    var resolved = resolve(provider: base)
                 {
                     resolved.kind = .hierarchical(level, resolved.kind)
                     return resolved

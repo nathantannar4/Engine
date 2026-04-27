@@ -44,23 +44,25 @@ private enum ImageProvider {
     case image(Image.PlatformRepresentable)
 
     init?(for image: Image) {
-        guard let base = Mirror(reflecting: image).descendant("provider", "base") else {
+        guard
+            let provider = try? swift_getFieldValue("provider", Any.self, image),
+            let base = try? swift_getFieldValue("base", Any.self, provider)
+        else {
             return nil
         }
 
         let className = String(describing: type(of: base))
-        let mirror = Mirror(reflecting: base)
         switch className {
         case "NamedImageProvider":
-            guard let name = mirror.descendant("name") as? String else {
+            guard let name = try? swift_getFieldValue("name", String.self, base) else {
                 return nil
             }
-            if let location = mirror.descendant("location") {
+            if let location = try? swift_getFieldValue("location", Any.self, base) {
                 if String(describing: location) == "system" {
                     self = .system(name)
                 } else {
-                    let bundle = mirror.descendant("location", "bundle")
-                    self = .named(name, bundle as? Bundle)
+                    let bundle = try? swift_getFieldValue("location", Bundle.self, location)
+                    self = .named(name, bundle)
                 }
             } else {
                 self = .named(name, nil)
@@ -73,10 +75,10 @@ private enum ImageProvider {
             self = .image(image)
 
         case "CGImageProvider":
-            guard 
-                let image = mirror.descendant("image"),
-                let scale = mirror.descendant("scale") as? CGFloat,
-                let orientation = mirror.descendant("orientation") as? Image.Orientation
+            guard
+                let image = try? swift_getFieldValue("name", String.self, base),
+                let scale = try? swift_getFieldValue("scale", CGFloat.self, base),
+                let orientation = try? swift_getFieldValue("orientation", Image.Orientation.self, base)
             else {
                 return nil
             }

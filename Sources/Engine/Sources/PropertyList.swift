@@ -9,6 +9,28 @@ public protocol _AnyPropertyListKey {
 }
 
 struct PropertyList {
+
+    struct ID {
+        private nonisolated(unsafe) static let lock: os_unfair_lock_t = {
+            let lock = os_unfair_lock_t.allocate(capacity: 1)
+            lock.initialize(to: os_unfair_lock_s())
+            return lock
+        }()
+        private nonisolated(unsafe) static var seed: Int = .max
+
+        static func generate() -> Int {
+            defer {
+                os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(Self.lock) }
+                seed -= 1
+                if seed < 0 {
+                    seed = .max
+                }
+            }
+            return seed
+        }
+    }
+
+
     struct ElementLayout<Fields> {
         var metadata: (Any.Type, UInt)
         var fields: Fields
@@ -332,7 +354,7 @@ struct PropertyList {
                         length: lastValue.pointee.fields.length + 1,
                         skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
                         keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                        id: UniqueID.generate()
+                        id: ID.generate()
                     )
                 ),
                 value: newValue
@@ -351,7 +373,7 @@ struct PropertyList {
                         after: lastValue,
                         length: lastValue.pointee.fields.length + 1,
                         keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
-                        id: UniqueID.generate()
+                        id: ID.generate()
                     )
                 ),
                 value: newValue
@@ -408,25 +430,5 @@ extension UnsafeMutablePointer {
         withMemoryRebound(to: PropertyList.TypedElementLayout<Fields, T>.self, capacity: 1) { p in
             return body(&p.pointee)
         }
-    }
-}
-
-private struct UniqueID {
-    private nonisolated(unsafe) static let lock: os_unfair_lock_t = {
-        let lock = os_unfair_lock_t.allocate(capacity: 1)
-        lock.initialize(to: os_unfair_lock_s())
-        return lock
-    }()
-    private nonisolated(unsafe) static var seed: Int = .max
-
-    static func generate() -> Int {
-        defer {
-            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(Self.lock) }
-            seed -= 1
-            if seed < 0 {
-                seed = .max
-            }
-        }
-        return seed
     }
 }

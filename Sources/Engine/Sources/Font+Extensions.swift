@@ -41,7 +41,7 @@ extension Font {
             return resolved.ctFont as PlatformRepresentable
         }
         #endif
-        return FontProvider(for: self)?.resolved(in: environment())
+        return FontProvider(for: self, in: environment())?.resolved(in: environment())
     }
 }
 
@@ -51,14 +51,15 @@ private enum FontProvider {
     case platform(CTFont)
     case named(Font.PlatformRepresentable)
 
-    init?(for font: Font) {
-        guard let base = Mirror(reflecting: font).descendant("provider", "base") else {
+    init?(for font: Font, in environment: @autoclosure () -> EnvironmentValues? = nil) {
+        guard
+            let provider = try? swift_getFieldValue("provider", Any.self, font),
+            let base = try? swift_getFieldValue("base", Any.self, provider)
+        else {
             return nil
         }
 
         let className = String(describing: type(of: base))
-        let mirror = Mirror(reflecting: base)
-
         if let regex = try? NSRegularExpression(
             pattern: "ModifierProvider<(.*)>"
         ), let match = regex.firstMatch(
@@ -67,8 +68,9 @@ private enum FontProvider {
         ) {
             let modifier = className[Range(match.range(at: 1), in: className)!]
 
-            guard let sFont = mirror.descendant("base") as? Font,
-                  var font = sFont.toPlatformValue()
+            guard
+                let sFont = try? swift_getFieldValue("base", Font.self, base),
+                var font = sFont.toPlatformValue(in: environment())
             else {
                 return nil
             }
@@ -91,14 +93,19 @@ private enum FontProvider {
                 break
 
             case "WeightModifier":
-                if let weight = mirror.descendant("modifier", "weight", "value") as? CGFloat {
+                if let modifier = try? swift_getFieldValue("modifier", Any.self, base),
+                    let weight = try? swift_getFieldValue("weight", Any.self, modifier),
+                    let weight = try? swift_getFieldValue("value", CGFloat.self, weight)
+                {
                     font = font.with(weight: Font.PlatformRepresentable.Weight(rawValue: weight)) ?? font
                 }
                 break
 
             case "WidthModifier":
                 if #available(watchOS 9.0, *) {
-                    if let width = mirror.descendant("modifier", "width") as? CGFloat {
+                    if let modifier = try? swift_getFieldValue("modifier", Any.self, base),
+                        let width = try? swift_getFieldValue("width", CGFloat.self, modifier)
+                    {
                         font = font.with(width: Font.PlatformRepresentable.Width(rawValue: width)) ?? font
                     }
                 }
@@ -108,20 +115,25 @@ private enum FontProvider {
                 break
 
             case "FeatureSettingModifier":
-                if let type = mirror.descendant("modifier", "type") as? Int,
-                   let selector = mirror.descendant("modifier", "selector") as? Int
+                if let modifier = try? swift_getFieldValue("modifier", Any.self, base),
+                    let type = try? swift_getFieldValue("type", Int.self, modifier),
+                    let selector = try? swift_getFieldValue("selector", Int.self, modifier)
                 {
                     font = font.with(featureType: type, selector: selector) ?? font
                 }
                 break
 
             case "PointSizeModifier":
-                if let pointSize = mirror.descendant("modifier", "pointSize") as? CGFloat {
+                if let modifier = try? swift_getFieldValue("modifier", Any.self, base),
+                    let pointSize = try? swift_getFieldValue("pointSize", CGFloat.self, modifier)
+                {
                     font = font.withSize(pointSize)
                 }
 
             case "ScalePointSizeModifier":
-                if let scaleFactor = mirror.descendant("modifier", "scaleFactor") as? CGFloat {
+                if let modifier = try? swift_getFieldValue("modifier", Any.self, base),
+                    let scaleFactor = try? swift_getFieldValue("scaleFactor", CGFloat.self, modifier)
+                {
                     let size = font.pointSize * scaleFactor
                     font = font.withSize(size)
                 }
@@ -137,31 +149,31 @@ private enum FontProvider {
 
         switch className {
         case "SystemProvider":
-            guard let size = mirror.descendant("size") as? CGFloat else {
+            guard let size = try? swift_getFieldValue("size", CGFloat.self, base) else {
                 return nil
             }
-            let weight = mirror.descendant("weight") as? Font.Weight
-            let design = mirror.descendant("design") as? Font.Design
+            let weight = try? swift_getFieldValue("weight", Font.Weight.self, base)
+            let design = try? swift_getFieldValue("design", Font.Design.self, base)
             self = .system(size: size, weight: weight, design: design)
 
         case "TextStyleProvider":
-            guard let style = mirror.descendant("style") as?  Font.TextStyle else {
+            guard let style = try? swift_getFieldValue("style", Font.TextStyle.self, base) else {
                 return nil
             }
-            let weight = mirror.descendant("weight") as? Font.Weight
-            let design = mirror.descendant("design") as? Font.Design
+            let weight = try? swift_getFieldValue("weight", Font.Weight.self, base)
+            let design = try? swift_getFieldValue("design", Font.Design.self, base)
             self = .textStyle(style, weight: weight, design: design)
 
         case "PlatformFontProvider":
-            guard let font = mirror.descendant("font") as? Font.PlatformRepresentable else {
+            guard let font = try? swift_getFieldValue("font", Font.PlatformRepresentable.self, base) else {
                 return nil
             }
             self = .platform(font)
 
         case "NamedProvider":
             guard
-                let name = mirror.descendant("name") as? String,
-                let size = mirror.descendant("size") as? CGFloat,
+                let name = try? swift_getFieldValue("name", String.self, base),
+                let size = try? swift_getFieldValue("size", CGFloat.self, base),
                 let font = Font.PlatformRepresentable(name: name, size: size)
             else {
                 return nil
@@ -170,8 +182,8 @@ private enum FontProvider {
             #if os(macOS)
             self = .named(font)
             #else
-            if let textStyle = mirror.descendant("textStyle") as? Font.TextStyle,
-               let textStyle = Font.PlatformRepresentable.TextStyle(textStyle)
+            if let style = try? swift_getFieldValue("textStyle", Font.TextStyle.self, base),
+                let textStyle = Font.PlatformRepresentable.TextStyle(style)
             {
                 let metrics = UIFontMetrics(forTextStyle: textStyle)
                 self = .named(metrics.scaledFont(for: font))
@@ -464,10 +476,10 @@ fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
 
 fileprivate extension Font.PlatformRepresentable.Weight {
     init?(_ weight: Font.Weight) {
-        guard let rawValue = Mirror(reflecting: weight).descendant("value") as? CGFloat else {
+        guard let value = try? swift_getFieldValue("value", CGFloat.self, weight) else {
             return nil
         }
-        self = Font.PlatformRepresentable.Weight(rawValue)
+        self = Font.PlatformRepresentable.Weight(value)
     }
 }
 

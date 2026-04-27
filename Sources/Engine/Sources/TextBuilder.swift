@@ -11,18 +11,20 @@ public struct TextBuilder {
 
     public static func buildBlock() -> [Text] { [] }
 
-    public static func buildPartialBlock(
-        first: Void
-    ) -> [Text] { [] }
+    public static func buildPartialBlock(first: Void) -> [Text] { [] }
 
-    public static func buildPartialBlock(
-        first: Never
-    ) -> [Text] {}
+    public static func buildPartialBlock(first: Never) -> [Text] {}
 
     public static func buildExpression(
         _ component: Text?
     ) -> [Text] {
         guard let component else { return [] }
+        return [component]
+    }
+
+    public static func buildExpression(
+        _ component: Text
+    ) -> [Text] {
         return [component]
     }
 
@@ -89,7 +91,6 @@ public struct TextBuilder {
         accumulated + next
     }
 }
-
 
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
