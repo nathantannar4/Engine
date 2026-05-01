@@ -7,6 +7,13 @@ import SwiftUI
 /// Accessors to internal keys ``Engine.EnvironmentKeyVisitor``
 extension EnvironmentValues {
 
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
+    public var hostingController: UIViewController? {
+        self["WithCurrentHostingControllerKey"]
+    }
+    #endif
+
     /// The value for the ``.labelsHidden(_)`` modifier
     public var labelsHidden: Bool {
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
@@ -79,8 +86,16 @@ extension EnvironmentValues {
 
     /// The value for the ``.lineLimit(_, reservesSpace: Bool)`` modifier
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    public var lowerLineLimit: Int? {
+    public var lineLimitMininum: Int? {
         self["LowerLineLimitKey"]
+    }
+
+    /// The value for the ``.lineLimit(_, reservesSpace: Bool)`` modifier
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
+    public var lineLimitRange: ClosedRange<Int>? {
+        let min = lineLimitMininum ?? 0
+        let max = lineLimit ?? Int.max
+        return min...max
     }
 
     /// The value for the ``.textScale(_)`` modifier
@@ -234,14 +249,42 @@ struct EnvironmentValues_Previews: PreviewProvider {
                 }
                 .baselineOffset(10)
 
-                EnvironmentValuePreview(keyPath: \.lowerLineLimit) {
+                HStack {
                     Text("Line Limit")
-                } content: { lowerLineLimit in
-                    Text(lowerLineLimit ?? -1, format: .number)
-                }
-                .lineLimit(2...3)
-            }
 
+                    Divider()
+                        .fixedSize()
+
+                    EnvironmentValueReader(\.lineLimitMininum) { lineLimitMininum in
+                        Text(lineLimitMininum ?? -1, format: .number)
+                    }
+                    .lineLimit(2...3)
+
+                    Divider()
+                        .fixedSize()
+
+                    EnvironmentValueReader(\.lineLimitRange) { lineLimitRange in
+                        Text(lineLimitRange?.description ?? "nil")
+                    }
+                    .lineLimit(2...3)
+
+                    Divider()
+                        .fixedSize()
+
+                    EnvironmentValueReader(\.lineLimitRange) { lineLimitRange in
+                        Text(lineLimitRange?.description ?? "nil")
+                    }
+                    .lineLimit(2...)
+
+                    Divider()
+                        .fixedSize()
+
+                    EnvironmentValueReader(\.lineLimitRange) { lineLimitRange in
+                        Text(lineLimitRange?.description ?? "nil")
+                    }
+                    .lineLimit(...3)
+                }
+            }
 
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                 EnvironmentValuePreview(keyPath: \.textScale) {

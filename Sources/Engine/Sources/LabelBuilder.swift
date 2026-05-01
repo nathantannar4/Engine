@@ -62,6 +62,12 @@ public struct LabelElementBuilder {
     }
 
     public static func buildPartialBlock(
+        first component: Label<Text, Image>
+    ) -> [LabelElementComponent] {
+        [.text(component.title), .image(component.icon)]
+    }
+
+    public static func buildPartialBlock(
         component: [LabelElementComponent]
     ) -> [LabelElementComponent] {
         component
@@ -208,6 +214,18 @@ struct LabelBuilder_Previews: PreviewProvider {
                     Text("On Subtitle")
                 } else {
                     Text("Off Subtitle")
+                }
+            }
+
+            Label {
+                Label("Title", systemImage: "apple.logo")
+            }
+
+            Label {
+                Label {
+                    Text("Title")
+                } icon: {
+                    Image(systemName: "apple.logo")
                 }
             }
         }

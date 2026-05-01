@@ -15,6 +15,7 @@ public typealias PlatformHostingController<Content: View> = UIHostingController<
 public protocol AnyHostingController: PlatformViewController {
 
     var disableSafeArea: Bool { get set }
+    var transaction: Transaction? { get }
     func render()
 }
 
@@ -30,7 +31,7 @@ open class HostingController<
     @available(macOS 13.3, iOS 13.0, tvOS 13.0, *)
     public var disablesSafeArea: Bool {
         get {
-            #if os(iOS) || os(tvOS)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             return _disableSafeArea
             #else
             return safeAreaRegions.isEmpty
@@ -40,7 +41,7 @@ open class HostingController<
             if #available(iOS 16.4, tvOS 16.4, *) {
                 safeAreaRegions = newValue ? [] : .all
             }
-            #if os(iOS) || os(tvOS)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             _disableSafeArea = newValue
             #endif
         }
@@ -56,11 +57,7 @@ open class HostingController<
         }
         set {
             guard let view else { return }
-            do {
-                try swift_setFieldValue("allowUIKitAnimations", newValue, view)
-            } catch {
-                print("Failed to set `allowUIKitAnimations`, this is unexpected please file an issue =")
-            }
+            try? swift_setFieldValue("allowUIKitAnimations", newValue, view)
         }
     }
 
@@ -95,7 +92,7 @@ open class HostingController<
     #endif
 
     /// The pending transaction that was used to trigger a content update
-    public private(set) var transaction: Transaction?
+    fileprivate var updateTransaction: Transaction?
 
     public init(content: Content) {
         super.init(rootView: content)
@@ -114,7 +111,7 @@ open class HostingController<
 
     open func update(content: Content, transaction: Transaction) {
         self.content = content
-        self.transaction = transaction
+        self.updateTransaction = transaction
         #if os(iOS)
         if shouldRenderForContentUpdate {
             withCATransaction {
@@ -135,16 +132,13 @@ open class HostingController<
                 allowUIKitAnimationsForNextUpdate = true
             }
             func setAllowUIKitAnimations(hostingView: AnyHostingView) {
-                do {
-                    if #available(iOS 18.1, tvOS 18.1, *) {
-                        var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView)
+                if #available(iOS 18.1, tvOS 18.1, *) {
+                    if var allowUIKitAnimations = try? swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView) {
                         allowUIKitAnimations += 1
-                        try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
-                    } else {
-                        try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
+                        try? swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
                     }
-                } catch {
-                    print("Failed to allow UIKit animations, this is unexpected please file an issue =")
+                } else {
+                    try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
                 }
             }
             func setAllowUIKitAnimations(children: [UIViewController]) {
@@ -162,12 +156,12 @@ open class HostingController<
 
     open override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        transaction = nil
+        updateTransaction = nil
     }
     #elseif os(macOS)
     open override func viewDidLayout() {
         super.viewDidLayout()
-        transaction = nil
+        updateTransaction = nil
     }
     #endif
 }
@@ -190,6 +184,13 @@ extension PlatformHostingController: AnyHostingController {
             _disableSafeArea = newValue
             #endif
         }
+    }
+
+    public var transaction: Transaction? {
+        if let hostingController = self as? HostingController<Content> {
+            return hostingController.updateTransaction
+        }
+        return nil
     }
 
     public func render() {

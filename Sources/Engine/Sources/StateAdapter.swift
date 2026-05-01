@@ -13,7 +13,7 @@ public struct StateAdapter<Value, Content: View>: View {
 
     public init(
         initialValue: Value,
-        content: @escaping (Binding<Value>) -> Content
+        @ViewBuilder content: @escaping (Binding<Value>) -> Content
     ) {
         self._value = State(wrappedValue: initialValue)
         self.content = content

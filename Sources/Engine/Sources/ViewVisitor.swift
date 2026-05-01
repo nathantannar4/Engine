@@ -42,7 +42,7 @@ public typealias TypeDescriptor = EngineCore.TypeDescriptor
 /// The ``TypeDescriptor`` for the `View` protocol
 public typealias ViewProtocolDescriptor = EngineCore.ViewProtocolDescriptor
 
-#if os(iOS) || os(tvOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 
 /// The ``TypeDescriptor`` for the `UIViewRepresentable` protocol
 public typealias UIViewRepresentableProtocolDescriptor = EngineCore.UIViewRepresentableProtocolDescriptor

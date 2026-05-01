@@ -23,6 +23,10 @@ public struct Tuple<Values> {
     public var values: Values
 
     public var count: Int {
+        Self.count
+    }
+
+    public static var count: Int {
         let metadata = Metadata<TupleMetadata>(Values.self)!
         return metadata[\.numberOfElements]
     }

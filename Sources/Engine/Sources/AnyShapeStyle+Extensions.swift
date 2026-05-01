@@ -126,7 +126,6 @@ extension AnyShapeStyle {
         func resolve(provider: Any) -> ResolvedStyle? {
             let className = String(describing: type(of: provider))
             if className == "AnyShapeStyle" {
-                let mirror = Mirror(reflecting: provider)
                 if let provider = try? swift_getFieldValue("storage", Any.self, provider),
                     let box = try? swift_getFieldValue("box", Any.self, provider)
                 {
