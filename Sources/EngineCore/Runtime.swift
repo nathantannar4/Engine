@@ -2,7 +2,6 @@
 // Copyright (c) Nathan Tannar
 //
 
-import os.log
 import Foundation
 
 @inline(__always)
@@ -231,7 +230,6 @@ private func swift_getField(
         FieldLookupCache.shared[type, key] = field
         return field
     } catch {
-        os_log(.error, log: .default, "Failed to resolve field %{public}@ on type %{public}@.", key, String(describing: type))
         throw error
     }
 }

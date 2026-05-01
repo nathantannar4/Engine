@@ -2,6 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
+import os.log
 import SwiftUI
 
 #if !os(watchOS)
@@ -52,12 +53,20 @@ open class HostingController<
     public var allowUIKitAnimations: Int32 {
         get {
             guard let view else { return 0 }
-            let result = try? swift_getFieldValue("allowUIKitAnimations", Int32.self, view)
-            return result ?? 0
+            do {
+                return try swift_getFieldValue("allowUIKitAnimations", Int32.self, view)
+            } catch {
+                os_log(.error, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
+                return 0
+            }
         }
         set {
             guard let view else { return }
-            try? swift_setFieldValue("allowUIKitAnimations", newValue, view)
+            do {
+                try swift_setFieldValue("allowUIKitAnimations", newValue, view)
+            } catch {
+                os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
+            }
         }
     }
 
@@ -69,8 +78,12 @@ open class HostingController<
                 return allowUIKitAnimations > 0
             } else {
                 guard let view else { return false }
-                let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
-                return result ?? false
+                do {
+                    return try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
+                } catch {
+                    os_log(.error, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                    return false
+                }
             }
         }
         set {
@@ -78,7 +91,11 @@ open class HostingController<
                 allowUIKitAnimations += 1
             } else {
                 guard let view else { return }
-                try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
+                do {
+                    try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
+                } catch {
+                    os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                }
             }
         }
     }
@@ -133,12 +150,19 @@ open class HostingController<
             }
             func setAllowUIKitAnimations(hostingView: AnyHostingView) {
                 if #available(iOS 18.1, tvOS 18.1, *) {
-                    if var allowUIKitAnimations = try? swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView) {
+                    do {
+                        var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView)
                         allowUIKitAnimations += 1
-                        try? swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
+                        try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
+                    } catch {
+                        os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
                     }
                 } else {
-                    try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
+                    do {
+                        try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
+                    } catch {
+                        os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                    }
                 }
             }
             func setAllowUIKitAnimations(children: [UIViewController]) {
