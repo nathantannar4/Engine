@@ -5,20 +5,28 @@
 import os.log
 import SwiftUI
 
-#if !os(watchOS)
+#if os(watchOS)
+import WatchKit
+#endif
 
 #if os(macOS)
 public typealias PlatformHostingController<Content: View> = NSHostingController<Content>
+#elseif os(watchOS)
+public typealias PlatformHostingController<Content: View> = WKHostingController<Content>
 #else
 public typealias PlatformHostingController<Content: View> = UIHostingController<Content>
 #endif
 
+#if !os(watchOS)
 public protocol AnyHostingController: PlatformViewController {
 
+    #if os(iOS) || os(tvOS) || os(visionOS)
     var disableSafeArea: Bool { get set }
+    #endif
     var transaction: Transaction? { get }
     func render()
 }
+#endif
 
 open class HostingController<
     Content: View
@@ -29,75 +37,26 @@ open class HostingController<
         set { rootView = newValue }
     }
 
-    @available(macOS 13.3, iOS 13.0, tvOS 13.0, *)
-    public var disablesSafeArea: Bool {
-        get {
-            #if os(iOS) || os(tvOS) || os(visionOS)
-            return _disableSafeArea
-            #else
-            return safeAreaRegions.isEmpty
-            #endif
-        }
-        set {
-            if #available(iOS 16.4, tvOS 16.4, *) {
-                safeAreaRegions = newValue ? [] : .all
-            }
-            #if os(iOS) || os(tvOS) || os(visionOS)
-            _disableSafeArea = newValue
-            #endif
+    #if os(watchOS)
+    public var rootView: Content {
+        didSet {
+            setNeedsBodyUpdate()
         }
     }
+    #endif
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     @available(iOS 18.1, tvOS 18.1, visionOS 2.1, *)
     public var allowUIKitAnimations: Int32 {
-        get {
-            guard let view else { return 0 }
-            do {
-                return try swift_getFieldValue("allowUIKitAnimations", Int32.self, view)
-            } catch {
-                os_log(.error, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
-                return 0
-            }
-        }
-        set {
-            guard let view else { return }
-            do {
-                try swift_setFieldValue("allowUIKitAnimations", newValue, view)
-            } catch {
-                os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
-            }
-        }
+        get { (view as! AnyHostingView).allowUIKitAnimations }
+        set { (view as! AnyHostingView).allowUIKitAnimations = newValue }
     }
 
     @available(iOS, introduced: 16.0, obsoleted: 18.1)
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     public var allowUIKitAnimationsForNextUpdate: Bool {
-        get {
-            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                return allowUIKitAnimations > 0
-            } else {
-                guard let view else { return false }
-                do {
-                    return try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, view)
-                } catch {
-                    os_log(.error, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
-                    return false
-                }
-            }
-        }
-        set {
-            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                allowUIKitAnimations += 1
-            } else {
-                guard let view else { return }
-                do {
-                    try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, view)
-                } catch {
-                    os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
-                }
-            }
-        }
+        get { (view as! AnyHostingView).allowUIKitAnimationsForNextUpdate }
+        set { (view as! AnyHostingView).allowUIKitAnimationsForNextUpdate = newValue }
     }
 
     @available(iOS 16.0, tvOS 16.0, *)
@@ -112,9 +71,15 @@ open class HostingController<
     fileprivate var updateTransaction: Transaction?
 
     public init(content: Content) {
+        #if os(watchOS)
+        self.rootView = content
+        super.init()
+        #else
         super.init(rootView: content)
+        #endif
     }
 
+    #if !os(watchOS)
     @available(iOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(tvOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(macOS, obsoleted: 10.15, renamed: "init(content:)")
@@ -125,6 +90,7 @@ open class HostingController<
     public required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    #endif
 
     open func update(content: Content, transaction: Transaction) {
         self.content = content
@@ -140,40 +106,8 @@ open class HostingController<
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     open override func viewWillLayoutSubviews() {
-        if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
-            UIView.inheritedAnimationDuration > 0 || view.layer.animationKeys()?.isEmpty == false
-        {
-            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                allowUIKitAnimations += 1
-            } else {
-                allowUIKitAnimationsForNextUpdate = true
-            }
-            func setAllowUIKitAnimations(hostingView: AnyHostingView) {
-                if #available(iOS 18.1, tvOS 18.1, *) {
-                    do {
-                        var allowUIKitAnimations = try swift_getFieldValue("allowUIKitAnimations", Int32.self, hostingView)
-                        allowUIKitAnimations += 1
-                        try swift_setFieldValue("allowUIKitAnimations", allowUIKitAnimations, hostingView)
-                    } catch {
-                        os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
-                    }
-                } else {
-                    do {
-                        try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", true, hostingView)
-                    } catch {
-                        os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
-                    }
-                }
-            }
-            func setAllowUIKitAnimations(children: [UIViewController]) {
-                for child in children {
-                    if let hostingView = child.view as? AnyHostingView {
-                        setAllowUIKitAnimations(hostingView: hostingView)
-                    }
-                    setAllowUIKitAnimations(children: child.children)
-                }
-            }
-            setAllowUIKitAnimations(children: children)
+        if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+            (view as! AnyHostingView).enableUIKitAnimationsIfNeeded()
         }
         super.viewWillLayoutSubviews()
     }
@@ -190,25 +124,15 @@ open class HostingController<
     #endif
 }
 
+#if !os(watchOS)
 extension PlatformHostingController: AnyHostingController {
 
+    #if os(iOS) || os(tvOS) || os(visionOS)
     public var disableSafeArea: Bool {
-        get {
-            #if os(macOS)
-            return false
-            #else
-            return _disableSafeArea
-            #endif
-        }
-        set {
-            if #available(macOS 13.3, iOS 16.4, tvOS 16.4, *) {
-                safeAreaRegions = newValue ? [] : .all
-            }
-            #if !os(macOS)
-            _disableSafeArea = newValue
-            #endif
-        }
+        get { _disableSafeArea }
+        set { _disableSafeArea = newValue }
     }
+    #endif
 
     public var transaction: Transaction? {
         if let hostingController = self as? HostingController<Content> {
@@ -221,6 +145,7 @@ extension PlatformHostingController: AnyHostingController {
         _render(seconds: 1 / 60)
     }
 }
+#endif
 
 #if os(iOS)
 extension AnyHostingController {
@@ -233,5 +158,3 @@ extension AnyHostingController {
     }
 }
 #endif
-
-#endif // !os(watchOS)

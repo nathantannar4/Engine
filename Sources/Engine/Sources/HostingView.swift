@@ -2,6 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
+import os.log
 import SwiftUI
 
 #if !os(watchOS)
@@ -13,6 +14,16 @@ public typealias PlatformHostingView<Content: View> = _UIHostingView<Content>
 #endif
 
 public protocol AnyHostingView: PlatformView {
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    @available(iOS 16.0, tvOS 16.0, *)
+    var allowUIKitAnimations: Int32 { get set }
+
+    @available(iOS, introduced: 16.0, obsoleted: 18.1)
+    @available(tvOS, introduced: 16.0, obsoleted: 18.1)
+    @available(visionOS, introduced: 1.0, obsoleted: 2.1)
+    var allowUIKitAnimationsForNextUpdate: Bool { get set }
+    #endif
 
     func render()
 }
@@ -32,7 +43,8 @@ open class HostingView<
                 do {
                     return try swift_getFieldValue("_rootView", Content.self, self)
                 } catch {
-                    fatalError("\(error)")
+                    os_log(.error, log: .default, "Failed to get `_rootView`. Please file an issue.")
+                    fatalError(error.localizedDescription)
                 }
             }
             #endif
@@ -51,7 +63,7 @@ open class HostingView<
                     try swift_setFieldValue("propertiesNeedingUpdate", flags, self)
                     setNeedsLayout()
                 } catch {
-                    fatalError("\(error)")
+                    os_log(.error, log: .default, "Failed to set `_rootView`. Please file an issue.")
                 }
             }
             #endif
@@ -70,34 +82,6 @@ open class HostingView<
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
-    @available(iOS 16.0, tvOS 16.0, *)
-    public var allowUIKitAnimations: Int32 {
-        get {
-            let result = try? swift_getFieldValue("allowUIKitAnimations", Int32.self, self)
-            return result ?? 0
-        }
-        set {
-            try? swift_setFieldValue("allowUIKitAnimations", newValue, self)
-        }
-    }
-
-    @available(iOS, introduced: 16.0, obsoleted: 18.1)
-    @available(tvOS, introduced: 16.0, obsoleted: 18.1)
-    @available(visionOS, introduced: 1.0, obsoleted: 2.1)
-    public var allowUIKitAnimationsForNextUpdate: Bool {
-        get {
-            let result = try? swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
-            return result ?? false
-        }
-        set {
-            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                allowUIKitAnimations += 1
-            } else {
-                try? swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
-            }
-        }
-    }
-
     @available(iOS 16.0, tvOS 16.0, visionOS 1.0, *)
     public var automaticallyAllowUIKitAnimationsForNextUpdate: Bool {
         get { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate }
@@ -166,14 +150,8 @@ open class HostingView<
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     open override func layoutSubviews() {
-        if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate,
-            UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false
-        {
-            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
-                allowUIKitAnimations += 1
-            } else {
-                allowUIKitAnimationsForNextUpdate = true
-            }
+        if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+            enableUIKitAnimationsIfNeeded()
         }
         super.layoutSubviews()
     }
@@ -272,9 +250,91 @@ open class HostingView<
 
 extension PlatformHostingView: AnyHostingView {
 
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    @available(iOS 16.0, tvOS 16.0, *)
+    public var allowUIKitAnimations: Int32 {
+        get {
+            do {
+                return try swift_getFieldValue("allowUIKitAnimations", Int32.self, self)
+            } catch {
+                os_log(.error, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
+                return 0
+            }
+        }
+        set {
+            do {
+                try swift_setFieldValue("allowUIKitAnimations", newValue, self)
+            } catch {
+                os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
+            }
+        }
+    }
+
+    @available(iOS, introduced: 16.0, obsoleted: 18.1)
+    @available(tvOS, introduced: 16.0, obsoleted: 18.1)
+    @available(visionOS, introduced: 1.0, obsoleted: 2.1)
+    public var allowUIKitAnimationsForNextUpdate: Bool {
+        get {
+            do {
+                return try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
+            } catch {
+                os_log(.error, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                return false
+            }
+        }
+        set {
+            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
+                if newValue {
+                    allowUIKitAnimations += 1
+                }
+            } else {
+                do {
+                    try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
+                } catch {
+                    os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                }
+            }
+        }
+    }
+    #endif
+
     public func render() {
         _renderForTest(interval: 1 / 60)
     }
+}
+
+extension AnyHostingView {
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    @available(iOS 16.0, tvOS 16.0, visionOS 1.0, *)
+    func enableUIKitAnimationsIfNeeded() {
+        if UIView.inheritedAnimationDuration > 0 || layer.animationKeys()?.isEmpty == false {
+            enableUIKitAnimations()
+        }
+    }
+
+    @available(iOS 16.0, tvOS 16.0, visionOS 1.0, *)
+    private func enableUIKitAnimations() {
+        func enableUIKitAnimations(hostingView: AnyHostingView) {
+            if #available(iOS 18.1, tvOS 18.1, visionOS 2.1, *) {
+                hostingView.allowUIKitAnimations += 1
+            } else {
+                hostingView.allowUIKitAnimationsForNextUpdate = true
+            }
+        }
+        func enableUIKitAnimations(subviews: [UIView]) {
+            for subview in subviews {
+                if let hostingView = subview as? AnyHostingView {
+                    hostingView.enableUIKitAnimationsIfNeeded()
+                } else {
+                    enableUIKitAnimations(subviews: subview.subviews)
+                }
+            }
+        }
+        enableUIKitAnimations(hostingView: self)
+        enableUIKitAnimations(subviews: subviews)
+    }
+    #endif
 }
 
 #if os(iOS) || os(tvOS) || os(visionOS)
