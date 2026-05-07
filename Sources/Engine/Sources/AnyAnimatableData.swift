@@ -143,7 +143,7 @@ final class AnyAnimatableDataStorage<
     }
 
     override func `as`<V: VectorArithmetic>(_: V.Type) -> V? {
-        guard Vector.self == Vector.self else { return nil }
+        guard Vector.self == V.self else { return nil }
         return unsafeBitCast(vector, to: V.self)
     }
 

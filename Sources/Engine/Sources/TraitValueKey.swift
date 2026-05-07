@@ -39,6 +39,21 @@ extension View {
             )
         )
     }
+
+    /// Conditionally writes the trait `Key` to the view
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    public func trait<Key: TraitValueKey>(
+        _ key: Key.Type,
+        _ value: Key.Value,
+        isEnabled: Bool
+    ) -> some View {
+        modifier(
+            _ConditionalTraitWritingModifier<TraitValueKeyBox<Key>>(
+                value: value,
+                isEnabled: isEnabled
+            )
+        )
+    }
 }
 
 extension VariadicView.Subview {

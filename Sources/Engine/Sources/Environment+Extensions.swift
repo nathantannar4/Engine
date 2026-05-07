@@ -113,7 +113,6 @@ extension EnvironmentValues {
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
     /// The value for the ``.textInputAutocapitalization(_)`` modifier
     @available(iOS 15.0, tvOS 15.0, watchOS 8.0, *)
-    @available(macOS, unavailable)
     public var textInputAutocapitalization: TextInputAutocapitalization {
         self["TextInputAutocapitalizationKey", default: TextInputAutocapitalization.never]
     }
@@ -121,17 +120,26 @@ extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     /// The value for the ``.textContentType(_)`` modifier
-    @available(macOS, unavailable)
-    @available(watchOS, unavailable)
     public var textContentType: UITextContentType? {
         let rawValue = self["TextContentTypeKey", as: UITextContentType.RawValue.self]
         return rawValue.map({ UITextContentType(rawValue: $0) })
+    }
+
+    /// The value for the ``.keyboardType(_)`` modifier
+    public var keyboardType: UIKeyboardType {
+        self["KeyboardTypeKey", default: UIKeyboardType.default]
     }
     #endif
 
     /// The value for the display corner radius
     public var displayCornerRadius: CGFloat? {
         self["DisplayCornerRadiusKey"]
+    }
+
+    /// The value for the color scheme of the system
+    public var colorSchemeContrast: ColorSchemeContrast {
+        get { _colorSchemeContrast }
+        set { _colorSchemeContrast = newValue }
     }
 
     /// The value for the color scheme of the system
@@ -144,6 +152,40 @@ extension EnvironmentValues {
         self["ExplicitPreferredColorSchemeKey"]
     }
 }
+
+#if os(iOS) || os(tvOS) || os(visionOS)
+@available(iOS 15.0, tvOS 15.0, watchOS 8.0, *)
+extension TextInputAutocapitalization {
+    enum Behaviour {
+        case never
+        case words
+        case sentences
+        case characters
+    }
+}
+
+extension UITextAutocapitalizationType {
+
+    @available(iOS 15.0, tvOS 15.0, *)
+    public init?(_ textInputAutocapitalization: TextInputAutocapitalization) {
+        guard
+            let behaviour = try? swift_getFieldValue("behavior", TextInputAutocapitalization.Behaviour?.self, textInputAutocapitalization)
+        else {
+            return nil
+        }
+        switch behaviour {
+        case .never:
+            self = .none
+        case .words:
+            self = .words
+        case .sentences:
+            self = .sentences
+        case .characters:
+            self = .allCharacters
+        }
+    }
+}
+#endif
 
 // MARK: - Previews
 
@@ -316,6 +358,17 @@ struct EnvironmentValues_Previews: PreviewProvider {
                 }
                 .textInputAutocapitalization(.characters)
             }
+            #endif
+
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            EnvironmentValuePreview(keyPath: \.keyboardType) {
+                TextField("Label", text: .constant(""))
+                    .fixedSize()
+
+            } content: { keyboardType in
+                Text(verbatim: "\(keyboardType)")
+            }
+            .keyboardType(.numberPad)
             #endif
 
             #if os(iOS) || os(tvOS) || os(visionOS)
