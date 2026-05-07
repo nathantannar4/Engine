@@ -37,6 +37,7 @@ struct EmptyShape_Previews: PreviewProvider {
             EmptyShape()
                 .fill(Color.red)
                 .frame(width: 100, height: 100)
+                .border(Color.red)
 
             Rectangle()
                 .fill(Color.blue)
@@ -48,7 +49,7 @@ struct EmptyShape_Previews: PreviewProvider {
             Rectangle()
                 .fill(Color.red)
                 .frame(width: 100, height: 100)
-                .scaleEffect(2)
+                .scaleEffect(1.25)
                 .clipShape {
                     Rectangle()
                 }
@@ -56,7 +57,7 @@ struct EmptyShape_Previews: PreviewProvider {
             Rectangle()
                 .fill(Color.yellow)
                 .frame(width: 100, height: 100)
-                .scaleEffect(2)
+                .scaleEffect(1.25)
                 .clipShape {
                     EmptyShape()
                 }

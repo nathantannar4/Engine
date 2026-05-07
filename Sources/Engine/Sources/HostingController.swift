@@ -4,6 +4,7 @@
 
 import os.log
 import SwiftUI
+import EngineCore
 
 #if os(watchOS)
 import WatchKit
@@ -23,22 +24,21 @@ public protocol AnyHostingController: PlatformViewController {
     #if os(iOS) || os(tvOS) || os(visionOS)
     var disableSafeArea: Bool { get set }
     #endif
-    var transaction: Transaction? { get }
     func render()
 }
 #endif
 
 open class HostingController<
     Content: View
->: PlatformHostingController<Content> {
+>: PlatformHostingController<HostingRootView<Content>> {
 
     public var content: Content {
-        get { rootView }
-        set { rootView = newValue }
+        get { rootView.content }
+        set { rootView.content = newValue }
     }
 
     #if os(watchOS)
-    public var rootView: Content {
+    public var rootView: HostingRootView<Content> {
         didSet {
             setNeedsBodyUpdate()
         }
@@ -67,15 +67,13 @@ open class HostingController<
     private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
     #endif
 
-    /// The pending transaction that was used to trigger a content update
-    fileprivate var updateTransaction: Transaction?
-
     public init(content: Content) {
+        let rootView = HostingRootView(content: content, transaction: Transaction())
         #if os(watchOS)
-        self.rootView = content
+        self.rootView = rootView
         super.init()
         #else
-        super.init(rootView: content)
+        super.init(rootView: rootView)
         #endif
     }
 
@@ -83,7 +81,7 @@ open class HostingController<
     @available(iOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(tvOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(macOS, obsoleted: 10.15, renamed: "init(content:)")
-    override init(rootView: Content) {
+    override init(rootView: HostingRootView<Content>) {
         fatalError("init(rootView:) has not been implemented")
     }
 
@@ -93,8 +91,18 @@ open class HostingController<
     #endif
 
     open func update(content: Content, transaction: Transaction) {
-        self.content = content
-        self.updateTransaction = transaction
+        rootView = HostingRootView(
+            content: content,
+            transaction: transaction
+        )
+        // Fixes `.transition` modifier
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+        #elseif os(macOS)
+        view.needsLayout = true
+        view.layoutSubtreeIfNeeded()
+        #endif
         #if os(iOS)
         if shouldRenderForContentUpdate {
             withCATransaction {
@@ -111,16 +119,6 @@ open class HostingController<
         }
         super.viewWillLayoutSubviews()
     }
-
-    open override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        updateTransaction = nil
-    }
-    #elseif os(macOS)
-    open override func viewDidLayout() {
-        super.viewDidLayout()
-        updateTransaction = nil
-    }
     #endif
 }
 
@@ -133,13 +131,6 @@ extension PlatformHostingController: AnyHostingController {
         set { _disableSafeArea = newValue }
     }
     #endif
-
-    public var transaction: Transaction? {
-        if let hostingController = self as? HostingController<Content> {
-            return hostingController.updateTransaction
-        }
-        return nil
-    }
 
     public func render() {
         _render(seconds: 1 / 60)

@@ -4,6 +4,7 @@
 
 import os.log
 import SwiftUI
+import EngineCore
 
 #if !os(watchOS)
 
@@ -30,9 +31,14 @@ public protocol AnyHostingView: PlatformView {
 
 open class HostingView<
     Content: View
->: PlatformHostingView<Content> {
+>: PlatformHostingView<HostingRootView<Content>> {
 
     public var content: Content {
+        get { _rootView.content }
+        set { _rootView.content = newValue }
+    }
+
+    public var _rootView: HostingRootView<Content> {
         get {
             #if os(macOS)
             return rootView
@@ -41,7 +47,7 @@ open class HostingView<
                 return rootView
             } else {
                 do {
-                    return try swift_getFieldValue("_rootView", Content.self, self)
+                    return try swift_getFieldValue("_rootView", HostingRootView<Content>.self, self)
                 } catch {
                     os_log(.error, log: .default, "Failed to get `_rootView`. Please file an issue.")
                     fatalError(error.localizedDescription)
@@ -110,7 +116,8 @@ open class HostingView<
     #endif
 
     public init(content: Content) {
-        super.init(rootView: content)
+        let rootView = HostingRootView(content: content, transaction: Transaction())
+        super.init(rootView: rootView)
         #if os(macOS)
         layer?.backgroundColor = nil
         #else
@@ -130,8 +137,23 @@ open class HostingView<
     @available(iOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(tvOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(macOS, obsoleted: 10.15, renamed: "init(content:)")
-    public required init(rootView: Content) {
+    public required init(rootView: HostingRootView<Content>) {
         fatalError("init(rootView:) has not been implemented")
+    }
+
+    open func update(content: Content, transaction: Transaction) {
+        _rootView = HostingRootView(
+            content: content,
+            transaction: transaction
+        )
+        // Fixes `.transition` modifier
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        setNeedsLayout()
+        layoutIfNeeded()
+        #elseif os(macOS)
+        needsLayout = true
+        layout()
+        #endif
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
@@ -145,6 +167,17 @@ open class HostingView<
             )
         let size = sizeThatFits(fittingSize)
         return size
+    }
+    #elseif os(macOS)
+    public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
+        var sizeThatFits = fittingSize
+        if let proposedWidth = proposal.width, proposedWidth != .infinity {
+            sizeThatFits.width = max(sizeThatFits.width, proposedWidth)
+        }
+        if let proposedHeight = proposal.height, proposedHeight != .infinity {
+            sizeThatFits.height = max(sizeThatFits.height, proposedHeight)
+        }
+        return sizeThatFits
     }
     #endif
 
@@ -344,5 +377,208 @@ fileprivate extension CGPoint {
     }
 }
 #endif
+
+// MARK: - Previews
+
+struct HostingView_Previews: PreviewProvider {
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    struct HostingViewAdapter<
+        Content: View
+    >: UIViewRepresentable {
+
+        var content: Content
+
+        typealias UIViewType = HostingView<Content>
+
+        init(
+            @ViewBuilder content: () -> Content
+        ) {
+            self.content = content()
+        }
+
+        func makeUIView(context: Context) -> UIViewType {
+            let uiView = HostingView(content: content)
+            return uiView
+        }
+
+        func updateUIView(_ uiView: UIViewType, context: Context) {
+            uiView.update(content: content, transaction: context.transaction)
+        }
+
+        @available(iOS 16.0, tvOS 16.0, *)
+        func sizeThatFits(
+            _ proposal: ProposedViewSize,
+            uiView: UIViewType,
+            context: Context
+        ) -> CGSize? {
+            return uiView.sizeThatFits(ProposedSize(proposal))
+        }
+
+        func _overrideSizeThatFits(
+            _ size: inout CGSize,
+            in proposedSize: _ProposedSize,
+            uiView: UIViewType
+        ) {
+            size = uiView.sizeThatFits(ProposedSize(proposedSize))
+        }
+    }
+    #else
+    struct HostingViewAdapter<
+        Content: View
+    >: NSViewRepresentable {
+
+        var content: Content
+
+        typealias NSViewType = HostingView<Content>
+
+        init(
+            @ViewBuilder content: () -> Content
+        ) {
+            self.content = content()
+        }
+
+        func makeNSView(context: Context) -> NSViewType {
+            let nsView = HostingView(content: content)
+            return nsView
+        }
+
+        func updateNSView(_ nsView: NSViewType, context: Context) {
+            nsView.update(content: content, transaction: context.transaction)
+        }
+
+        @available(macOS 13.0, *)
+        func sizeThatFits(
+            _ proposal: ProposedViewSize,
+            nsView: NSViewType,
+            context: Context
+        ) -> CGSize? {
+            return nsView.sizeThatFits(ProposedSize(proposal))
+        }
+
+        func _overrideSizeThatFits(
+            _ size: inout CGSize,
+            in proposedSize: _ProposedSize,
+            nsView: NSViewType
+        ) {
+            size = nsView.sizeThatFits(ProposedSize(proposedSize))
+        }
+    }
+    #endif
+
+    struct Preview: View {
+        var body: some View {
+            VStack {
+                StateAdapter(initialValue: false) { $isExpanded in
+                    VStack {
+                        HostingViewAdapter {
+                            Content(isExpanded: isExpanded)
+                        }
+
+                        Button {
+                            withAnimation {
+                                isExpanded.toggle()
+                            }
+                        } label: {
+                            Text("Toggle")
+                        }
+                    }
+                    .padding()
+                    .border(Color.red)
+                }
+
+                HostingViewAdapter {
+                    StateAdapter(initialValue: false) { $isExpanded in
+                        VStack {
+                            Content(isExpanded: isExpanded)
+
+                            Button {
+                                withAnimation {
+                                    isExpanded.toggle()
+                                }
+                            } label: {
+                                Text("Toggle")
+                            }
+                        }
+                        .padding()
+                        .border(Color.red)
+                    }
+                }
+            }
+        }
+
+        struct Content: View {
+            var isExpanded: Bool
+
+            var body: some View {
+                VStack {
+                    Text("Title")
+
+                    if isExpanded {
+                        Text("Subtitle")
+                            .transition(.scale)
+                    }
+                }
+                .frame(maxWidth: isExpanded ? .infinity : nil)
+                .padding()
+                .border(Color.red)
+            }
+        }
+    }
+
+    static var previews: some View {
+        ZStack {
+            Preview()
+        }
+
+        VStack {
+            HostingViewAdapter {
+                Text("Hello, World")
+                    .frame(maxWidth: .infinity)
+                    .background(Color.yellow)
+            }
+            .padding()
+            .background(Color.red)
+
+            ScrollView {
+                HostingViewAdapter {
+                    Text("Hello, World")
+                        .frame(maxWidth: .infinity)
+                        .background(Color.yellow)
+                }
+                .padding()
+                .background(Color.red)
+            }
+        }
+        .frame(width: 300, height: 300)
+        .previewLayout(.sizeThatFits)
+
+        VStack {
+            HostingViewAdapter {
+                Text("Hello, World")
+                    .background(Color.yellow)
+            }
+            .padding()
+            .background(Color.red)
+
+            ScrollView {
+                HostingViewAdapter {
+                    Text("Hello, World")
+                        .background(Color.yellow)
+                }
+                .padding()
+                .background(Color.red)
+            }
+        }
+        .frame(width: 300, height: 300)
+        .previewLayout(.sizeThatFits)
+
+        HostingViewAdapter {
+            Color.yellow
+        }
+        .frame(width: 300, height: 300)
+        .previewLayout(.sizeThatFits)
+    }
+}
 
 #endif

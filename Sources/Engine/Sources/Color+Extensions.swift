@@ -128,6 +128,21 @@ extension Color {
         return resolve(provider: base)
     }
     #endif
+
+    @inlinable
+    public static func random(
+        _ colorSpace: RGBColorSpace = .sRGB,
+        in range: ClosedRange<Double> = 0...1,
+        opacity: Double = 1
+    ) -> Color {
+        Color(
+            colorSpace,
+            red: Double.random(in: range),
+            green: Double.random(in: range),
+            blue: Double.random(in: range),
+            opacity: opacity
+        )
+    }
 }
 
 extension Color.PlatformRepresentable {

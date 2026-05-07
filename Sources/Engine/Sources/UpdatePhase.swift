@@ -35,7 +35,7 @@ public struct UpdatePhase: @preconcurrency DynamicProperty {
     }
 
     @MainActor
-    public mutating func update() {
+    public func update() {
         storage.wrappedValue.value.update()
     }
 
@@ -54,7 +54,7 @@ public struct UpdatePhase: @preconcurrency DynamicProperty {
         }
 
         public mutating func update() {
-            phase = phase &+ 1
+            phase &+= 1
         }
     }
 }
