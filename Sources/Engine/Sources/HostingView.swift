@@ -94,6 +94,16 @@ open class HostingView<
         set { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate = newValue }
     }
     private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
+
+    /// Set to `true` when embedded in a `UIViewRepresentable` to trigger a layout if `Content` size changes outside of a rootView update
+    public var invalidatesIntrinsicContentSizeOnIdealSizeChange: Bool = false
+
+    private var cachedIntrinsicContentSize: CGSize? {
+        didSet {
+            guard oldValue != nil, oldValue != cachedIntrinsicContentSize else { return }
+            invalidateIntrinsicContentSize()
+        }
+    }
     #endif
 
     public var isHitTestingPassthrough: Bool = {
@@ -114,6 +124,8 @@ open class HostingView<
         disablesSafeArea ? .zero : super.safeAreaInsets
     }
     #endif
+
+    private var isUpdating = false
 
     public init(content: Content) {
         let rootView = HostingRootView(content: content, transaction: Transaction())
@@ -142,16 +154,18 @@ open class HostingView<
     }
 
     open func update(content: Content, transaction: Transaction) {
+        isUpdating = true; defer { isUpdating = false }
+
         _rootView = HostingRootView(
             content: content,
             transaction: transaction
         )
         // Fixes `.transition` modifier
         #if os(iOS) || os(tvOS) || os(visionOS)
-        setNeedsLayout()
         layoutIfNeeded()
         #elseif os(macOS)
-        needsLayout = true
+        layoutIfNeeded()
+        #elseif os(macOS)
         layout()
         #endif
     }
@@ -187,6 +201,9 @@ open class HostingView<
             enableUIKitAnimationsIfNeeded()
         }
         super.layoutSubviews()
+        if invalidatesIntrinsicContentSizeOnIdealSizeChange, !isUpdating {
+            cachedIntrinsicContentSize = intrinsicContentSize
+        }
     }
     #endif
 

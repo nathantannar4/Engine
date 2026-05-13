@@ -4,7 +4,6 @@
 
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension View {
 
     /// Masks this view using the inverted alpha channel of the given view.
@@ -16,12 +15,33 @@ extension View {
         self.mask(
             Rectangle()
                 .scale(100)
-                .ignoresSafeArea()
+                .edgesIgnoringSafeArea(.all)
                 .overlay(
                     mask()
                         .blendMode(.destinationOut),
                     alignment: alignment
                 )
         )
+    }
+}
+
+// MARK: - Previews
+
+struct InvertedMask_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            Color.blue
+                .frame(height: 50)
+                .invertedMask {
+                    Text("Hello, World")
+                }
+
+            Color.blue
+                .frame(height: 50)
+                .invertedMask(alignment: .bottomTrailing) {
+                    Text("Hello, World")
+                }
+        }
+        .padding()
     }
 }

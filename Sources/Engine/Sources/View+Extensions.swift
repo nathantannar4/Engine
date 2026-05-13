@@ -14,7 +14,7 @@ extension View {
       @available(watchOS, introduced: 6.0, deprecated: 100000.0, message: "Use `mask(alignment:content:)` instead.")
       @available(visionOS, introduced: 1.0, deprecated: 100000.0, message: "Use `mask(alignment:content:)` instead.")
     public func mask<Mask: View>(
-        alignment: Alignment,
+        alignment: Alignment = .center,
         @ViewBuilder mask: () -> Mask
     ) -> some View {
         self.mask(
@@ -34,7 +34,7 @@ extension View {
       @available(watchOS, introduced: 6.0, deprecated: 100000.0, message: "Use `overlay(alignment:content:)` instead.")
       @available(visionOS, introduced: 1.0, deprecated: 100000.0, message: "Use `overlay(alignment:content:)` instead.")
     public func overlay<Overlay: View>(
-        alignment: Alignment,
+        alignment: Alignment = .center,
         @ViewBuilder overlay: () -> Overlay
     ) -> some View {
         self.overlay(
@@ -54,7 +54,7 @@ extension View {
       @available(watchOS, introduced: 6.0, deprecated: 100000.0, message: "Use `background(alignment:content:)` instead.")
       @available(visionOS, introduced: 1.0, deprecated: 100000.0, message: "Use `background(alignment:content:)` instead.")
     public func background<Background: View>(
-        alignment: Alignment,
+        alignment: Alignment = .center,
         @ViewBuilder background: () -> Background
     ) -> some View {
         self.background(

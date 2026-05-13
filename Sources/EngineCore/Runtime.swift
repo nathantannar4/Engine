@@ -128,26 +128,27 @@ struct SwiftFieldTypeMismatchError: Error, CustomStringConvertible {
 
 private func getFieldValue<Value, InstanceType>(
     _ key: String,
-    _ value: Value.Type,
+    _ valueType: Value.Type,
     _ instance: InstanceType
 ) throws -> Value {
     let field = try swift_getField(key, instance)
-    guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || value == Any.self else {
+    guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || valueType == Any.self else {
         throw SwiftFieldTypeMismatchError(
             key: key,
             expected: field.type,
-            received: value,
+            received: valueType,
             instance: type(of: instance)
         )
     }
     return try withUnsafeInstancePointer(instance) { pointer in
         func project<S>(_ type: S.Type) -> Value {
             let buffer = pointer.advanced(by: field.offset).assumingMemoryBound(to: S.self)
-            if value == Any.self {
+            if valueType == Any.self {
                 let box = buffer.pointee as Any
                 return box as! Value
             }
-            return unsafeBitCast(buffer.pointee, to: value)
+            let value = unsafeBitCast(buffer.pointee, to: valueType)
+            return value
         }
         return _openExistential(field.type, do: project)
     }

@@ -97,10 +97,8 @@ open class HostingController<
         )
         // Fixes `.transition` modifier
         #if os(iOS) || os(tvOS) || os(visionOS)
-        view.setNeedsLayout()
         view.layoutIfNeeded()
         #elseif os(macOS)
-        view.needsLayout = true
         view.layoutSubtreeIfNeeded()
         #endif
         #if os(iOS)
@@ -111,6 +109,31 @@ open class HostingController<
         }
         #endif
     }
+
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
+        let fittingSize = proposal
+            .replacingUnspecifiedDimensions(
+                by: CGSize(
+                    width: CGFloat.infinity,
+                    height: CGFloat.infinity
+                )
+            )
+        let size = sizeThatFits(in: fittingSize)
+        return size
+    }
+    #elseif os(macOS)
+    public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
+        var sizeThatFits = view.fittingSize
+        if let proposedWidth = proposal.width, proposedWidth != .infinity {
+            sizeThatFits.width = max(sizeThatFits.width, proposedWidth)
+        }
+        if let proposedHeight = proposal.height, proposedHeight != .infinity {
+            sizeThatFits.height = max(sizeThatFits.height, proposedHeight)
+        }
+        return sizeThatFits
+    }
+    #endif
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     open override func viewWillLayoutSubviews() {
