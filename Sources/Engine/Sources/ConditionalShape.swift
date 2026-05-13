@@ -72,6 +72,20 @@ extension ConditionalShape: Shape {
     }
 }
 
+extension ConditionalShape: InsettableShape where TrueContent: InsettableShape, FalseContent: InsettableShape {
+
+    public nonisolated func inset(
+        by amount: CGFloat
+    ) -> ConditionalShape<TrueContent.InsetShape, FalseContent.InsetShape> {
+        switch storage {
+        case .trueContent(let shape):
+            return .init(shape.inset(by: amount))
+        case .falseContent(let shape):
+            return .init(shape.inset(by: amount))
+        }
+    }
+}
+
 // MARK: - Previews
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)

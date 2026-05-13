@@ -54,8 +54,8 @@ public struct ShapeBuilder {
         S: Shape
     >(
         _ shape: S?
-    ) -> ConditionalShape<S, EmptyShape> {
-        shape.map { .init($0) } ?? .init(EmptyShape())
+    ) -> OptionalShape<S> {
+        OptionalShape(shape)
     }
 
     @_disfavoredOverload
@@ -74,6 +74,18 @@ public struct ShapeBuilder {
 }
 
 extension View {
+
+    /// Masks this view using the alpha channel of the given view.
+    @inlinable
+    @_disfavoredOverload
+    public func mask<S: Shape>(
+        alignment: Alignment = .center,
+        @ShapeBuilder shape: () -> S
+    ) -> some View {
+        mask(alignment: alignment) {
+            _ShapeView(shape: shape(), style: Color.black)
+        }
+    }
 
     /// Sets a clipping shape for this view.
     @inlinable
@@ -118,43 +130,59 @@ extension View {
 
 struct ShapeBuilder_Previews: PreviewProvider {
     static var previews: some View {
-        VStack {
-            StateAdapter(initialValue: true) { $flag in
-                VStack {
-                    HStack {
-                        Rectangle()
-                            .fill(Color.blue)
-                            .clipShape {
-                                Circle()
-                            }
+        ZStack {
+            Preview()
+        }
+    }
 
-                        Rectangle()
-                            .fill(Color.yellow)
-                            .clipShape {
-                                if flag {
-                                    Circle()
-                                } else {
-                                    RoundedRectangle(cornerRadius: 12)
-                                }
-                            }
+    struct Preview: View {
+        @State var flag = true
 
-                        Rectangle()
-                            .fill(Color.red)
-                            .overlay(
-                                ZStack(alignment: .topLeading) {
-                                    Circle()
-                                        .frame(width: 30, height: 30)
-                                        .offset(x: -15, y: -15)
-                                },
-                                alignment: .topLeading
-                            )
-                            .clipShape {
-                                if !flag {
-                                    RoundedRectangle(cornerRadius: 12)
-                                }
-                            }
+        var body: some View {
+            VStack {
+                Button {
+                    withAnimation {
+                        flag.toggle()
                     }
+                } label: {
+                    Text("Toggle")
+                }
 
+                HStack {
+                    Rectangle()
+                        .fill(Color.blue)
+                        .clipShape {
+                            Circle()
+                        }
+
+                    Rectangle()
+                        .fill(Color.yellow)
+                        .clipShape {
+                            if flag {
+                                Circle()
+                            } else {
+                                RoundedRectangle(cornerRadius: 12)
+                            }
+                        }
+
+                    Rectangle()
+                        .fill(Color.red)
+                        .overlay(
+                            ZStack(alignment: .topLeading) {
+                                Circle()
+                                    .frame(width: 30, height: 30)
+                                    .offset(x: -15, y: -15)
+                            },
+                            alignment: .topLeading
+                        )
+                        .clipShape {
+                            if !flag {
+                                RoundedRectangle(cornerRadius: 12)
+                            }
+                        }
+                }
+
+                HStack {
                     Rectangle()
                         .clipShape {
                             // Empty
@@ -166,13 +194,19 @@ struct ShapeBuilder_Previews: PreviewProvider {
                             s
                         }
                 }
-                #if os(iOS) || os(macOS)
-                .onTapGesture {
-                    withAnimation {
-                        flag.toggle()
-                    }
+
+                HStack {
+                    Rectangle()
+                        .mask {
+                            // Empty
+                        }
+
+                    let s: Circle? = nil
+                    Rectangle()
+                        .mask {
+                            s
+                        }
                 }
-                #endif
             }
         }
     }

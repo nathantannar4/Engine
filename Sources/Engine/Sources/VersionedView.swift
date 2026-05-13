@@ -21,31 +21,37 @@ import EngineCore
 @MainActor @preconcurrency
 public protocol VersionedView: PrimitiveView {
 
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     associatedtype V7Body: View = V6Body
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     @ViewBuilder @MainActor @preconcurrency var v7Body: V7Body { get }
 
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     associatedtype V6Body: View = V5Body
 
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     @ViewBuilder @MainActor @preconcurrency var v6Body: V6Body { get }
 
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     associatedtype V5Body: View = V4Body
 
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     @ViewBuilder @MainActor @preconcurrency var v5Body: V5Body { get }
 
+    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     associatedtype V4Body: View = V3Body
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     @ViewBuilder @MainActor @preconcurrency var v4Body: V4Body { get }
 
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     associatedtype V3Body: View = V2Body
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     @ViewBuilder @MainActor @preconcurrency var v3Body: V3Body { get }
 
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     associatedtype V2Body: View = V1Body
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -56,33 +62,33 @@ public protocol VersionedView: PrimitiveView {
     @ViewBuilder @MainActor @preconcurrency var v1Body: V1Body { get }
 }
 
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension VersionedView where V7Body == V6Body {
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     public var v7Body: V6Body { v6Body }
 }
 
+@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
 extension VersionedView where V6Body == V5Body {
-    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     public var v6Body: V6Body { v5Body }
 }
 
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension VersionedView where V5Body == V4Body {
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var v5Body: V5Body { v4Body }
 }
 
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension VersionedView where V4Body == V3Body {
-    @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var v4Body: V4Body { v3Body }
 }
 
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension VersionedView where V3Body == V2Body {
-    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public var v3Body: V3Body { v2Body }
 }
 
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension VersionedView where V2Body == V1Body {
-    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public var v2Body: V2Body { v1Body }
 }
 

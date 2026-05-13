@@ -180,7 +180,7 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
 
         public func index<ID: Hashable, C: Collection>(in collection: C) -> C.Index? where C.Element == ID {
             guard let selection = id(as: ID.self) else { return nil }
-            let index = collection.firstIndex(where: { $0 == selection })
+            let index = collection.firstIndex(where: { [selection] in $0 == selection })
             return index
         }
 
