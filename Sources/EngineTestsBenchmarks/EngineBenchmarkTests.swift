@@ -13,9 +13,10 @@ final class BenchmarkTests: XCTestCase {
         iterations: Int = 1,
         @ViewBuilder content: () -> Content
     ) -> TimeInterval {
+        let content = content()
         var time: TimeInterval = 0
         for _ in (0..<iterations) {
-            let host = HostingView(content: content())
+            let host = HostingView(content: content)
             time += host.measureRender()
         }
         return time / Double(iterations)
@@ -112,7 +113,8 @@ final class BenchmarkTests: XCTestCase {
             StaticConditionalContent()
                 .input(StaticFlag.self)
         }
-        print("\(dynamicRenderTime) vs. \(staticViewRenderTime)") // 0.67ms vs. 0.24ms
+        let percentCost = (dynamicRenderTime - staticViewRenderTime) / staticViewRenderTime
+        print("\(dynamicRenderTime) vs. \(staticViewRenderTime) (\(Int(percentCost * 100))% Increase)") // 0.67ms vs. 0.24ms (70% Increase)
         XCTAssertGreaterThan(dynamicRenderTime, staticViewRenderTime)
     }
 

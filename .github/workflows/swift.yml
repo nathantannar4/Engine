@@ -33,9 +33,9 @@ jobs:
     - name: Build for visionOS
       run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
     - name: Test for macOS
-      run: xcodebuild -scheme EngineTests -destination 'platform=macOS' test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks test
     - name: Test for iOS
-      run: xcodebuild -scheme EngineTests -destination 'platform=iOS Simulator,name=iPhone 16' test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 16' -skip-testing EngineTestsBenchmarks test
   build-26:
     runs-on: macos-latest
     steps:
@@ -59,6 +59,6 @@ jobs:
     - name: Build for visionOS
       run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
     - name: Test for macOS
-      run: xcodebuild -scheme EngineTests -destination 'platform=macOS' test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks test
     - name: Test for iOS
-      run: xcodebuild -scheme EngineTests -destination 'platform=iOS Simulator,name=iPhone 17' test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 17' -skip-testing EngineTestsBenchmarks test

@@ -30,6 +30,24 @@ extension Optional {
     }
 }
 
+extension Optional where Wrapped == String {
+
+    @usableFromInline
+    var value: String {
+        get {
+            switch self {
+            case .none:
+                return ""
+            case .some(let wrapped):
+                return wrapped
+            }
+        }
+        set {
+            self = newValue.isEmpty ? .none : .some(newValue)
+        }
+    }
+}
+
 extension Hashable {
 
     @usableFromInline

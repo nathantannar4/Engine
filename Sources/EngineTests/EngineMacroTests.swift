@@ -5,13 +5,10 @@ import XCTest
 #if canImport(EngineMacrosCore)
 @testable import EngineMacrosCore
 
-let testMacros: [String: Macro.Type] = [
-    "StyledView": StyledViewMacro.self,
-]
-
 @MainActor
 final class MacroTests: XCTestCase {
-    func testMacro() throws {
+
+    func testStyledViewMacro() throws {
         let sourceInput = """
         @StyledView
         struct LabelView<Label: View, Content: View>: StyledView {
@@ -163,7 +160,497 @@ final class MacroTests: XCTestCase {
         assertMacroExpansion(
             sourceInput,
             expandedSource: sourceOutput,
-            macros: testMacros
+            macros: [
+                "StyledView": StyledViewMacro.self,
+            ]
+        )
+    }
+
+    func testEnumKeyPathsMacro() {
+        let sourceInput = """
+        @EnumKeyPaths
+        enum PrimitiveUnion {
+            case empty
+            case integer(Int)
+            case double(Double)
+            case string(String)
+            case pair(int: Int, double: Double)
+            case triple(Int, Double, String)
+            case optionalInteger(Int?)
+            case optionalDouble(double: Double?)
+            case optionalPair(Int?, Double?)
+        
+            struct Box {
+                var value: Int
+            }
+            case box(Box)
+        
+            case `default`
+        }
+        """
+        let sourceOutput = """
+        enum PrimitiveUnion {
+            case empty
+            case integer(Int)
+            case double(Double)
+            case string(String)
+            case pair(int: Int, double: Double)
+            case triple(Int, Double, String)
+            case optionalInteger(Int?)
+            case optionalDouble(double: Double?)
+            case optionalPair(Int?, Double?)
+
+            struct Box {
+                var value: Int
+            }
+            case box(Box)
+
+            case `default`
+        
+            enum CaseKey {
+                case empty
+                case integer
+                case double
+                case string
+                case pair
+                case triple
+                case optionalInteger
+                case optionalDouble
+                case optionalPair
+                case box
+                case `default`
+            }
+        
+            var key: CaseKey {
+                switch self {
+                case .empty:
+                    return .empty
+                case .integer:
+                    return .integer
+                case .double:
+                    return .double
+                case .string:
+                    return .string
+                case .pair:
+                    return .pair
+                case .triple:
+                    return .triple
+                case .optionalInteger:
+                    return .optionalInteger
+                case .optionalDouble:
+                    return .optionalDouble
+                case .optionalPair:
+                    return .optionalPair
+                case .box:
+                    return .box
+                case .`default`:
+                    return .`default`
+                }
+            }
+
+            var isEmpty: Bool {
+                get {
+                    switch self {
+                    case .empty:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+                set {
+                    guard newValue else {
+                        return
+                    }
+                    self = .empty
+                }
+            }
+
+            var isInteger: Bool {
+                get {
+                    switch self {
+                    case .integer:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var integer: Int? {
+                get {
+                    switch self {
+                    case .integer(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .integer(newValue)
+                }
+            }
+
+            var isDouble: Bool {
+                get {
+                    switch self {
+                    case .double:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var double: Double? {
+                get {
+                    switch self {
+                    case .double(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .double(newValue)
+                }
+            }
+
+            var isString: Bool {
+                get {
+                    switch self {
+                    case .string:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var string: String? {
+                get {
+                    switch self {
+                    case .string(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .string(newValue)
+                }
+            }
+
+            var isPair: Bool {
+                get {
+                    switch self {
+                    case .pair:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var pairInt: Int? {
+                get {
+                    switch self {
+                    case .pair(let v0, _):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .pair(_, let v1) = self else {
+                        return
+                    }
+                    self = .pair(int: newValue, double: v1)
+                }
+            }
+
+            var pairDouble: Double? {
+                get {
+                    switch self {
+                    case .pair(_, let v1):
+                        return v1
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .pair(let v0, _) = self else {
+                        return
+                    }
+                    self = .pair(int: v0, double: newValue)
+                }
+            }
+
+            var pair: (int: Int, double: Double)? {
+                get {
+                    switch self {
+                    case .pair(let v0, let v1):
+                        return (int: v0, double: v1)
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .pair(int: newValue.int, double: newValue.double)
+                }
+            }
+
+            var isTriple: Bool {
+                get {
+                    switch self {
+                    case .triple:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var tripleInt: Int? {
+                get {
+                    switch self {
+                    case .triple(let v0, _, _):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .triple(_, let v1, let v2) = self else {
+                        return
+                    }
+                    self = .triple(newValue, v1, v2)
+                }
+            }
+
+            var tripleDouble: Double? {
+                get {
+                    switch self {
+                    case .triple(_, let v1, _):
+                        return v1
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .triple(let v0, _, let v2) = self else {
+                        return
+                    }
+                    self = .triple(v0, newValue, v2)
+                }
+            }
+
+            var tripleString: String? {
+                get {
+                    switch self {
+                    case .triple(_, _, let v2):
+                        return v2
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .triple(let v0, let v1, _) = self else {
+                        return
+                    }
+                    self = .triple(v0, v1, newValue)
+                }
+            }
+
+            var triple: (Int, Double, String)? {
+                get {
+                    switch self {
+                    case .triple(let v0, let v1, let v2):
+                        return (v0, v1, v2)
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .triple(newValue.0, newValue.1, newValue.2)
+                }
+            }
+
+            var isOptionalInteger: Bool {
+                get {
+                    switch self {
+                    case .optionalInteger:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var optionalInteger: Int? {
+                get {
+                    switch self {
+                    case .optionalInteger(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    self = .optionalInteger(newValue)
+                }
+            }
+
+            var isOptionalDouble: Bool {
+                get {
+                    switch self {
+                    case .optionalDouble:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var optionalDoubleDouble: Double? {
+                get {
+                    switch self {
+                    case .optionalDouble(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    self = .optionalDouble(double: newValue)
+                }
+            }
+
+            var isOptionalPair: Bool {
+                get {
+                    switch self {
+                    case .optionalPair:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var optionalPairInt: Int? {
+                get {
+                    switch self {
+                    case .optionalPair(let v0, _):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .optionalPair(_, let v1) = self else {
+                        return
+                    }
+                    self = .optionalPair(newValue, v1)
+                }
+            }
+
+            var optionalPairDouble: Double? {
+                get {
+                    switch self {
+                    case .optionalPair(_, let v1):
+                        return v1
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .optionalPair(let v0, _) = self else {
+                        return
+                    }
+                    self = .optionalPair(v0, newValue)
+                }
+            }
+
+            var optionalPair: (Int?, Double?)? {
+                get {
+                    switch self {
+                    case .optionalPair(let v0, let v1):
+                        return (v0, v1)
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    self = .optionalPair(newValue?.0, newValue?.1)
+                }
+            }
+
+            var isBox: Bool {
+                get {
+                    switch self {
+                    case .box:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var box: Box? {
+                get {
+                    switch self {
+                    case .box(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .box(newValue)
+                }
+            }
+
+            var isDefault: Bool {
+                get {
+                    switch self {
+                    case .`default`:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+                set {
+                    guard newValue else {
+                        return
+                    }
+                    self = .`default`
+                }
+            }
+        }
+        """
+        assertMacroExpansion(
+            sourceInput,
+            expandedSource: sourceOutput,
+            macros: [
+                "EnumKeyPaths": EnumKeyPathsMacro.self,
+            ]
         )
     }
 }

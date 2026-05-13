@@ -10,7 +10,7 @@ import SwiftUI
 @available(tvOS, introduced: 13.0, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
 @available(watchOS, introduced: 6.0, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
 @available(visionOS, introduced: 1.0, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
-public struct UnevenRoundedRectangle: Shape {
+public struct RoundedCornersRectangle: Shape {
 
     public var topLeadingRadius: CGFloat
     public var bottomLeadingRadius: CGFloat
@@ -18,7 +18,6 @@ public struct UnevenRoundedRectangle: Shape {
     public var bottomTrailingRadius: CGFloat
     public var style: RoundedCornerStyle
 
-    @_disfavoredOverload
     @inlinable
     public init(
         topLeadingRadius: CGFloat = 0,
@@ -92,15 +91,15 @@ public struct UnevenRoundedRectangle: Shape {
 
 // MARK: - Previews
 
-struct UnevenRoundedRectangle_Previews: PreviewProvider {
+struct RoundedCornersRectangle_Previews: PreviewProvider {
     static var previews: some View {
         VStack {
-            UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 12, topTrailingRadius: 0)
+            RoundedCornersRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 12, topTrailingRadius: 0)
                 .fill(Color.blue)
                 .frame(height: 50)
 
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                SwiftUI.UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 12, topTrailingRadius: 0)
+                UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 12, topTrailingRadius: 0)
                     .fill(Color.blue)
                     .frame(height: 50)
             }

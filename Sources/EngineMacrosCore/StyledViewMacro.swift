@@ -4,11 +4,13 @@
 
 import Foundation
 import SwiftCompilerPlugin
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
 public struct StyledViewMacro: PeerMacro, MemberMacro {
+
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
@@ -29,7 +31,9 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         let type = try getType(
-            declaration: declaration
+            of: node,
+            declaration: declaration,
+            in: context
         )
         let name = type.name.text
         let prefix = getPrefix(
@@ -78,7 +82,9 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         let type = try getType(
-            declaration: declaration
+            of: node,
+            declaration: declaration,
+            in: context
         )
         let name = type.name.text
         let prefix = getPrefix(
@@ -129,15 +135,19 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
     }
 
     private static func getType(
-        declaration: some SyntaxProtocol
+        of node: AttributeSyntax,
+        declaration: some SyntaxProtocol,
+        in context: some MacroExpansionContext
     ) throws -> StructDeclSyntax {
         guard let type = declaration.as(StructDeclSyntax.self) else {
+            context.diagnose(Diagnostic(node: node, message: Error.unsupportedType))
             throw Error.unsupportedType
         }
         guard
             let inheritanceClause = type.inheritanceClause,
             inheritanceClause.inheritedTypes.contains(where: { $0.type.as(IdentifierTypeSyntax.self)?.text == "StyledView" })
         else {
+            context.diagnose(Diagnostic(node: node, message: Error.missingConformance))
             throw Error.missingConformance
         }
         return type
@@ -372,9 +382,21 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         """
     }
 
-    public enum Error: Swift.Error, CustomStringConvertible {
+    public enum Error: String, Swift.Error, CustomStringConvertible, DiagnosticMessage {
         case unsupportedType
         case missingConformance
+
+        public var message: String {
+            return description
+        }
+
+        public var diagnosticID: MessageID {
+            return MessageID(domain: "StyledViewMacro", id: rawValue)
+        }
+
+        public var severity: DiagnosticSeverity {
+            return .error
+        }
 
         public var description: String {
             switch self {
