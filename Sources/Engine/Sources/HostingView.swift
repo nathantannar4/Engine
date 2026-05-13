@@ -164,8 +164,6 @@ open class HostingView<
         #if os(iOS) || os(tvOS) || os(visionOS)
         layoutIfNeeded()
         #elseif os(macOS)
-        layoutIfNeeded()
-        #elseif os(macOS)
         layout()
         #endif
     }
