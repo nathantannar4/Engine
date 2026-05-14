@@ -140,7 +140,7 @@ private enum FontProvider {
 
 
             default:
-                os_log(.error, log: .default, "Failed to resolve Font modifier %{public}@. Please file an issue.", String(modifier))
+                os_log(.debug, log: .default, "Failed to resolve Font modifier %{public}@. Please file an issue.", String(modifier))
             }
 
             self = .named(font)

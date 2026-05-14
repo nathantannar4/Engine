@@ -85,7 +85,7 @@ private enum ImageProvider {
             self = .cg(image as! CGImage, scale, orientation)
 
         default:
-            os_log(.error, log: .default, "Failed to resolve Image provider %{public}@. Please file an issue.", className)
+            os_log(.debug, log: .default, "Failed to resolve Image provider %{public}@. Please file an issue.", className)
             return nil
         }
     }

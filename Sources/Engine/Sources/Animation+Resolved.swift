@@ -208,7 +208,7 @@ extension Animation {
                                 delay += d
                             }
                         default:
-                            os_log(.error, log: .default, "Failed to resolve Animation modifier %{public}@. Please file an issue.", name)
+                            os_log(.debug, log: .default, "Failed to resolve Animation modifier %{public}@. Please file an issue.", name)
                         }
                     }
                     animator = next

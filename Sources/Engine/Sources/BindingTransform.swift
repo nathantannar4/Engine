@@ -28,7 +28,7 @@ extension Binding {
             do {
                 self.transaction(transaction).wrappedValue = try transform.set(newValue, oldValue: wrappedValue)
             } catch {
-                os_log(.error, log: .default, "Projection %{public}@ failed with error: %{public}@", String(describing: Self.self), error.localizedDescription)
+                os_log(.debug, log: .default, "Projection %{public}@ failed with error: %{public}@", String(describing: Self.self), error.localizedDescription)
             }
         }
     }

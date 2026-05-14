@@ -683,7 +683,7 @@ extension Text {
                         attributes.scale = .init(scale: scale)
                     }
                 default:
-                    os_log(.error, log: .default, "Failed to resolve Text modifier %{public}@. Please file an issue.", className)
+                    os_log(.debug, log: .default, "Failed to resolve Text modifier %{public}@. Please file an issue.", className)
                     break
                 }
             }

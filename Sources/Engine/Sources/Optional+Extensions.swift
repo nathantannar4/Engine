@@ -48,6 +48,57 @@ extension Optional where Wrapped == String {
     }
 }
 
+extension Optional where Wrapped == Bool {
+
+    @usableFromInline
+    var isTrue: Bool {
+        get {
+            switch self {
+            case .none:
+                return false
+            case .some(let wrapped):
+                return wrapped
+            }
+        }
+        set {
+            self = .some(newValue)
+        }
+    }
+
+    @usableFromInline
+    var isFalse: Bool {
+        get {
+            switch self {
+            case .none:
+                return false
+            case .some(let wrapped):
+                return wrapped == false
+            }
+        }
+        set {
+            self = .some(!newValue)
+        }
+    }
+}
+
+extension Optional where Wrapped == URL {
+
+    @usableFromInline
+    var value: String {
+        get {
+            switch self {
+            case .none:
+                return ""
+            case .some(let wrapped):
+                return wrapped.absoluteString
+            }
+        }
+        set {
+            self = URL(string: newValue)
+        }
+    }
+}
+
 extension Hashable {
 
     @usableFromInline

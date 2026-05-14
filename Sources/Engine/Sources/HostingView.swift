@@ -49,7 +49,7 @@ open class HostingView<
                 do {
                     return try swift_getFieldValue("_rootView", HostingRootView<Content>.self, self)
                 } catch {
-                    os_log(.error, log: .default, "Failed to get `_rootView`. Please file an issue.")
+                    os_log(.debug, log: .default, "Failed to get `_rootView`. Please file an issue.")
                     fatalError(error.localizedDescription)
                 }
             }
@@ -69,7 +69,7 @@ open class HostingView<
                     try swift_setFieldValue("propertiesNeedingUpdate", flags, self)
                     setNeedsLayout()
                 } catch {
-                    os_log(.error, log: .default, "Failed to set `_rootView`. Please file an issue.")
+                    os_log(.debug, log: .default, "Failed to set `_rootView`. Please file an issue.")
                 }
             }
             #endif
@@ -305,7 +305,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 return try swift_getFieldValue("allowUIKitAnimations", Int32.self, self)
             } catch {
-                os_log(.error, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
                 return 0
             }
         }
@@ -313,7 +313,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 try swift_setFieldValue("allowUIKitAnimations", newValue, self)
             } catch {
-                os_log(.error, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
             }
         }
     }
@@ -326,7 +326,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 return try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
             } catch {
-                os_log(.error, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
                 return false
             }
         }
@@ -339,7 +339,7 @@ extension PlatformHostingView: AnyHostingView {
                 do {
                     try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
                 } catch {
-                    os_log(.error, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                    os_log(.debug, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
                 }
             }
         }

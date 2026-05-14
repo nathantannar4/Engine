@@ -236,7 +236,7 @@ extension AnyShapeStyle {
                     return resolved
                 }
             }
-            os_log(.error, log: .default, "Failed to resolve AnyShapeStyle provider %{public}@. Please file an issue.", className)
+            os_log(.debug, log: .default, "Failed to resolve AnyShapeStyle provider %{public}@. Please file an issue.", className)
             return nil
         }
         return resolve(provider: self)

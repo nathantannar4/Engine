@@ -28,6 +28,30 @@ extension Binding where Value == Optional<String> {
     }
 }
 
+extension Binding where Value == Optional<Bool> {
+
+    /// A ``BindingTransform`` that transforms the value to `true` when `true`
+    @inlinable
+    public func isTrue() -> Binding<Bool> {
+        self[keyPath: \.isTrue]
+    }
+
+    /// A ``BindingTransform`` that transforms the value to `true` when `false`
+    @inlinable
+    public func isFalse() -> Binding<Bool> {
+        self[keyPath: \.isFalse]
+    }
+}
+
+extension Binding where Value == Optional<URL> {
+
+    /// A ``BindingTransform`` that transforms a `URL` to a `String`
+    @inlinable
+    public func value() -> Binding<String> {
+        self[keyPath: \.value]
+    }
+}
+
 // MARK: - Previews
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)

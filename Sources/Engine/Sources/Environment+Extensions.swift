@@ -114,7 +114,7 @@ extension EnvironmentValues {
     /// The value for the ``.textInputAutocapitalization(_)`` modifier
     @available(iOS 15.0, tvOS 15.0, watchOS 8.0, *)
     public var textInputAutocapitalization: TextInputAutocapitalization {
-        self["TextInputAutocapitalizationKey", default: TextInputAutocapitalization.never]
+        self["TextInputAutocapitalizationKey", default: TextInputAutocapitalization.sentences]
     }
     #endif
 
@@ -201,32 +201,34 @@ struct EnvironmentValues_Previews: PreviewProvider {
             }
             .labelsHidden()
 
-            EnvironmentValuePreview(keyPath: \.foregroundStyle) {
-                Text("Hello, World")
-            } content: { foregroundStyle in
-                Circle()
-                    .fill(foregroundStyle)
-                    .fixedSize()
-            }
-            .foregroundStyle(.green)
+            HStack {
+                EnvironmentValuePreview(keyPath: \.foregroundStyle) {
+                    Text("Hello, World")
+                } content: { foregroundStyle in
+                    Circle()
+                        .fill(foregroundStyle)
+                        .fixedSize()
+                }
+                .foregroundStyle(.green)
 
-            EnvironmentValuePreview(keyPath: \.foregroundStyle) {
-                Text("Hello, World")
-            } content: { foregroundStyle in
-                Circle()
-                    .fill(foregroundStyle)
-                    .fixedSize()
-            }
-            .foregroundStyle(.green)
+                EnvironmentValuePreview(keyPath: \.foregroundStyle) {
+                    Text("Hello, World")
+                } content: { foregroundStyle in
+                    Circle()
+                        .fill(foregroundStyle)
+                        .fixedSize()
+                }
+                .foregroundStyle(.green)
 
-            EnvironmentValuePreview(keyPath: \.foregroundColor) {
-                Text("Hello, World")
-            } content: { foregroundColor in
-                Circle()
-                    .fill(foregroundColor ?? .black)
-                    .fixedSize()
+                EnvironmentValuePreview(keyPath: \.foregroundColor) {
+                    Text("Hello, World")
+                } content: { foregroundColor in
+                    Circle()
+                        .fill(foregroundColor ?? .black)
+                        .fixedSize()
+                }
+                .foregroundStyle(.green)
             }
-            .foregroundStyle(.green)
 
             EnvironmentValuePreview(keyPath: \.tintStyle) {
                 Button("Action") { }
@@ -237,23 +239,25 @@ struct EnvironmentValues_Previews: PreviewProvider {
             }
             .tint(.green)
 
-            EnvironmentValuePreview(keyPath: \.tintColor) {
-                Button("Action") { }
-            } content: { tintColor in
-                Circle()
-                    .fill(tintColor ?? .red)
-                    .fixedSize()
-            }
-            .tint(.green)
+            HStack {
+                EnvironmentValuePreview(keyPath: \.tintColor) {
+                    Button("Action") { }
+                } content: { tintColor in
+                    Circle()
+                        .fill(tintColor ?? .red)
+                        .fixedSize()
+                }
+                .tint(.green)
 
-            EnvironmentValuePreview(keyPath: \.accentColor) {
-                Button("Action") { }
-            } content: { accentColor in
-                Circle()
-                    .fill(accentColor)
-                    .fixedSize()
+                EnvironmentValuePreview(keyPath: \.accentColor) {
+                    Button("Action") { }
+                } content: { accentColor in
+                    Circle()
+                        .fill(accentColor)
+                        .fixedSize()
+                }
+                .accentColor(.green)
             }
-            .accentColor(.green)
 
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 EnvironmentValuePreview(keyPath: \.underlineStyle) {
@@ -356,7 +360,7 @@ struct EnvironmentValues_Previews: PreviewProvider {
                 } content: { textInputAutocapitalization in
                     Text(verbatim: "\(textInputAutocapitalization)")
                 }
-                .textInputAutocapitalization(.characters)
+                .textInputAutocapitalization(.never)
             }
             #endif
 
@@ -391,7 +395,9 @@ struct EnvironmentValues_Previews: PreviewProvider {
                 EmptyView()
             } content: { systemColorScheme in
                 Text(verbatim: "\(systemColorScheme)")
+                    .environment(\.colorScheme, systemColorScheme)
             }
+            .environment(\.colorScheme, .dark)
         }
     }
 

@@ -112,7 +112,7 @@ extension Color {
                 return color
 
             default:
-                os_log(.error, log: .default, "Failed to resolve Color provider %{public}@. Please file an issue.", className)
+                os_log(.debug, log: .default, "Failed to resolve Color provider %{public}@. Please file an issue.", className)
                 return .resolved(self, in: environment())
             }
         }
