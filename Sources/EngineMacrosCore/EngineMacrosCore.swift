@@ -9,6 +9,6 @@ import SwiftSyntaxMacros
 struct EngineMacrosCore: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         StyledViewMacro.self,
-        EnumKeyPathsMacro.self,
+        UnionMacro.self,
     ]
 }
