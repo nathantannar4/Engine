@@ -7,6 +7,11 @@ import SwiftUI
 /// Accessors to internal keys ``Engine.EnvironmentKeyVisitor``
 extension EnvironmentValues {
 
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+    public var hasGlassEffect: Bool {
+        self["__Key_hasGlassEffect", default: false]
+    }
+
     #if os(iOS) || os(tvOS) || os(visionOS)
     @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
     public var hostingController: UIViewController? {
@@ -131,6 +136,10 @@ extension EnvironmentValues {
     }
     #endif
 
+    public var submit: SubmitAction? {
+        self["__Key_triggerSubmission"]
+    }
+
     /// The value for the display corner radius
     public var displayCornerRadius: CGFloat? {
         self["DisplayCornerRadiusKey"]
@@ -150,6 +159,16 @@ extension EnvironmentValues {
     /// The value for the ``.preferredColorScheme(_)`` modifier
     public var preferredColorScheme: ColorScheme? {
         self["ExplicitPreferredColorSchemeKey"]
+    }
+}
+
+@MainActor @preconcurrency
+public struct SubmitAction {
+
+    var onSubmit: () -> Void
+
+    public func callAsFunction() {
+        onSubmit()
     }
 }
 
@@ -300,6 +319,10 @@ struct EnvironmentValues_Previews: PreviewProvider {
 
                     Divider()
                         .fixedSize()
+
+                    EnvironmentValueReader(\.lineLimit) { lineLimit in
+                        Text(lineLimit ?? -1, format: .number)
+                    }
 
                     EnvironmentValueReader(\.lineLimitMininum) { lineLimitMininum in
                         Text(lineLimitMininum ?? -1, format: .number)

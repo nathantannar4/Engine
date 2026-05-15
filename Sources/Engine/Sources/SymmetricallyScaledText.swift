@@ -33,6 +33,59 @@ public struct SymmetricallyScaledText: View {
     }
 }
 
+@frozen
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+public struct SymmetricallyScaledReferencesText: View {
+    @usableFromInline
+    var source: Text
+    @usableFromInline
+    var references: [Text]
+
+    @inlinable
+    public init(source: Text, references: [Text]) {
+        self.source = source
+        self.references = references
+    }
+
+    @inlinable
+    public init(source: Text, @TextBuilder references: () -> [Text]) {
+        self.init(source: source, references: references())
+    }
+
+    public var body: some View {
+        EquatableBody(source: source, references: references)
+            .equatable()
+    }
+
+    private struct EquatableBody: View, Equatable {
+        var source: Text
+        var references: [Text]
+
+        var body: some View {
+            ResolvedBody(source: source, references: references)
+        }
+
+        private struct ResolvedBody: View {
+            var source: Text
+            var references: [Text]
+
+            @Environment(\.self) var environment
+
+            var reference: Text {
+                let longestReference = references
+                    .map({ $0.resolve(in: environment) })
+                    .sorted(by: { $0.count > $1.count })
+                    .first
+                return Text(longestReference) ?? source
+            }
+
+            var body: some View {
+                SymmetricallyScaledText(source: source, reference: reference)
+            }
+        }
+    }
+}
+
 // MARK: - Previews
 
 struct SymmetricallyScaledText_Previews: PreviewProvider {
@@ -55,6 +108,22 @@ struct SymmetricallyScaledText_Previews: PreviewProvider {
                     source: bottomText,
                     reference: topText
                 )
+
+                if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                    SymmetricallyScaledReferencesText(
+                        source: topText
+                    ) {
+                        topText
+                        bottomText
+                    }
+
+                    SymmetricallyScaledReferencesText(
+                        source: bottomText
+                    ) {
+                        topText
+                        bottomText
+                    }
+                }
             }
             .minimumScaleFactor(0.5)
             .lineLimit(1)

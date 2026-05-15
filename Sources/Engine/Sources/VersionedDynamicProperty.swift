@@ -83,6 +83,12 @@ import SwiftUI
 @MainActor @preconcurrency
 public protocol VersionedDynamicProperty: DynamicProperty {
 
+    @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+    associatedtype V8Property: DynamicProperty = V7Property
+
+    @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+    var v8Property: V8Property { get }
+
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     associatedtype V7Property: DynamicProperty = V6Property
 
@@ -122,6 +128,11 @@ public protocol VersionedDynamicProperty: DynamicProperty {
     associatedtype V1Property: DynamicProperty = EmptyDynamicProperty
 
     var v1Property: V1Property { get }
+}
+
+@available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+extension VersionedDynamicProperty where V8Property == V7Property {
+    public var v8Property: V8Property { v7Property }
 }
 
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
@@ -212,7 +223,14 @@ extension VersionedDynamicProperty {
         inputs: inout _GraphInputs
     ) {
         #if !DEBUG
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            V8Property._makeProperty(
+                in: &buffer,
+                container: container,
+                fieldOffset: fieldOffset,
+                inputs: &inputs
+            )
+        } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             V7Property._makeProperty(
                 in: &buffer,
                 container: container,
@@ -266,6 +284,15 @@ extension VersionedDynamicProperty {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
+        case .v8:
+            if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+                V8Property._makeProperty(
+                    in: &buffer,
+                    container: container,
+                    fieldOffset: fieldOffset,
+                    inputs: &inputs
+                )
+            }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                 V7Property._makeProperty(
@@ -348,7 +375,9 @@ extension VersionedDynamicProperty {
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public static var _propertyBehaviors: UInt32 {
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            return V8Property._propertyBehaviors
+        } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             return V7Property._propertyBehaviors
         } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             return V6Property._propertyBehaviors

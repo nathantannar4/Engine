@@ -56,6 +56,34 @@ struct PropertyList {
         var id: Int
     }
 
+    struct ElementFieldsV8 {
+        var before: UnsafeMutablePointer<ElementLayout<ElementFieldsV8>>?
+        var after: UnsafeMutablePointer<ElementLayout<ElementFieldsV8>>?
+        var skip: UnsafeMutablePointer<ElementLayout<ElementFieldsV8>>?
+        var length: UInt32
+        var skipCount: UInt32
+        var skipFilter: UInt
+        var keyFilter: UInt
+        var id: Int
+        var storage: Storage
+        var disableUniquenessChecks: Bool
+
+        struct Storage {
+            var buf: UnsafeMutableRawPointer
+            var count: UInt32
+            var capacity: UInt32
+            var lastOffset: UInt16
+            var nextOffset: UInt16
+            var alignMask: UInt16
+            var ownsBuffer: Bool
+
+            var keyType: Any.Type {
+                let keyType = buf.load(fromByteOffset: 0, as: Any.Type.self)
+                return keyType
+            }
+        }
+    }
+
     struct TypedElementLayout<Fields, Value> {
         var base: ElementLayout<Fields>
         var value: Value
@@ -64,11 +92,13 @@ struct PropertyList {
     enum ElementPointer {
         case v1(UnsafeMutablePointer<ElementLayout<ElementFieldsV1>>)
         case v6(UnsafeMutablePointer<ElementLayout<ElementFieldsV6>>)
+        case v8(UnsafeMutablePointer<ElementLayout<ElementFieldsV8>>)
 
         var object: Unmanaged<AnyObject> {
             switch self {
             case .v1(let ptr): Unmanaged<AnyObject>.fromOpaque(ptr)
             case .v6(let ptr): Unmanaged<AnyObject>.fromOpaque(ptr)
+            case .v8(let ptr): Unmanaged<AnyObject>.fromOpaque(ptr)
             }
         }
 
@@ -76,6 +106,7 @@ struct PropertyList {
             switch self {
             case .v1(let ptr): ptr.pointee.metadata
             case .v6(let ptr): ptr.pointee.metadata
+            case .v8(let ptr): ptr.pointee.metadata
             }
         }
 
@@ -83,6 +114,7 @@ struct PropertyList {
             switch self {
             case .v1(let ptr): ptr.pointee.fields
             case .v6(let ptr): ptr.pointee.fields
+            case .v8(let ptr): ptr.pointee.fields
             }
         }
 
@@ -90,6 +122,7 @@ struct PropertyList {
             switch self {
             case .v1(let ptr): ptr.pointee.fields.id
             case .v6(let ptr): ptr.pointee.fields.id
+            case .v8(let ptr): ptr.pointee.fields.id
             }
         }
 
@@ -97,6 +130,7 @@ struct PropertyList {
             switch self {
             case .v1(let ptr): ptr.pointee.fields.keyType
             case .v6(let ptr): ptr.pointee.fields.keyType
+            case .v8(let ptr): ptr.pointee.fields.storage.keyType
             }
         }
 
@@ -109,6 +143,9 @@ struct PropertyList {
                 case .v6(let ptr):
                     guard let after = ptr.pointee.fields.after else { return nil }
                     return .v6(after)
+                case .v8(let ptr):
+                    guard let after = ptr.pointee.fields.after else { return nil }
+                    return .v8(after)
                 }
             }
             nonmutating set {
@@ -125,6 +162,12 @@ struct PropertyList {
                     } else {
                         ptr.pointee.fields.after = nil
                     }
+                case .v8(let ptr):
+                    if case .v8(let newValue) = newValue {
+                        ptr.pointee.fields.after = newValue
+                    } else {
+                        ptr.pointee.fields.after = nil
+                    }
                 }
             }
         }
@@ -137,6 +180,9 @@ struct PropertyList {
                 case .v6(let ptr):
                     guard let skip = ptr.pointee.fields.skip else { return nil }
                     return .v6(skip)
+                case .v8(let ptr):
+                    guard let skip = ptr.pointee.fields.skip else { return nil }
+                    return .v8(skip)
                 }
             }
             nonmutating set {
@@ -149,6 +195,12 @@ struct PropertyList {
                     } else {
                         ptr.pointee.fields.skip = nil
                     }
+                case .v8(let ptr):
+                    if case .v8(let newValue) = newValue {
+                        ptr.pointee.fields.skip = newValue
+                    } else {
+                        ptr.pointee.fields.skip = nil
+                    }
                 }
             }
         }
@@ -156,10 +208,9 @@ struct PropertyList {
         var skipCount: UInt32 {
             get {
                 switch self {
-                case .v1:
-                    return 0
-                case .v6(let ptr):
-                    return ptr.pointee.fields.skipCount
+                case .v1: 0
+                case .v6(let ptr): ptr.pointee.fields.skipCount
+                case .v8(let ptr): ptr.pointee.fields.skipCount
                 }
             }
             nonmutating set {
@@ -167,6 +218,8 @@ struct PropertyList {
                 case .v1:
                     break
                 case .v6(let ptr):
+                    ptr.pointee.fields.skipCount = newValue
+                case .v8(let ptr):
                     ptr.pointee.fields.skipCount = newValue
                 }
             }
@@ -177,6 +230,7 @@ struct PropertyList {
                 switch self {
                 case .v1(let ptr): ptr.pointee.fields.keyFilter
                 case .v6(let ptr): ptr.pointee.fields.keyFilter
+                case .v8(let ptr): ptr.pointee.fields.keyFilter
                 }
             }
             nonmutating set {
@@ -184,6 +238,8 @@ struct PropertyList {
                 case .v1(let ptr):
                     ptr.pointee.fields.keyFilter = newValue
                 case .v6(let ptr):
+                    ptr.pointee.fields.keyFilter = newValue
+                case .v8(let ptr):
                     ptr.pointee.fields.keyFilter = newValue
                 }
             }
@@ -194,6 +250,7 @@ struct PropertyList {
                 switch self {
                 case .v1(let ptr): UInt32(ptr.pointee.fields.length)
                 case .v6(let ptr): ptr.pointee.fields.length
+                case .v8(let ptr): ptr.pointee.fields.length
                 }
             }
             nonmutating set {
@@ -201,6 +258,8 @@ struct PropertyList {
                 case .v1(let ptr):
                     ptr.pointee.fields.length = Int(newValue)
                 case .v6(let ptr):
+                    ptr.pointee.fields.length = newValue
+                case .v8(let ptr):
                     ptr.pointee.fields.length = newValue
                 }
             }
@@ -254,6 +313,11 @@ struct PropertyList {
                 return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV6.self) { ptr in
                     ptr.pointee.value = newValue
                 }
+            case .v8(let ptr):
+                assertionFailure("Not yet supported")
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV8.self) { ptr in
+                    ptr.pointee.value = newValue
+                }
             }
         }
 
@@ -269,6 +333,11 @@ struct PropertyList {
                 return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV6.self) { ptr in
                     return ptr.pointee.value
                 }
+            case .v8(let ptr):
+                assertionFailure("Not yet supported")
+                return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV8.self) { ptr in
+                    return ptr.pointee.value
+                }
             }
         }
     }
@@ -277,7 +346,11 @@ struct PropertyList {
 
     var elements: ElementPointer? {
         guard let ptr else { return nil }
-        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            return .v8(
+                ptr.assumingMemoryBound(to: ElementLayout<ElementFieldsV8>.self)
+            )
+        } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             return .v6(
                 ptr.assumingMemoryBound(to: ElementLayout<ElementFieldsV6>.self)
             )
@@ -341,7 +414,9 @@ struct PropertyList {
         guard let lastValue = ptr else {
             return
         }
-        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            assertionFailure("Not yet supported")
+        } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             let lastValue = lastValue.assumingMemoryBound(to: ElementLayout<ElementFieldsV6>.self)
             let newValue = TypedElementLayout<ElementFieldsV6, Value>(
                 base: ElementLayout(

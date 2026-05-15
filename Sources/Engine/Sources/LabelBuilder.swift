@@ -7,7 +7,7 @@ import SwiftUI
 /// A collection of views suitible for a label, ideal for when you want to limit
 /// the label to primitive ``Text``/``Image``.
 @frozen
-public struct LabelElement {
+public struct LabelElement: Equatable, Sendable {
 
     public var image: Image?
     public var title: Text?

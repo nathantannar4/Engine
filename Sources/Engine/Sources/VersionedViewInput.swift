@@ -43,6 +43,11 @@ public struct VersionInput: Equatable, Sendable {
     public struct V7: _VersionInput {
         public static let value: VersionInput = .v7
     }
+
+    public static let v8 = VersionInput(rawValue: 8)
+    public struct V8: _VersionInput {
+        public static let value: VersionInput = .v8
+    }
 }
 
 public protocol _VersionInput: ViewInput where Key == VersionInputKey { }
@@ -67,10 +72,16 @@ extension _VersionInput where Self == VersionInput.V6 {
 extension _VersionInput where Self == VersionInput.V7 {
     public static var v7: VersionInput.V7 { .init() }
 }
+extension _VersionInput where Self == VersionInput.V8 {
+    public static var v8: VersionInput.V8 { .init() }
+}
+
 
 public struct VersionInputKey: ViewInputKey {
     public static var defaultValue: VersionInput {
-        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+            return .v8
+        } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             return .v7
         } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             return .v6
@@ -139,6 +150,7 @@ extension View {
 
 struct VersionInput_Previews: PreviewProvider {
     struct PreviewVersionInputView: VersionedView {
+        var v8Body: some View { Text("V8") }
         var v7Body: some View { Text("V7") }
         var v6Body: some View { Text("V6") }
         var v5Body: some View { Text("V5") }
@@ -149,6 +161,7 @@ struct VersionInput_Previews: PreviewProvider {
     }
 
     struct PreviewVersionInputViewModifier: VersionedViewModifier {
+        func v8Body(content: Content) -> some View { Text("V8") }
         func v7Body(content: Content) -> some View { Text("V7") }
         func v6Body(content: Content) -> some View { Text("V6") }
         func v5Body(content: Content) -> some View { Text("V5") }
@@ -162,6 +175,10 @@ struct VersionInput_Previews: PreviewProvider {
         Group {
             VStack {
                 PreviewVersionInputView()
+                    .version(.v8)
+
+                PreviewVersionInputView()
+                    .version(.v7)
 
                 PreviewVersionInputView()
                     .version(.v6)
@@ -186,6 +203,11 @@ struct VersionInput_Previews: PreviewProvider {
             VStack {
                 EmptyView()
                     .modifier(PreviewVersionInputViewModifier())
+                    .version(.v8)
+
+                EmptyView()
+                    .modifier(PreviewVersionInputViewModifier())
+                    .version(.v7)
 
                 EmptyView()
                     .modifier(PreviewVersionInputViewModifier())

@@ -60,6 +60,18 @@ final class ViewVisitorTests: XCTestCase {
         XCTAssert(visitor.output)
     }
 
+    func testCustomView() {
+        struct ContentView: View {
+            var body: some View {
+                Text("Hello, World")
+            }
+        }
+        let content = ContentView()
+        var visitor = TestVisitor<ContentView>()
+        content.visit(visitor: &visitor)
+        XCTAssert(visitor.output)
+    }
+
     #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
     func testViewRepresentableVisit() {
         #if os(iOS) || os(tvOS) || os(visionOS)

@@ -11,9 +11,10 @@ extension View {
     @_disfavoredOverload
     @inlinable
     public func foregroundStyle<S: ShapeStyle>(
-        _ style: S?
+        _ style: S?,
+        isEnabled: Bool = true
     ) -> some View {
-        modifier(ForegroundStyleModifier(style: style))
+        modifier(ForegroundStyleModifier(style: style, isEnabled: isEnabled))
     }
 }
 
@@ -40,9 +41,10 @@ extension Text {
     @_disfavoredOverload
     @inlinable
     public func foregroundStyle<S: ShapeStyle>(
-        _ style: S?
+        _ style: S?,
+        isEnabled: Bool = true
     ) -> Text {
-        if let style {
+        if isEnabled, let style {
             return foregroundStyle(style)
         }
         return self
@@ -76,17 +78,22 @@ public struct ForegroundStyleModifier<
 >: ViewModifier {
 
     public var style: S?
+    public var isEnabled: Bool
 
     @Environment(\.foregroundStyle) private var foregroundStyle
 
     @inlinable
-    init(style: S? = nil) {
+    public init(
+        style: S? = nil,
+        isEnabled: Bool
+    ) {
         self.style = style
+        self.isEnabled = isEnabled
     }
 
     public func body(content: Content) -> some View {
         content
-            .foregroundStyle(style.map { AnyShapeStyle($0) } ?? foregroundStyle)
+            .foregroundStyle((isEnabled ? style : nil).map { AnyShapeStyle($0) } ?? foregroundStyle)
     }
 }
 
@@ -100,7 +107,7 @@ public struct ForegroundColorModifier: ViewModifier {
     @Environment(\.foregroundColor) private var foregroundColor
 
     @inlinable
-    init(
+    public init(
         color: Color? = nil,
         isEnabled: Bool
     ) {

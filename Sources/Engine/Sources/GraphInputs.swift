@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import EngineCore
 
 /// A `ViewModifier` that only modifies the static inputs
 public protocol GraphInputsModifier: _GraphInputsModifier, ViewModifier where Body == Never {
@@ -95,7 +96,9 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
         ) {
-            inputs.customInputs.detach()
+            if #unavailable(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0) {
+                inputs.customInputs.detach()
+            }
         }
     }
 }

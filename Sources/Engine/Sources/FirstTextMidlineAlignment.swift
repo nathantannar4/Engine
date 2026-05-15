@@ -26,14 +26,58 @@ struct FirstTextMidlineAlignment_Previews: PreviewProvider {
                     .frame(width: 32, height: 32)
 
                 Text("Lorem ipsum")
+                    .border(Color.red)
             }
+            .border(Color.red)
 
             HStack(alignment: .firstTextMidline) {
                 Color.red
                     .frame(width: 32, height: 32)
 
                 Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+                    .border(Color.red)
             }
+            .border(Color.red)
+
+            HStack(alignment: .firstTextMidline) {
+                Color.red
+                    .frame(width: 32, height: 32)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Lorem ipsum")
+                        .alignmentGuide(.firstTextMidline) { d in
+                            return d[.bottom]
+                        }
+
+                    Text("Lorem ipsum dolor sit amet")
+                        .alignmentGuide(.firstTextMidline) { d in
+                            return d[.top]
+                        }
+                }
+                .border(Color.red)
+            }
+            .border(Color.red)
+
+            HStack(alignment: .firstTextMidline) {
+                Color.red
+                    .frame(width: 32, height: 32)
+
+                VStack(alignment: .leading) {
+                    Text("Lorem ipsum")
+                        .font(.subheadline.weight(.medium))
+                        .alignmentGuide(.firstTextMidline) { d in
+                            return d[.bottom]
+                        }
+
+                    Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+                        .font(.caption)
+                        .alignmentGuide(.firstTextMidline) { d in
+                            return d[.top]
+                        }
+                }
+                .border(Color.red)
+            }
+            .border(Color.red)
         }
     }
 }

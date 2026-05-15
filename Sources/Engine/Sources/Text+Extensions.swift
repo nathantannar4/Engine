@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import EngineCore
 import os.log
 
 extension Text {
@@ -153,6 +154,39 @@ extension Text {
         guard let storage else { return nil }
         return try? swift_getFieldValue("image", Image.self, storage)
     }
+
+    public var isVerbatim: Bool {
+        storage == nil
+    }
+
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    public func sizeThatFits(
+        _ proposal: ProposedSize,
+        environment: EnvironmentValues
+    ) -> CGSize {
+        let fittingSize = proposal
+            .replacingUnspecifiedDimensions(
+                by: CGSize(
+                    width: CGFloat.infinity,
+                    height: CGFloat.infinity
+                )
+            )
+        return sizeThatFits(fittingSize, environment: environment)
+    }
+
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    public func sizeThatFits(
+        _ size: CGSize,
+        environment: EnvironmentValues
+    ) -> CGSize {
+        let attributedString: NSAttributedString = resolveAttributed(in: environment)
+        return attributedString.sizeThatFits(
+            size: size,
+            lineLimit: environment.lineLimit,
+            minimumScaleFactor: environment.minimumScaleFactor,
+            displayScale: environment.displayScale
+        )
+    }
 }
 
 extension Text {
@@ -251,6 +285,15 @@ extension Text {
             case `default`
             case secondary
 
+            var multiplier: CGFloat {
+                switch self {
+                case .default:
+                    return 1
+                case .secondary:
+                    return 0.84
+                }
+            }
+
             @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
             init(scale: Text.Scale) {
                 switch scale {
@@ -320,6 +363,8 @@ extension Text {
                 }
                 if let fontWeight {
                     font = font.weight(fontWeight)
+                } else if scale == .secondary {
+                    font = font.weight(.medium)
                 }
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *), let fontWidth {
                     font = font.width(.init(fontWidth))
@@ -333,15 +378,21 @@ extension Text {
                 if isMonospaced {
                     font = font.monospaced()
                 }
+                if let scale, scale == .secondary, let platformFont = font.toPlatformValue(in: environment) {
+                    font = Font(platformFont.withSize(platformFont.pointSize * scale.multiplier))
+                }
                 return font
             }()
             attributes.swiftUI.foregroundColor = foregroundColor ?? environment.foregroundColor
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 attributes.swiftUI.underlineStyle = underlineStyle?.toSwiftUI() ?? environment.underlineStyle
                 attributes.swiftUI.strikethroughStyle = strikethroughStyle?.toSwiftUI() ?? environment.strikethroughStyle
-                attributes.kern = kerning ?? environment.kerning
-                attributes.tracking = tracking ?? environment.tracking
-                attributes.baselineOffset = baselineOffset ?? environment.baselineOffset
+                let kerning = kerning ?? environment.kerning
+                attributes.kern = kerning != 0 ? kerning : nil
+                let tracking = tracking ?? environment.tracking
+                attributes.tracking = tracking != 0 ? tracking : nil
+                let baselineOffset = baselineOffset ?? environment.baselineOffset
+                attributes.baselineOffset = baselineOffset != 0 ? baselineOffset : nil
             } else {
                 attributes.swiftUI.kern = kerning
                 attributes.swiftUI.tracking = tracking
@@ -408,6 +459,8 @@ extension Text {
                 }
                 if let fontWeight {
                     font = font.weight(fontWeight)
+                } else if scale == .secondary {
+                    font = font.weight(.medium)
                 }
                 if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *), let fontWidth {
                     font = font.width(.init(fontWidth))
@@ -420,6 +473,9 @@ extension Text {
                 }
                 if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), isMonospaced {
                     font = font.monospaced()
+                }
+                if let scale, scale == .secondary, let platformFont = font.toPlatformValue(in: environment) {
+                    return platformFont.withSize(platformFont.pointSize * scale.multiplier)
                 }
                 return font.toPlatformValue(in: environment)
             }()
@@ -484,29 +540,43 @@ extension Text {
                 return foregroundColor
             }()
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                attributes[.kern] = kerning ?? environment.kerning
-                attributes[.tracking] = tracking ?? environment.tracking
-                attributes[.baselineOffset] = baselineOffset ?? environment.baselineOffset
+                let kerning = kerning ?? environment.kerning
+                attributes[.kern] = kerning != 0 ? kerning : nil
+                let tracking = tracking ?? environment.tracking
+                attributes[.tracking] = tracking != 0 ? tracking : nil
+                let baselineOffset = baselineOffset ?? environment.baselineOffset
+                attributes[.baselineOffset] = baselineOffset != 0 ? baselineOffset : nil
             } else {
                 attributes[.kern] = kerning
                 attributes[.tracking] = tracking
                 attributes[.baselineOffset] = baselineOffset
             }
+            let paragraphStyle = NSMutableParagraphStyle()
             #if canImport(FoundationModels) // Xcode 26
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                let paragraphStyle = NSMutableParagraphStyle()
                 paragraphStyle.lineSpacing = environment.lineSpacing
-                switch environment.multilineTextAlignment {
-                case .leading:
-                    paragraphStyle.alignment = environment.layoutDirection == .leftToRight ? .left : .right
-                case .trailing:
-                    paragraphStyle.alignment = environment.layoutDirection == .leftToRight ? .right : .left
-                case .center:
-                    paragraphStyle.alignment = .center
+                if let lineHeight = environment.lineHeight?.storage {
+                    switch lineHeight {
+                    case .exact(let height):
+                        paragraphStyle.minimumLineHeight = height
+                        paragraphStyle.maximumLineHeight = height
+                    case .leading(let increase):
+                        paragraphStyle.lineSpacing = increase
+                    case .multiple(let multiple):
+                        paragraphStyle.lineHeightMultiple = multiple
+                    }
                 }
-                attributes[.paragraphStyle] = paragraphStyle
             }
             #endif
+            switch environment.multilineTextAlignment {
+            case .leading:
+                paragraphStyle.alignment = environment.layoutDirection == .leftToRight ? .left : .right
+            case .trailing:
+                paragraphStyle.alignment = environment.layoutDirection == .leftToRight ? .right : .left
+            case .center:
+                paragraphStyle.alignment = .center
+            }
+            attributes[.paragraphStyle] = paragraphStyle.copy() as! NSParagraphStyle
             return attributes
         }
     }
@@ -515,7 +585,7 @@ extension Text {
         indirect enum Storage {
             struct Element {
                 enum Storage {
-                    case text(String)
+                    case text(String, arguments: [Resolved])
                     case image(Image)
                 }
                 var storage: Storage
@@ -530,7 +600,7 @@ extension Text {
                 switch self {
                 case .element(let element):
                     switch element.storage {
-                    case .text(let string):
+                    case .text(let string, let arguments):
                         var attributedString = AttributedString(
                             string,
                             attributes: element.attributes.attributeContainer
@@ -546,25 +616,40 @@ extension Text {
                                 }
                             }
                         }
+                        if !arguments.isEmpty {
+                            var location = attributedString.startIndex
+                            for argument in arguments {
+                                let substring = argument.storage.resolveAttributedString()
+                                if let substringRange = attributedString.range(of: String(substring.characters)), substringRange.lowerBound >= location {
+                                    for run in substring.runs {
+                                        let offset = substring.characters.distance(from: substring.startIndex, to: run.range.lowerBound)
+                                        let length = substring.characters.distance(from: run.range.lowerBound, to: run.range.upperBound)
+                                        let lower = attributedString.characters.index(substringRange.lowerBound, offsetBy: offset)
+                                        let upper = attributedString.characters.index(lower, offsetBy: length)
+                                        attributedString[lower..<upper].mergeAttributes(run.attributes, mergePolicy: .keepNew)
+                                    }
+                                    location = substringRange.upperBound
+                                }
+                            }
+                        }
                         return attributedString
 
                     case .image(let image):
                         let attributeContainer = element.attributes.attributeContainer
                         var attributedString = AttributedString.attachment(attributes: attributeContainer)
-                        if let image = image.toPlatformValue(in: element.attributes.environment) {
+                        var environment = element.attributes.environment
+                        if let font = attributeContainer.swiftUI.font {
+                            environment.font = font
+                        }
+                        if var image = image.toPlatformValue(in: environment) {
                             #if os(iOS) || os(tvOS) || os(visionOS)
                             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
                                let baselineOffset = attributeContainer.swiftUI.baselineOffset,
                                baselineOffset != 0
                             {
-                                attributedString.attachment = NSTextAttachment(
-                                    image: image.withBaselineOffset(fromBottom: baselineOffset)
-                                )
-                            } else {
-                                attributedString.attachment = NSTextAttachment(
-                                    image: image
-                                )
+                                image = image.withBaselineOffset(fromBottom: baselineOffset)
                             }
+                            attributedString.attachment = NSTextAttachment(image: image)
                             #elseif os(macOS)
                             let attachment = NSTextAttachment()
                             attachment.image = image
@@ -583,23 +668,57 @@ extension Text {
                 switch self {
                 case .element(let element):
                     switch element.storage {
-                    case .text(let string):
-                        return NSAttributedString(
+                    case .text(let string, let arguments):
+                        let attributedString = NSAttributedString(
                             string: string,
                             attributes: element.attributes.attributes
                         )
+                        if !arguments.isEmpty {
+                            let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
+                            var location = 0
+                            for argument in arguments {
+                                let substring = argument.storage.resolveNSAttributedString()
+                                let substringRange = mutableAttributedString.mutableString.range(
+                                    of: substring.string,
+                                    range: NSRange(location: location, length: attributedString.length - location)
+                                )
+                                if substringRange.location != NSNotFound {
+                                    substring.enumerateAttributes(
+                                        in: NSRange(location: 0, length: substring.length)
+                                    ) { attributes, range, _ in
+                                        let subrange = NSRange(
+                                            location: range.location + substringRange.location,
+                                            length: range.length
+                                        )
+                                        mutableAttributedString.setAttributes(attributes, range: subrange)
+                                    }
+                                    location = NSMaxRange(substringRange)
+                                }
+                            }
+                            return mutableAttributedString.copy() as! NSAttributedString
+                        }
+                        return attributedString
+
                     case .image(let image):
                         let attachment = NSTextAttachment()
-                        attachment.image = image.toPlatformValue(in: element.attributes.environment)
+                        var environment = element.attributes.environment
+                        let attributes = element.attributes.attributes
+                        if let font = attributes[.font] as? Font.PlatformRepresentable {
+                            environment.font = Font(font)
+                        }
+                        attachment.image = image.toPlatformValue(in: environment)
                         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
                             return NSAttributedString(
                                 attachment: attachment,
-                                attributes: element.attributes.attributes
+                                attributes: attributes
                             )
                         } else {
-                            return NSAttributedString(attachment: attachment)
+                            let attributedString = NSMutableAttributedString(attachment: attachment)
+                            attributedString.setAttributes(attributes, range: NSRange(location: 0, length: attributedString.length))
+                            return attributedString.copy() as! NSAttributedString
                         }
                     }
+
                 case .concatenated(let first, let second):
                     let attributedString = NSMutableAttributedString()
                     attributedString.append(first.storage.resolveNSAttributedString())
@@ -693,7 +812,7 @@ extension Text {
             return Resolved(
                 storage: .element(
                     .init(
-                        storage: .text(text),
+                        storage: .text(text, arguments: []),
                         attributes: attributes
                     )
                 )
@@ -739,11 +858,36 @@ extension Text {
                 )
             )
 
+        case "LocalizedTextStorage":
+            guard
+                let key = try? swift_getFieldValue("key", LocalizedStringKey.self, storage),
+                let hasFormatting = try? swift_getFieldValue("hasFormatting", Bool.self, key),
+                hasFormatting,
+                let rawArguments = try? swift_getFieldValue("arguments", Any.self, key) as? [Any],
+                rawArguments.count > 0
+            else {
+                fallthrough
+            }
+
+            let arguments = rawArguments
+                .compactMap { try? swift_getFieldValue("storage", Any.self, $0) }
+                .compactMap { Mirror(reflecting: $0).descendant("text", ".0") as? Text }
+                .map { $0._resolve(with: attributes) }
+
+            return Resolved(
+                storage: .element(
+                    .init(
+                        storage: .text(resolve(in: attributes.environment), arguments: arguments),
+                        attributes: attributes
+                    )
+                )
+            )
+
         default:
             return Resolved(
                 storage: .element(
                     .init(
-                        storage: .text(resolve(in: attributes.environment)),
+                        storage: .text(resolve(in: attributes.environment), arguments: []),
                         attributes: attributes
                     )
                 )
@@ -759,6 +903,91 @@ extension NSTextAttachment: @unchecked @retroactive Sendable { }
 extension NSTextAttachment: @unchecked Sendable { }
 #endif
 #endif
+
+#if canImport(FoundationModels) // Xcode 26
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+extension AttributedString.LineHeight {
+
+    enum Storage {
+        case multiple(factor: CGFloat)
+        case leading(increase: CGFloat)
+        case exact(point: CGFloat)
+    }
+
+    var storage: Storage? {
+        try? swift_getFieldValue("baselineInterval", Storage.self, self)
+    }
+}
+#endif
+
+extension Text.TruncationMode {
+
+    func toNSLineBreakMode(lineLimit: Int?) -> NSLineBreakMode {
+        if lineLimit ?? -1 <= 0 {
+            return .byWordWrapping
+        }
+        switch self {
+        case .head:
+            return .byTruncatingHead
+        case .middle:
+            return .byTruncatingMiddle
+        case .tail:
+            return .byTruncatingTail
+        @unknown default:
+            return .byWordWrapping
+        }
+    }
+}
+
+extension NSAttributedString {
+
+    func sizeThatFits(
+        size: CGSize,
+        lineLimit: Int? = nil,
+        minimumScaleFactor: CGFloat = 1,
+        displayScale: CGFloat
+    ) -> CGSize {
+        let context = NSStringDrawingContext()
+        context.minimumScaleFactor = minimumScaleFactor
+
+        #if os(macOS)
+        let options: NSString.DrawingOptions = [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
+        #else
+        let options: NSStringDrawingOptions = [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
+        #endif
+        var sizeThatFits = boundingRect(
+            with: size,
+            options: options,
+            context: context
+        ).size
+
+        if let lineLimit, lineLimit > 1 {
+            sizeThatFits.width = boundingRect(
+               with: size,
+               options: options.subtracting(.usesLineFragmentOrigin),
+               context: context
+            ).size.width
+        }
+
+        if context.minimumScaleFactor < 1, context.actualScaleFactor < 1 {
+            let mutableAttributedString = NSMutableAttributedString(attributedString: self)
+            mutableAttributedString.enumerateAttribute(.font, in: NSRange(location: 0, length: length)) { value, range, _ in
+                guard let font = value as? Font.PlatformRepresentable else { return }
+                let scaledFont = font.withSize(floor(font.pointSize * context.actualScaleFactor))
+                mutableAttributedString.addAttribute(.font, value: scaledFont, range: range)
+            }
+            sizeThatFits = mutableAttributedString.boundingRect(
+                with: size,
+                options: options,
+                context: context
+            ).size
+        }
+
+        sizeThatFits.height = sizeThatFits.height.rounded(scale: displayScale)
+        sizeThatFits.width = sizeThatFits.width.rounded(scale: displayScale)
+        return sizeThatFits
+    }
+}
 
 // MARK: - Previews
 

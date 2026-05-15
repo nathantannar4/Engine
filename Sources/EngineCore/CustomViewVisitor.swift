@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import os.log
 
 private struct CustomViewIterator<
     Content: View
@@ -72,16 +73,15 @@ extension View {
     }
 
     nonisolated var hasDynamicProperties: Bool {
-        let fields = swift_getFields(self)
-        for field in fields {
-            guard let value = field.value else { continue }
-            func project<Value>(_ value: Value) -> Bool {
-                value is DynamicProperty
+        do {
+            let fields = try swift_getFields(self)
+            for field in fields {
+                if field.value is DynamicProperty {
+                    return true
+                }
             }
-            let isDynamicProperty = _openExistential(value, do: project)
-            if isDynamicProperty {
-                return true
-            }
+        } catch {
+            os_log(.debug, log: .default, "Failed to resolve fields of %{public}@. Please file an issue.", String(describing: Self.self))
         }
         return false
     }

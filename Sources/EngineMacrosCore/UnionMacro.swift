@@ -9,7 +9,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-public struct EnumKeyPathsMacro: MemberMacro {
+public struct UnionMacro: MemberMacro {
 
     public static func expansion(
         of node: AttributeSyntax,
@@ -323,7 +323,7 @@ public struct EnumKeyPathsMacro: MemberMacro {
         }
 
         public var diagnosticID: MessageID {
-            return MessageID(domain: "EnumKeyPathsMacro", id: rawValue)
+            return MessageID(domain: "UnionMacro", id: rawValue)
         }
 
         public var severity: DiagnosticSeverity {
@@ -333,7 +333,7 @@ public struct EnumKeyPathsMacro: MemberMacro {
         public var description: String {
             switch self {
             case .unsupportedType:
-                return "EnumKeyPathsMacro can only be applied to an enum"
+                return "UnionMacro can only be applied to an enum"
             }
         }
     }

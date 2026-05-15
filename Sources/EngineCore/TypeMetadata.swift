@@ -39,6 +39,11 @@ struct Metadata<Kind: TypeMetadata>: TypeMetadata {
                 return nil
             }
             self.ptr = ptr
+        case .enum, .optional:
+            guard Kind.self == EnumMetadata.self else {
+                return nil
+            }
+            self.ptr = ptr
         case .class:
             guard Kind.self == ClassMetadata.self else {
                 return nil
@@ -68,6 +73,10 @@ struct ContextDescriptorLayout {
 extension ContextDescriptor {
     var layout: Layout {
         ptr.load(as: Layout.self)
+    }
+
+    var trailing: UnsafeRawPointer {
+        ptr + MemoryLayout<Layout>.size
     }
 }
 
@@ -186,6 +195,80 @@ struct StructMetadata: TypeMetadata {
 
     var descriptor: Descriptor {
         Descriptor(ptr: ptr.load(as: Layout.self).descriptor)
+    }
+
+    var genericArgumentPtr: UnsafeRawPointer {
+        ptr + MemoryLayout<Layout>.size
+    }
+
+    var genericTypes: [Any.Type]? {
+        guard descriptor.layout.base.base.flags.isGeneric else {
+            return nil
+        }
+
+        let genericContext = TypeGenericContext(
+            ptr: descriptor.ptr + MemoryLayout<Descriptor.Layout>.size
+        ).layout.base
+        let numParams = Int(genericContext.numParams)
+        return Array(unsafeUninitializedCapacity: numParams) {
+            let gap = genericArgumentPtr
+            for i in 0 ..< numParams {
+                let type = gap.load(
+                    fromByteOffset: i * MemoryLayout<Any.Type>.stride,
+                    as: Any.Type.self
+                )
+
+                $0[i] = type
+            }
+            $1 = numParams
+        }
+    }
+}
+
+struct EnumMetadata: TypeMetadata {
+    struct Layout {
+        let kind: Int
+        let descriptor: UnsafePointer<Descriptor>
+    }
+
+    struct Descriptor: ContextDescriptor {
+        struct Layout {
+            let base: TypeDescriptorLayout
+            let numPayloadCasesAndPayloadSizeOffset: UInt32
+            let numEmptyCases: UInt32
+        }
+
+        let ptr: UnsafeRawPointer
+
+        var numPayloadCases: Int {
+            Int(layout.numPayloadCasesAndPayloadSizeOffset) & 0xFFFFFF
+        }
+
+        var numEmptyCases: Int {
+            Int(layout.numEmptyCases)
+        }
+
+        var numCases: Int {
+            numEmptyCases + numPayloadCases
+        }
+    }
+
+    let ptr: UnsafeRawPointer
+
+    var descriptor: Descriptor {
+        Descriptor(ptr: ptr.load(as: Layout.self).descriptor)
+    }
+
+    var numPayloadCases: Int {
+        descriptor.numPayloadCases
+    }
+
+    var numEmptyCases: Int {
+        descriptor.numEmptyCases
+    }
+
+    var numCases: Int {
+        descriptor.numCases
     }
 
     var genericArgumentPtr: UnsafeRawPointer {

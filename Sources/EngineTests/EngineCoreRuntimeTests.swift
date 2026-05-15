@@ -28,6 +28,10 @@ final class CoreRuntimeTests: XCTestCase {
         XCTAssertFalse(swift_getIsClassType(MyStruct.self))
         XCTAssertFalse(swift_getIsClassType(MyStruct()))
 
+        struct MyEnum { }
+        XCTAssertFalse(swift_getIsClassType(MyEnum.self))
+        XCTAssertFalse(swift_getIsClassType(MyEnum()))
+
         class MyClass { }
         XCTAssert(swift_getIsClassType(MyClass.self))
         XCTAssert(swift_getIsClassType(MyClass()))
@@ -179,7 +183,6 @@ final class CoreRuntimeTests: XCTestCase {
         #else
         let host = NSHostingView(rootView: EmptyView())
         #endif
-        print(swift_getFields(host).map(\.field.key))
         if #available(iOS 16.0, tvOS 16.0, *) { } else {
             _ = try swift_getFieldValue("propertiesNeedingUpdate", UInt16.self, host)
         }

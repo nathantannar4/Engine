@@ -5,14 +5,22 @@
 import SwiftUI
 
 @frozen
-public struct InsetShape<S: Shape>: Shape {
+public struct InsetShape<S: Shape>: Shape, InsettableShape, Animatable {
 
     public var shape: S
     public var insets: EdgeInsets
 
-    public var animatableData: EdgeInsets {
-        get { insets }
-        set { insets = newValue }
+    public var animatableData: AnimatablePair<S.AnimatableData, EdgeInsets.AnimatableData> {
+        get {
+            AnimatablePair(
+                shape.animatableData,
+                insets.animatableData
+            )
+        }
+        set {
+            shape.animatableData = newValue.first
+            insets.animatableData = newValue.second
+        }
     }
 
     @inlinable
@@ -45,9 +53,6 @@ public struct InsetShape<S: Shape>: Shape {
     public func sizeThatFits(_ proposal: ProposedViewSize) -> CGSize {
         shape.sizeThatFits(proposal)
     }
-}
-
-extension InsetShape: InsettableShape {
 
     public nonisolated func inset(
         by amount: CGFloat
@@ -78,49 +83,84 @@ extension Shape {
 
 struct InsetShape_Previews: PreviewProvider {
     static var previews: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Rectangle()
-                    .inset(dx: -10, dy: -10)
-                    .fill(Color.red)
-
-                Rectangle()
-                    .fill(Color.black)
-
-                Rectangle()
-                    .inset(dx: 10, dy: 10)
-                    .fill(Color.blue)
-            }
-            .frame(width: 100, height: 100)
-
-            ZStack {
-                Capsule()
-                    .inset(dx: -10, dy: -10)
-                    .fill(Color.red)
-
-                Capsule()
-                    .fill(Color.black)
-
-                Capsule()
-                    .inset(dx: 10, dy: 10)
-                    .fill(Color.blue)
-            }
-            .frame(width: 100, height: 100)
-
-            ZStack {
-                Capsule()
-                    .inset(dx: -10, dy: -10)
-                    .fill(Color.red)
-
-                Capsule()
-                    .fill(Color.black)
-
-                Capsule()
-                    .inset(dx: 10, dy: 10)
-                    .fill(Color.blue)
-            }
-            .frame(width: 100, height: 40)
+        ZStack {
+            Preview()
         }
-        .padding()
+    }
+
+    struct Preview: View {
+        @State var flag = false
+
+        var body: some View {
+            let inset: CGFloat = flag ? 20 : 10
+            VStack(spacing: 48) {
+                ZStack {
+                    Rectangle()
+                        .inset(dx: -inset, dy: -inset)
+                        .fill(Color.red)
+
+                    Rectangle()
+                        .fill(Color.black)
+
+                    Rectangle()
+                        .inset(dx: inset, dy: inset)
+                        .fill(Color.blue)
+                }
+                .frame(width: 100, height: 100)
+
+                ZStack {
+                    Capsule()
+                        .inset(dx: -inset, dy: -inset)
+                        .fill(Color.red)
+
+                    Capsule()
+                        .fill(Color.black)
+
+                    Capsule()
+                        .inset(dx: inset, dy: inset)
+                        .fill(Color.blue)
+                }
+                .frame(width: 100, height: 100)
+
+                ZStack {
+                    Capsule()
+                        .inset(dx: -inset, dy: -inset)
+                        .fill(Color.red)
+
+                    Capsule()
+                        .fill(Color.black)
+
+                    Capsule()
+                        .inset(dx: inset, dy: inset)
+                        .fill(Color.blue)
+                }
+                .frame(width: 100, height: 60)
+
+                ZStack {
+                    Circle()
+                        .inset(dx: -inset, dy: -inset)
+                        .inset(dx: -inset, dy: -inset)
+                        .fill(Color.red)
+
+                    Circle()
+                        .fill(Color.black)
+
+                    Circle()
+                        .inset(dx: inset, dy: inset)
+                        .inset(dx: inset, dy: inset)
+                        .fill(Color.blue)
+                }
+                .frame(width: 100, height: 100)
+
+                Button {
+                    withAnimation {
+                        flag.toggle()
+                    }
+                } label: {
+                    Text("Toggle")
+                }
+            }
+            .padding()
+        }
     }
 }

@@ -180,7 +180,8 @@ private class AnimationTimingCurveProvider: NSObject, UITimingCurveProvider {
                 )
             )
         case .fluidSpring(let fluidSpringCurve):
-            let initialVelocity = log(fluidSpringCurve.dampingFraction) / (fluidSpringCurve.duration - fluidSpringCurve.blendDuration)
+            let duration = fluidSpringCurve.duration + fluidSpringCurve.blendDuration
+            let initialVelocity = duration > 0 ? log(fluidSpringCurve.dampingFraction) / duration : 0
             return UISpringTimingParameters(
                 dampingRatio: fluidSpringCurve.dampingFraction,
                 initialVelocity: CGVector(

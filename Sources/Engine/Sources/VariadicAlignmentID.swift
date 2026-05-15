@@ -43,39 +43,20 @@ extension VerticalAlignment {
 
 struct VariadicAlignmentID_Previews: PreviewProvider {
     static var previews: some View {
-        VStack(spacing: 48) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Label")
+        HStack(alignment: .secondTextBaseline) {
+            Text("Label")
 
-                VStack(alignment: .trailing) {
-                    Text("One")
-                    Text("Two")
-                    Text("Three")
-                }
-                .font(.title)
+            VStack(alignment: .trailing) {
+                Text("One")
+                    .alignmentGuide(.secondTextBaseline, value: .firstTextBaseline)
+
+                Text("Two")
+                    .alignmentGuide(.secondTextBaseline, value: .firstTextBaseline)
+
+                Text("Three")
+                    .alignmentGuide(.secondTextBaseline, value: .firstTextBaseline)
             }
-
-            HStack(alignment: .secondTextBaseline) {
-                Text("Label")
-
-                VStack(alignment: .trailing) {
-                    Text("One")
-                        .alignmentGuide(.secondTextBaseline) { d in
-                            d[VerticalAlignment.firstTextBaseline]
-                        }
-
-                    Text("Two")
-                        .alignmentGuide(.secondTextBaseline) { d in
-                            d[VerticalAlignment.firstTextBaseline]
-                        }
-
-                    Text("Three")
-                        .alignmentGuide(.secondTextBaseline) { d in
-                            d[VerticalAlignment.firstTextBaseline]
-                        }
-                }
-                .font(.title)
-            }
+            .font(.title)
         }
     }
 }

@@ -3,6 +3,7 @@ import SwiftSyntaxMacrosTestSupport
 import XCTest
 
 #if canImport(EngineMacrosCore)
+import EngineMacros
 @testable import EngineMacrosCore
 
 @MainActor
@@ -166,9 +167,51 @@ final class MacroTests: XCTestCase {
         )
     }
 
-    func testEnumKeyPathsMacro() {
+    func testUnionMacro() {
+        @Union
+        enum PrimitiveUnion {
+            case empty
+            case integer(Int)
+            case double(Double)
+            case string(String)
+            case pair(int: Int, double: Double)
+            case triple(Int, Double, String)
+            case optionalInteger(Int?)
+            case optionalDouble(double: Double?)
+            case optionalPair(Int?, Double?)
+
+            struct Box {
+                var value: Int
+            }
+            case box(Box)
+
+            @Union
+            enum Status {
+                case offline
+                case online
+            }
+            case status(Status)
+
+            case `default`
+        }
+
+        var union = PrimitiveUnion.empty
+        XCTAssert(union.isEmpty)
+        union.integer = 0
+        XCTAssert(union.isInteger)
+        union.double = nil
+        XCTAssert(union.isInteger)
+        union.pair = (1, 1)
+        XCTAssert(union.isPair)
+        union.optionalInteger = nil
+        XCTAssert(union.isOptionalInteger)
+        union.isDefault = false
+        XCTAssert(union.isOptionalInteger)
+        union.status = .online
+        XCTAssert(union.isStatus)
+
         let sourceInput = """
-        @EnumKeyPaths
+        @Union
         enum PrimitiveUnion {
             case empty
             case integer(Int)
@@ -184,6 +227,13 @@ final class MacroTests: XCTestCase {
                 var value: Int
             }
             case box(Box)
+        
+            @Union
+            enum Status {
+                case offline
+                case online
+            }
+            case status(Status)
         
             case `default`
         }
@@ -204,9 +254,48 @@ final class MacroTests: XCTestCase {
                 var value: Int
             }
             case box(Box)
+            enum Status {
+                case offline
+                case online
+
+                var isOffline: Bool {
+                    get {
+                        switch self {
+                        case .offline:
+                            return true
+                        default:
+                            return false
+                        }
+                    }
+                    set {
+                        guard newValue else {
+                            return
+                        }
+                        self = .offline
+                    }
+                }
+
+                var isOnline: Bool {
+                    get {
+                        switch self {
+                        case .online:
+                            return true
+                        default:
+                            return false
+                        }
+                    }
+                    set {
+                        guard newValue else {
+                            return
+                        }
+                        self = .online
+                    }
+                }
+            }
+            case status(Status)
 
             case `default`
-        
+
             enum CaseKey {
                 case empty
                 case integer
@@ -218,9 +307,10 @@ final class MacroTests: XCTestCase {
                 case optionalDouble
                 case optionalPair
                 case box
+                case status
                 case `default`
             }
-        
+
             var key: CaseKey {
                 switch self {
                 case .empty:
@@ -243,6 +333,8 @@ final class MacroTests: XCTestCase {
                     return .optionalPair
                 case .box:
                     return .box
+                case .status:
+                    return .status
                 case .`default`:
                     return .`default`
                 }
@@ -627,6 +719,34 @@ final class MacroTests: XCTestCase {
                 }
             }
 
+            var isStatus: Bool {
+                get {
+                    switch self {
+                    case .status:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            var status: Status? {
+                get {
+                    switch self {
+                    case .status(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .status(newValue)
+                }
+            }
+
             var isDefault: Bool {
                 get {
                     switch self {
@@ -649,7 +769,7 @@ final class MacroTests: XCTestCase {
             sourceInput,
             expandedSource: sourceOutput,
             macros: [
-                "EnumKeyPaths": EnumKeyPathsMacro.self,
+                "Union": UnionMacro.self,
             ]
         )
     }

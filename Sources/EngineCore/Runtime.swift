@@ -19,27 +19,32 @@ public struct MetadataField {
     public let type: Any.Type
 }
 
-public func swift_getFields<InstanceType>(_ instance: InstanceType) -> [(field: MetadataField, value: Any?)] {
-    func unwrap<T>(_ x: Any) -> T {
-        return x as! T
+public func swift_getFields<InstanceType>(_ instance: InstanceType) throws -> [(field: MetadataField, value: Any)] {
+    let fields = swift_getFields(InstanceType.self)
+    return try fields.compactMap { field in
+        return (field, try swift_getFieldValue(field.key, field.type, instance))
     }
-    var fields = [(field: MetadataField, value: Any?)]()
-    var mirror: Mirror? = Mirror(reflecting: instance)
-    while let m = mirror {
-        let nextValue = m.children.compactMap({ child -> (field: MetadataField, value: Any?)? in
-            guard let key = child.label else {
-                return nil
-            }
-            return (MetadataField(key: key, type: type(of: child.value)), unwrap(child.value))
-        })
-        fields.append(contentsOf: nextValue)
-        mirror = m.superclassMirror
+}
+
+public func swift_getFields(
+    _ type: Any.Type
+) -> [MetadataField] {
+    var type = type
+    if type == Any.self {
+        func project<T>(_: T.Type) -> Any.Type {
+            return T.self
+        }
+        type = _openExistential(type, do: project)
     }
-    return fields
+    let fields = swift_getFields_slow(type)
+    return fields.compactMap { field in
+        guard let key = field.name else { return nil }
+        return MetadataField(key: key, type: field.type)
+    }
 }
 
 public func swift_getFieldType(_ key: String, _ instance: Any) throws -> Any.Type {
-    try swift_getField(key, instance).type
+    try swift_getField(key, type(of: instance)).type
 }
 
 public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType) throws -> Value {
@@ -74,6 +79,13 @@ public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _
 
 public func swift_getStructGenerics(for type: Any.Type) -> [Any.Type]? {
     guard let metadata = Metadata<StructMetadata>(type) else {
+        return nil
+    }
+    return metadata[\.genericTypes]
+}
+
+public func swift_getEnumGenerics(for type: Any.Type) -> [Any.Type]? {
+    guard let metadata = Metadata<EnumMetadata>(type) else {
         return nil
     }
     return metadata[\.genericTypes]
@@ -131,7 +143,7 @@ private func getFieldValue<Value, InstanceType>(
     _ valueType: Value.Type,
     _ instance: InstanceType
 ) throws -> Value {
-    let field = try swift_getField(key, instance)
+    let field = try swift_getField(key, type(of: instance))
     guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || valueType == Any.self else {
         throw SwiftFieldTypeMismatchError(
             key: key,
@@ -159,14 +171,14 @@ private func setFieldValue<Value, InstanceType>(
     _ value: Value,
     _ instance: inout InstanceType
 ) throws {
-    let instanceType = type(of: instance)
-    let field = try swift_getField(key, instance)
+    let type = type(of: instance)
+    let field = try swift_getField(key, type)
     guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || Value.self == Any.self else {
         throw SwiftFieldTypeMismatchError(
             key: key,
             expected: field.type,
             received: Value.self,
-            instance: instanceType
+            instance: type
         )
     }
     try withUnsafeMutableInstancePointer(&instance) { pointer in
@@ -178,7 +190,7 @@ private func setFieldValue<Value, InstanceType>(
                         key: key,
                         expected: field.type,
                         received: Any.self,
-                        instance: instanceType
+                        instance: type
                     )
                 }
                 buffer.pointee = value
@@ -214,14 +226,14 @@ private class FieldLookupCache: @unchecked Sendable {
 
 private func swift_getField(
     _ key: String,
-    _ instance: Any
+    _ type: Any.Type
 ) throws -> Field {
-    var type: Any.Type = type(of: instance)
+    var type = type
     if type == Any.self {
-        func project<T>(_: T) -> Any.Type {
+        func project<T>(_: T.Type) -> Any.Type {
             return T.self
         }
-        type = _openExistential(instance, do: project)
+        type = _openExistential(type, do: project)
     }
     if let field = FieldLookupCache.shared[type, key] {
         return field
@@ -235,20 +247,35 @@ private func swift_getField(
     }
 }
 
-private func swift_getField_slow(
-    _ key: String,
-    _ instanceType: Any.Type
-) throws -> Field {
-    let count = swift_reflectionMirror_recursiveCount(instanceType)
+private func swift_getFields_slow(
+    _ type: Any.Type
+) -> [Field] {
+    let count = swift_reflectionMirror_recursiveCount(type)
+    var fields = [Field]()
     for i in 0..<count {
         var field = FieldReflectionMetadata()
-        let fieldType = swift_reflectionMirror_recursiveChildMetadata(instanceType, index: i, fieldMetadata: &field)
+        let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
+        defer { field.dealloc?(field.name) }
+        let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
+        fields.append(Field(type: fieldType, name: field.name, offset: offset))
+    }
+    return fields
+}
+
+private func swift_getField_slow(
+    _ key: String,
+    _ type: Any.Type
+) throws -> Field {
+    let count = swift_reflectionMirror_recursiveCount(type)
+    for i in 0..<count {
+        var field = FieldReflectionMetadata()
+        let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
         defer { field.dealloc?(field.name) }
         guard field.name == key else { continue }
-        let offset = swift_reflectionMirror_recursiveChildOffset(instanceType, index: i)
-        return Field(type: fieldType, offset: offset)
+        let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
+        return Field(type: fieldType, name: field.name, offset: offset)
     }
-    throw SwiftFieldNotFoundError(key: key, instance: instanceType)
+    throw SwiftFieldNotFoundError(key: key, instance: type)
 }
 
 private func withUnsafeInstancePointer<InstanceType, Result>(
@@ -289,6 +316,7 @@ private func withUnsafeMutableInstancePointer<InstanceType, Result>(
 
 private struct Field {
     let type: Any.Type
+    let name: String?
     let offset: Int
 }
 

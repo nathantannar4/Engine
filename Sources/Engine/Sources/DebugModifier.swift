@@ -22,24 +22,34 @@ public struct DebugOverlayModifier: ViewModifier {
         content
             #if DEBUG
             .overlay(
-                ZStack(alignment: .bottomTrailing) {
-                    let label = Text(label)
-                        .foregroundColor(color)
-                        .background(color.opacity(0.3))
-                        .alignmentGuide(VerticalAlignment.bottom) { d in
-                            d[.bottom] - d.height / 2
-                        }
-                        .padding(2)
+                GeometryReader { proxy in
+                    let size = proxy.size
+                    ZStack {
+                        Rectangle()
+                            .strokeBorder(color, lineWidth: 2)
 
-                    Rectangle()
-                        .strokeBorder(color, lineWidth: 2)
-                        .invertedMask(alignment: .bottomTrailing) {
-                            label
-                                .overlay(Rectangle())
-                        }
+                        Text(verbatim: "\(size.width.rounded(decimalPoints: 1)), \(size.height.rounded(decimalPoints: 1))")
+                            .fixedSize()
+                            .background(color.opacity(0.3))
+                            .alignmentGuide(VerticalAlignment.center) { d in
+                                d[VerticalAlignment.center] + (size.height + d.height) / 2
+                            }
+                            .alignmentGuide(HorizontalAlignment.center) { d in
+                                d[HorizontalAlignment.center] + (size.width - d.width) / 2
+                            }
+                            .frame(width: size.width, height: size.height, alignment: .center)
 
-                    label
-                        .border(color, width: 2)
+                        Text(label)
+                            .background(color.opacity(0.3))
+                            .fixedSize()
+                            .alignmentGuide(VerticalAlignment.center) { d in
+                                d[VerticalAlignment.center] - (size.height + d.height) / 2
+                            }
+                            .alignmentGuide(HorizontalAlignment.center) { d in
+                                d[HorizontalAlignment.center] - (size.width - d.width) / 2
+                            }
+                            .frame(width: size.width, height: size.height, alignment: .center)
+                    }
                 }
             )
             #endif
@@ -48,7 +58,7 @@ public struct DebugOverlayModifier: ViewModifier {
 
 extension View {
 
-    /// A view that flashes a debug overlay to indicate when a view update occurred
+    /// A modifier that draws a border around the frame with a label
     ///
     /// > Note: DEBUG builds only
     public func withDebugOverlay(label: String, color: Color) -> some View {
@@ -64,12 +74,15 @@ extension View {
 
 struct DebugOverlayModifier_Previews: PreviewProvider {
     static var previews: some View {
-        VStack {
+        VStack(spacing: 48) {
             Text("Hello, World")
-                .padding()
+                .padding(32)
                 .withDebugOverlay(label: "Text", color: .red)
-                .padding()
+                .padding(32)
                 .withDebugOverlay(label: "Padding", color: .blue)
+
+            Text("Text")
+                .withDebugOverlay(label: "Label", color: .red)
         }
     }
 }

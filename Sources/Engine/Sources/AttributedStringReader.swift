@@ -66,12 +66,12 @@ struct AttributedStringReader_Previews: PreviewProvider {
                     Text(attributedString)
                 }
 
-                #if os(iOS) || os(macOS)
+                #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
                 let attributedText: NSAttributedString = text.resolveAttributed(in: environment)
                 Label(attributedText: attributedText)
 
                 AttributedStringReader(text) { attributedString in
-                    #if os(iOS)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
                     let attributedText = try? NSAttributedString(
                         attributedString.toUIKit(in: environment),
                         including: \.uiKit
@@ -89,7 +89,7 @@ struct AttributedStringReader_Previews: PreviewProvider {
             .frame(maxWidth: .infinity)
         }
 
-        #if os(iOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         struct Label: UIViewRepresentable {
             var attributedText: NSAttributedString
 
