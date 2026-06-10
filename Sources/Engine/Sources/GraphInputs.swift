@@ -137,7 +137,6 @@ extension PropertyList {
                     || key.hasSuffix(".AccessibilityRelationshipScope")
                     || key.hasSuffix(".EventBindingBridgeFactoryInput")
                     || key.hasSuffix(".InterfaceIdiomInput")
-                    || key.hasSuffix(containerKey)
                 if isMatch {
                     break
                 }
