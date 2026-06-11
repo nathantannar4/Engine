@@ -43,15 +43,45 @@ struct EnvironmentValueReader_Preview: PreviewProvider {
     }
 
     static var previews: some View {
-        VStack {
-            EnvironmentValueReader(\.testFlag) { flag in
-                Text(flag.description)
-            }
+        ZStack {
+            Preview()
+        }
+    }
 
-            EnvironmentValueReader(\.testFlag) { flag in
+    struct Preview: View {
+        @State var flag = false
+        @State var value = 0
+
+        var body: some View {
+            VStack {
+                Toggle(isOn: $flag) { EmptyView() }
+                    .labelsHidden()
+
+                Button("\(value)") {
+                    value += 1
+                }
+
+                EnvironmentValueReader(\.testFlag) { flag in
+                    Text(flag.description)
+                }
+
+                if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+                    EnvironmentValueReader(\.testFlag) { flag in
+                        ChildView(flag: flag)
+                    }
+                }
+            }
+            .environment(\.testFlag, flag)
+        }
+
+        @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+        struct ChildView: View {
+            var flag: Bool
+
+            var body: some View {
+                let _ = Self._printChanges()
                 Text(flag.description)
             }
-            .environment(\.testFlag, true)
         }
     }
 }

@@ -22,8 +22,38 @@ extension Text {
 
     @inlinable
     @inline(__always)
-    public init(ellipsis key: LocalizedStringKey) {
-        self = Text(key) + Text("…")
+    public static var bulletPoint: Text {
+        Text("• ")
+    }
+
+    @inlinable
+    @inline(__always)
+    public static var ellipsis: Text {
+        Text("…")
+    }
+
+    @inlinable
+    @inline(__always)
+    public init(prefix: Text, _ key: LocalizedStringKey) {
+        self = prefix + Text(key)
+    }
+
+    @inlinable
+    @inline(__always)
+    public init(prefix: Text, _ text: Text) {
+        self = prefix + text
+    }
+
+    @inlinable
+    @inline(__always)
+    public init(_ key: LocalizedStringKey, suffix: Text) {
+        self = Text(key) + suffix
+    }
+
+    @inlinable
+    @inline(__always)
+    public init(_ text: Text, suffix: Text) {
+        self = text + suffix
     }
 
     @_disfavoredOverload
@@ -62,6 +92,11 @@ extension Text {
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Text {
+
+    public init?(_ image: Image?) {
+        guard let image else { return nil }
+        self = Text(image)
+    }
 
     public init?<Subject>(
         _ subject: Subject?,
@@ -1013,7 +1048,14 @@ struct Text_Previews: PreviewProvider {
                 Text(verbatim: "Nil")
             }
 
-            Text(ellipsis: "Search")
+            Text("Search", suffix: .ellipsis)
+
+            Text(prefix: .bulletPoint, "Line 1")
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                Text("Search", suffix: .ellipsis)
+                    .redacted(reason: .placeholder)
+            }
         }
     }
 }

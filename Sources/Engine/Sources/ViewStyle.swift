@@ -293,7 +293,7 @@ private struct ViewStylesBox: @unchecked Sendable {
     fileprivate subscript<ID: ViewStyledView>(
         _ : ID.Type
     ) -> [AnyViewStyle] {
-        get { storage[unsafeBitCast(ID.self, to: UnsafeRawPointer.self)] ?? [] }
+        get { storage[unsafeBitCast(ID.self, to: UnsafeRawPointer.self), default: []] }
         set { storage[unsafeBitCast(ID.self, to: UnsafeRawPointer.self)] = newValue }
     }
 }
@@ -453,10 +453,7 @@ private struct AnyViewStyledView<
         }
 
         func project<Style: ViewStyle>(_ : Style.Type) -> _ViewOutputs {
-            let view = unsafeBitCast(
-                view,
-                to: _GraphValue<AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>>.self
-            )
+            let view = view.unsafeCast(to: AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>.self)
             return AnyViewStyledViewBody<Style>._makeView(
                 view: view[\.content],
                 inputs: inputs
@@ -478,10 +475,7 @@ private struct AnyViewStyledView<
         }
 
         func project<Style: ViewStyle>(_ : Style.Type) -> _ViewListOutputs {
-            let view = unsafeBitCast(
-                view,
-                to: _GraphValue<AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>>.self
-            )
+            let view = view.unsafeCast(to: AnyViewStyledView<StyledView, AnyViewStyledViewBody<Style>>.self)
             return AnyViewStyledViewBody<Style>._makeViewList(
                 view: view[\.content],
                 inputs: inputs

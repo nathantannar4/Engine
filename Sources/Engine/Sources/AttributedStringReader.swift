@@ -44,6 +44,35 @@ public struct AttributedStringReader<Content: View>: View {
     }
 
     public var body: some View {
+        AttributedStringReaderBody(text: text, content: content)
+            .equatable()
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct AttributedStringReaderBody<Content: View>: View, Equatable {
+
+    var text: Text?
+    var content: (AttributedString?) -> Content
+
+    var body: some View {
+        AttributedStringReaderResolvedBody(text: text, content: content)
+    }
+
+    static nonisolated func == (lhs: Self, rhs: Self) -> Bool {
+        return lhs.text == rhs.text
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+private struct AttributedStringReaderResolvedBody<Content: View>: View {
+
+    var text: Text?
+    var content: (AttributedString?) -> Content
+
+    @Environment(\.self) var environment
+
+    var body: some View {
         content(text?.resolveAttributed(in: environment))
     }
 }

@@ -260,10 +260,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             var outputs: _ViewOutputs!
 
             mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
-                let view = unsafeBitCast(
-                    view,
-                    to: _GraphValue<ModifiedContent<Content, _TraitWritingModifier<Key>>>.self
-                )
+                let view = view.unsafeCast(to: ModifiedContent<Content, _TraitWritingModifier<Key>>.self)
                 outputs = ModifiedContent<Content, _TraitWritingModifier<Key>>._makeView(
                     view: view,
                     inputs: inputs
@@ -277,10 +274,7 @@ public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
             var outputs: _ViewListOutputs!
 
             mutating func visit<Key>(type: Key.Type) where Key: _ViewTraitKey {
-                let view = unsafeBitCast(
-                    view,
-                    to: _GraphValue<ModifiedContent<Content, _TraitWritingModifier<Key>>>.self
-                )
+                let view = view.unsafeCast(to: ModifiedContent<Content, _TraitWritingModifier<Key>>.self)
                 outputs = ModifiedContent<Content, _TraitWritingModifier<Key>>._makeViewList(
                     view: view,
                     inputs: inputs

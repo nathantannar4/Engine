@@ -136,6 +136,19 @@ extension EnvironmentValues {
     }
     #endif
 
+    /// The value for the `dynamicTypeSize`/`sizeCategory`'s `isAccessibilitySize`
+    public var isAccesssibilitySize: Bool {
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+            return dynamicTypeSize.isAccessibilitySize
+        }
+        switch sizeCategory {
+        case .accessibilityMedium, .accessibilityLarge, .accessibilityExtraLarge, .accessibilityExtraExtraLarge, .accessibilityExtraExtraExtraLarge:
+            return true
+        default:
+            return false
+        }
+    }
+
     public var submit: SubmitAction? {
         self["__Key_triggerSubmission"]
     }
