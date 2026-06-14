@@ -33,7 +33,7 @@ public struct StaticModifier<
     ) -> _ViewOutputs {
         func project<T>(_ type: T.Type) -> _ViewOutputs {
             let conformance = ViewModifierProtocolDescriptor.conformance(of: T.self)!
-            var visitor = ViewOutputsVisitor(view: modifier[\.modifier], inputs: inputs, body: body)
+            var visitor = ViewOutputsVisitor(modifier: modifier[\.modifier], inputs: inputs, body: body)
             conformance.visit(visitor: &visitor)
             return visitor.outputs
         }
@@ -48,7 +48,7 @@ public struct StaticModifier<
     ) -> _ViewListOutputs {
         func project<T>(_ type: T.Type) -> _ViewListOutputs {
             let conformance = ViewModifierProtocolDescriptor.conformance(of: T.self)!
-            var visitor = ViewListOutputsVisitor(view: modifier[\.modifier], inputs: inputs, body: body)
+            var visitor = ViewListOutputsVisitor(modifier: modifier[\.modifier], inputs: inputs, body: body)
             conformance.visit(visitor: &visitor)
             return visitor.outputs
         }
@@ -83,27 +83,27 @@ private struct StaticModifierBody<Modifier: ViewModifier>: ViewModifier {
 }
 
 private struct ViewOutputsVisitor: ViewModifierVisitor {
-    var view: _GraphValue<Any>
+    var modifier: _GraphValue<Any>
     var inputs: _ViewInputs
     var body: (_Graph, _ViewInputs) -> _ViewOutputs
 
     var outputs: _ViewOutputs!
 
     mutating func visit<Modifier>(type: Modifier.Type) where Modifier: ViewModifier {
-        let modifier = unsafeBitCast(view, to: _GraphValue<StaticModifierBody<Modifier>>.self)
+        let modifier = modifier.unsafeCast(to: StaticModifierBody<Modifier>.self)
         outputs = StaticModifierBody<Modifier>._makeView(modifier: modifier, inputs: inputs, body: body)
     }
 }
 
 private struct ViewListOutputsVisitor: ViewModifierVisitor {
-    var view: _GraphValue<Any>
+    var modifier: _GraphValue<Any>
     var inputs: _ViewListInputs
     var body: (_Graph, _ViewListInputs) -> _ViewListOutputs
 
     var outputs: _ViewListOutputs!
 
     mutating func visit<Modifier>(type: Modifier.Type) where Modifier: ViewModifier {
-        let modifier = unsafeBitCast(view, to: _GraphValue<StaticModifierBody<Modifier>>.self)
+        let modifier = modifier.unsafeCast(to: StaticModifierBody<Modifier>.self)
         outputs = StaticModifierBody<Modifier>._makeViewList(modifier: modifier, inputs: inputs, body: body)
     }
 }

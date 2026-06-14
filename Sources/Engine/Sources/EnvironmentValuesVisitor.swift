@@ -120,7 +120,7 @@ extension EnvironmentValues {
                 EnvironmentKeyLookupCache.shared[key] = conformance
                 return body(conformance) ?? defaultValue()
             }
-            ptr = p.after
+            ptr = p.advanced()
         }
         return defaultValue()
     }
@@ -250,7 +250,7 @@ public struct _EnvironmentValuesLogModifier: ViewModifier {
                         \(keyType)
                             ▿ value: \(value ?? "nil")\n
                         """
-                        ptr = p.after
+                        ptr = p.advanced()
                     }
                     return message
                 }()

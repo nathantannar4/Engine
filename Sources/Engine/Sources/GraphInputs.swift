@@ -59,16 +59,10 @@ extension _GraphInputs {
 
     public subscript<Value>(
         key: String,
-        as _: Value.Type
+        as _: Value.Type = Value.self
     ) -> Value? {
         get { customInputs[key, as: Value.self] }
-    }
-
-    public subscript<Value>(
-        key: String
-    ) -> Value? {
-        get { customInputs[key, as: Value.self] }
-        set { customInputs[key] = newValue }
+        set { customInputs[key, as: Value.self] = newValue }
     }
 }
 
@@ -96,9 +90,7 @@ public struct _ViewInputsBridgeModifier: ViewModifier {
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
         ) {
-            if #unavailable(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0) {
-                inputs.customInputs.detach()
-            }
+            inputs.customInputs.detach()
         }
     }
 }
@@ -128,6 +120,9 @@ extension PropertyList {
 
         let tail = ptr!
         var last = tail.after
+        if let last, last.length == 1 {
+            return
+        }
         tail.after = nil
 
         while let p = last?.after {

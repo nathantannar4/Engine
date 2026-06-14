@@ -79,6 +79,10 @@ public struct ViewAliasSourceModifier<
     private struct Modifier: GraphInputsModifier {
         nonisolated(unsafe) var source: Source
 
+        nonisolated var attribute: ViewAliasBody<Source> {
+            ViewAliasBody(source: source)
+        }
+
         public nonisolated static func makeInputs(
             modifier: _GraphValue<Self>,
             inputs: inout _GraphInputs
@@ -86,7 +90,7 @@ public struct ViewAliasSourceModifier<
             if Alias.self != Source.self {
                 inputs[ViewAliasInput<Alias>.self].append(
                     .init(
-                        attribute: unsafeBitCast(modifier[\.source], to: _GraphValue<Any>.self),
+                        attribute: unsafeBitCast(modifier[\.attribute], to: _GraphValue<Any>.self),
                         type: Source.self
                     )
                 )
@@ -198,7 +202,11 @@ private struct ViewAliasDefaultBody<Alias: ViewAlias>: View {
 }
 
 private struct ViewAliasBody<Content: View>: View {
-    var body: Content
+    nonisolated(unsafe) var source: Content
+
+    var body: some View {
+        source
+    }
 }
 
 private struct ViewOutputsVisitor: ViewVisitor {
@@ -208,7 +216,7 @@ private struct ViewOutputsVisitor: ViewVisitor {
     var outputs: _ViewOutputs!
 
     mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(view, to: _GraphValue<ViewAliasBody<Content>>.self)
+        let view = view.unsafeCast(to: ViewAliasBody<Content>.self)
         outputs = ViewAliasBody<Content>._makeView(view: view, inputs: inputs)
     }
 }
@@ -220,7 +228,7 @@ private struct ViewListOutputsVisitor: ViewVisitor {
     var outputs: _ViewListOutputs!
 
     mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(view, to: _GraphValue<ViewAliasBody<Content>>.self)
+        let view = view.unsafeCast(to: ViewAliasBody<Content>.self)
         outputs = ViewAliasBody<Content>._makeViewList(view: view, inputs: inputs)
     }
 }

@@ -72,16 +72,10 @@ public struct ViewInputs {
 
     public subscript<Value>(
         key: String,
-        as _: Value.Type
+        as _: Value.Type = Value.self
     ) -> Value? {
         get { customInputs[key, as: Value.self] }
-    }
-
-    public subscript<Value>(
-        key: String
-    ) -> Value? {
-        get { customInputs[key, as: Value.self] }
-        set { customInputs[key] = newValue }
+        set { customInputs[key, as: Value.self] = newValue }
     }
 }
 
@@ -116,9 +110,14 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
         while let p = ptr {
             message = ""
             dump(p, to: &message)
+            if case .v8 = p {
+                dump(p.keyType, to: &message)
+            }
             dump(p.fields, to: &message)
-            dump(p.value, to: &message)
-            ptr = p.after
+            if let value = p.value {
+                dump(value, to: &message)
+            }
+            ptr = p.advanced()
 
             os_log(.debug, "%@", message)
         }
@@ -163,16 +162,10 @@ extension _ViewInputs {
 
     public subscript<Value>(
         key: String,
-        as _: Value.Type
+        as _: Value.Type = Value.self
     ) -> Value? {
         get { graphInputs[key, as: Value.self] }
-    }
-
-    public subscript<Value>(
-        key: String
-    ) -> Value? {
-        get { graphInputs[key, as: Value.self] }
-        set { graphInputs[key] = newValue }
+        set { graphInputs[key, as: Value.self] = newValue }
     }
 }
 
@@ -213,16 +206,10 @@ extension _ViewListInputs {
 
     public subscript<Value>(
         key: String,
-        as _: Value.Type
+        as _: Value.Type = Value.self
     ) -> Value? {
         get { graphInputs[key, as: Value.self] }
-    }
-
-    public subscript<Value>(
-        key: String
-    ) -> Value? {
-        get { graphInputs[key, as: Value.self] }
-        set { graphInputs[key] = newValue }
+        set { graphInputs[key, as: Value.self] = newValue }
     }
 }
 
@@ -267,15 +254,9 @@ extension _ViewListCountInputs {
 
     public subscript<Value>(
         key: String,
-        as _: Value.Type
+        as _: Value.Type = Value.self
     ) -> Value? {
         get { customInputs[key, as: Value.self] }
-    }
-
-    public subscript<Value>(
-        key: String
-    ) -> Value? {
-        get { customInputs[key, as: Value.self] }
-        set { customInputs[key] = newValue }
+        set { customInputs[key, as: Value.self] = newValue }
     }
 }

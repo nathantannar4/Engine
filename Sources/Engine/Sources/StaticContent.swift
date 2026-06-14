@@ -82,7 +82,7 @@ private struct ViewOutputsVisitor: ViewVisitor {
     var outputs: _ViewOutputs!
 
     mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(view, to: _GraphValue<StaticContentBody<Content>>.self)
+        let view = view.unsafeCast(to: StaticContentBody<Content>.self)
         outputs = StaticContentBody<Content>._makeView(view: view, inputs: inputs)
     }
 }
@@ -94,7 +94,7 @@ private struct ViewListOutputsVisitor: ViewVisitor {
     var outputs: _ViewListOutputs!
 
     mutating func visit<Content>(type: Content.Type) where Content: View {
-        let view = unsafeBitCast(view, to: _GraphValue<StaticContentBody<Content>>.self)
+        let view = view.unsafeCast(to: StaticContentBody<Content>.self)
         outputs = StaticContentBody<Content>._makeViewList(view: view, inputs: inputs)
     }
 }

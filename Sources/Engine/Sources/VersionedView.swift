@@ -569,6 +569,27 @@ struct VersionedView_Previews: PreviewProvider {
             PreviewVersionedView()
 
             PreviewVersionedView()
+                .version(.v8)
+
+            PreviewVersionedView()
+                .version(.v7)
+
+            PreviewVersionedView()
+                .version(.v6)
+
+            PreviewVersionedView()
+                .version(.v5)
+
+            PreviewVersionedView()
+                .version(.v4)
+
+            PreviewVersionedView()
+                .version(.v3)
+
+            PreviewVersionedView()
+                .version(.v2)
+
+            PreviewVersionedView()
                 .version(.v1)
 
             VersionedViewWithState()
