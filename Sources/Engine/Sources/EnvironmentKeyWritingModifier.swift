@@ -27,6 +27,14 @@ public struct EnvironmentKeyWritingModifier<V>: ViewModifier {
         self._value = isEnabled ? .init(value) : .init(keyPath)
     }
 
+    public init(
+        keyPath: WritableKeyPath<EnvironmentValues, V>,
+        value: V?
+    ) {
+        self.keyPath = keyPath
+        self._value = value.map { .init($0) } ?? .init(keyPath)
+    }
+
     public func body(content: Content) -> some View {
         content
             .environment(keyPath, value)
@@ -45,6 +53,19 @@ extension View {
                 keyPath: keyPath,
                 value: value,
                 isEnabled: isEnabled
+            )
+        )
+    }
+
+    @_disfavoredOverload
+    public func environment<V>(
+        _ keyPath: WritableKeyPath<EnvironmentValues, V>,
+        _ value: V?
+    ) -> some View {
+        modifier(
+            EnvironmentKeyWritingModifier(
+                keyPath: keyPath,
+                value: value
             )
         )
     }
@@ -72,6 +93,9 @@ struct EnvironmentKeyWritingModifier_Previews: PreviewProvider {
 
                     Text("Hello, World")
                         .environment(\.font, .title, isEnabled: isEnabled)
+
+                    Text("Hello, World")
+                        .environment(\.font, isEnabled ? nil : .title)
                 }
             }
         }

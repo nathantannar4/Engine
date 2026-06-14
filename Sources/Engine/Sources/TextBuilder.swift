@@ -99,8 +99,6 @@ public struct MultiText: View {
     public var separator: Text
     public var blocks: [Text]
 
-    @Environment(\.self) private var environment
-
     @inlinable
     public init(
         separator: Text = .space,
@@ -128,14 +126,37 @@ public struct MultiText: View {
     }
 
     public var body: some View {
-        if let text = blocks.joined(separator: separator) {
-            environment.redactionReasons.isEmpty
-                ? text
-                : Text(text.resolve(in: environment))
-        }
+        MultiTextBody(separator: separator, blocks: blocks)
+            .equatable()
     }
 }
 
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+private struct MultiTextBody: View, Equatable {
+
+    var separator: Text
+    var blocks: [Text]
+
+    var body: some View {
+        ResolvedBody(separator: separator, blocks: blocks)
+    }
+
+    struct ResolvedBody: View {
+
+        var separator: Text
+        var blocks: [Text]
+
+        @Environment(\.self) var environment
+
+        var body: some View {
+            if let text = blocks.joined(separator: separator) {
+                environment.redactionReasons.isEmpty
+                    ? text
+                    : Text(text.resolve(in: environment))
+            }
+        }
+    }
+}
 
 extension Text {
 
@@ -285,7 +306,7 @@ struct TextBuilder_Previews: PreviewProvider {
                     MultiText {
                         texts
                     }
-                    .redacted(reason: .placeholder)
+                    .redacted(reason: flag ? [] : .placeholder)
 
                     Text("Value with interpolation: \(Text("Hello, World!"))")
                         .redacted(reason: .placeholder)

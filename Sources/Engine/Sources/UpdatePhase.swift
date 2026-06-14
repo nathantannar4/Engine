@@ -53,6 +53,10 @@ public struct UpdatePhase: @preconcurrency DynamicProperty {
             self.phase = 0
         }
 
+        public var updates: UInt32 {
+            phase
+        }
+
         public mutating func update() {
             phase &+= 1
         }
