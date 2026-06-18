@@ -254,184 +254,182 @@ struct ViewAlias_Previews: PreviewProvider {
     }
 
     static var previews: some View {
-        Group {
-            ZStack {
-                VStack {
-                    PreviewAlias()
+        ZStack {
+            VStack {
+                PreviewAlias()
 
-                    PreviewAlias()
-                        .viewAlias(PreviewAlias.self) {
-                            PreviewAlias()
-                        }
-                }
-            }
-            .previewDisplayName("DefaultBody")
-
-            ZStack {
-                VStack {
-                    VStack {
-                        PreviewAlias()
-
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
                         PreviewAlias()
                     }
+            }
+        }
+        .previewDisplayName("DefaultBody")
+
+        ZStack {
+            VStack {
+                VStack {
+                    PreviewAlias()
+
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
+
+                PreviewAlias()
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
                     }
-
-                    PreviewAlias()
-                        .viewAlias(PreviewAlias.self) {
-                            Text("Hello, World")
-                        }
-                }
             }
-            .previewDisplayName("Text")
+        }
+        .previewDisplayName("Text")
 
-            ZStack {
-                VStack {
-                    PreviewAlias()
-                        .viewAlias(PreviewAlias.self) {
-                            ForEach(0...2, id: \.self) { _ in
-                                Text("Hello, World")
-                            }
-                        }
-
-                    VStack {
-                        PreviewAlias()
-                    }
+        ZStack {
+            VStack {
+                PreviewAlias()
                     .viewAlias(PreviewAlias.self) {
                         ForEach(0...2, id: \.self) { _ in
                             Text("Hello, World")
                         }
                     }
 
-                    VStack {
-                        ForEach(0...2, id: \.self) { index in
-                            PreviewAlias()
-                        }
-                        .viewAlias(PreviewAlias.self) {
-                            Text("Hello, World")
-                        }
+                VStack {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    ForEach(0...2, id: \.self) { _ in
+                        Text("Hello, World")
                     }
                 }
-            }
-            .previewDisplayName("ForEach")
 
-            ZStack {
                 VStack {
-                    Group {
-                        PreviewAlias()
-                        PreviewAlias()
+                    ForEach(0...2, id: \.self) { index in
                         PreviewAlias()
                     }
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
                     }
-
-                    PreviewAlias()
-                        .viewAlias(PreviewAlias.self) {
-                            Group {
-                                Text("Hello, World")
-                                Text("Hello, World")
-                                Text("Hello, World")
-                            }
-                        }
-
                 }
             }
-            .previewDisplayName("Group")
+        }
+        .previewDisplayName("ForEach")
 
-            ZStack {
-                VariadicViewAdapter(source: PreviewAlias()) { content in
-                    Text(content.count.description)
+        ZStack {
+            VStack {
+                Group {
+                    PreviewAlias()
+                    PreviewAlias()
+                    PreviewAlias()
                 }
                 .viewAlias(PreviewAlias.self) {
                     Text("Hello, World")
-                    Text("Hello, World")
-                    Text("Hello, World")
                 }
-            }
-            .previewDisplayName("VariadicView")
 
-            ZStack {
-                VStack {
-                    ConditionalView(if: true) {
-                        ZStack {
-                            PreviewAlias()
-                        }
-                        .viewAlias(PreviewAlias.self) {
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
+                        Group {
+                            Text("Hello, World")
+                            Text("Hello, World")
                             Text("Hello, World")
                         }
                     }
 
-                    ConditionalView(if: true) {
+            }
+        }
+        .previewDisplayName("Group")
+
+        ZStack {
+            VariadicViewAdapter(source: PreviewAlias()) { content in
+                Text(content.count.description)
+            }
+            .viewAlias(PreviewAlias.self) {
+                Text("Hello, World")
+                Text("Hello, World")
+                Text("Hello, World")
+            }
+        }
+        .previewDisplayName("VariadicView")
+
+        ZStack {
+            VStack {
+                ConditionalView(if: true) {
+                    ZStack {
                         PreviewAlias()
                     }
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
                     }
+                }
 
-                    VStack {
-                        ConditionalView(if: true) {
-                            VStack {
-                                PreviewAlias()
-                            }
-                        }
-                    }
-                    .viewAlias(PreviewAlias.self) {
-                        Text("Hello, World")
-                    }
+                ConditionalView(if: true) {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
 
+                VStack {
                     ConditionalView(if: true) {
                         VStack {
                             PreviewAlias()
                         }
                     }
-                    .viewAlias(PreviewAlias.self) {
-                        Text("Hello, World")
-                    }
+                }
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
 
+                ConditionalView(if: true) {
                     VStack {
                         PreviewAlias()
                     }
-                    .viewAlias(PreviewAlias.self) {
-                        ConditionalView(if: true) {
-                            Text("Hello, World")
-                        }
-                    }
                 }
-            }
-            .previewDisplayName("ConditionalContent")
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
 
-            ZStack {
-                AnyView(PreviewAlias())
-                    .viewAlias(PreviewAlias.self) {
+                VStack {
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    ConditionalView(if: true) {
                         Text("Hello, World")
                     }
-            }
-            .previewDisplayName("AnyView")
-
-            ZStack {
-                ScrollView {
-                    PreviewAlias()
-                }
-                .viewAlias(PreviewAlias.self) {
-                    Text("Hello, World")
                 }
             }
-            .previewDisplayName("ScrollView")
-
-            #if os(iOS)
-            ZStack {
-                HostingViewBridge {
-                    PreviewAlias()
-                }
-                .viewAlias(PreviewAlias.self) {
-                    Text("Hello, World")
-                }
-            }
-            .previewDisplayName("HostingViewBridge")
-            #endif
         }
+        .previewDisplayName("ConditionalContent")
+
+        ZStack {
+            AnyView(PreviewAlias())
+                .viewAlias(PreviewAlias.self) {
+                    Text("Hello, World")
+                }
+        }
+        .previewDisplayName("AnyView")
+
+        ZStack {
+            ScrollView {
+                PreviewAlias()
+            }
+            .viewAlias(PreviewAlias.self) {
+                Text("Hello, World")
+            }
+        }
+        .previewDisplayName("ScrollView")
+
+        #if os(iOS)
+        ZStack {
+            HostingViewBridge {
+                PreviewAlias()
+            }
+            .viewAlias(PreviewAlias.self) {
+                Text("Hello, World")
+            }
+        }
+        .previewDisplayName("HostingViewBridge")
+        #endif
     }
 
     #if os(iOS)

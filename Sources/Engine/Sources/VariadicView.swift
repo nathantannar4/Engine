@@ -128,6 +128,16 @@ public struct AnyVariadicViewLayout<
 @available(*, deprecated, renamed: "VariadicView")
 public typealias AnyVariadicView = VariadicView
 
+extension KeyPath where Root == VariadicView.Subview {
+
+    @MainActor
+    public static func selection<ID: Hashable>(
+        _ id: ID.Type
+    ) -> KeyPath<VariadicView.Subview, ID> {
+        \.[selection: VariadicView.Subview.Selection<ID>()]
+    }
+}
+
 /// A type-erased collection of subviews in a container view.
 @frozen
 public struct VariadicView: View, RandomAccessCollection, Sequence {
@@ -150,18 +160,44 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
         }
 
         @frozen
+        public struct Selection<T: Hashable>: Hashable {
+
+            @inlinable
+            public init() { }
+        }
+
+        @frozen
         public struct ID: Hashable, @unchecked Sendable {
             var value: AnyHashable
         }
+
         public nonisolated var id: ID {
             ID(value: element.id)
         }
 
-        public func id<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
-            if let id = element.id(as: ID.self) {
+        public subscript<T: Hashable>(selection _: Selection<T>) -> T {
+            if let id = selection(as: T.self) {
                 return id
-            } else if ID.self == Int.self {
-                func project<T>(_ id: T) -> ID? {
+            }
+            fatalError("Selection type \(T.self) was nil, set one via the `tag` or `id` modifiers")
+        }
+
+        public func hasID<T: Hashable>(keyPath: KeyPath<Self, T>) -> Bool {
+            if keyPath == \.id {
+                return true
+            }
+            return selection(as: T.self, allowsImplicitID: false) != nil
+        }
+
+        public func id<T: Hashable>(as _: T.Type = T.self) -> T? {
+            return id(as: T.self, allowsImplicitID: true)
+        }
+
+        private func id<T: Hashable>(as _: T.Type = T.self, allowsImplicitID: Bool) -> T? {
+            if let id = element.id(as: T.self) {
+                return id
+            } else if allowsImplicitID, T.self == Int.self {
+                func project<Value>(_ id: Value) -> T? {
                     guard
                         let index = try? swift_getFieldValue("_index", Int32.self, id),
                         let implicitId = try? swift_getFieldValue("implicitID", Int32.self, id)
@@ -169,17 +205,17 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
                         return nil
                     }
                     if implicitId == 0 {
-                        return Int(index) as? ID
+                        return Int(index) as? T
                     }
-                    return Int(implicitId) as? ID
+                    return Int(implicitId) as? T
                 }
                 return _openExistential(element.id.base, do: project)
             }
             return nil
         }
 
-        public func index<ID: Hashable, C: Collection>(in collection: C) -> C.Index? where C.Element == ID {
-            guard let selection = id(as: ID.self) else { return nil }
+        public func index<T: Hashable, C: Collection>(in collection: C) -> C.Index? where C.Element == T {
+            guard let selection = id(as: T.self) else { return nil }
             for index in collection.indices {
                 if collection[index] == selection {
                     return index
@@ -188,12 +224,16 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return nil
         }
 
-        public func selection<ID: Hashable>(as _: ID.Type = ID.self) -> ID? {
+        public func selection<T: Hashable>(as _: T.Type = T.self) -> T? {
+            return selection(as: T.self, allowsImplicitID: true)
+        }
+
+        private func selection<T: Hashable>(as _: T.Type = T.self, allowsImplicitID: Bool) -> T? {
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *),
-                let tag = tag(as: ID.self)
+                let tag = tag(as: T.self)
             {
                 return tag
-            } else if let id = id(as: ID.self) {
+            } else if let id = id(as: T.self, allowsImplicitID: allowsImplicitID) {
                 return id
             }
             return nil
@@ -591,13 +631,15 @@ struct VariadicView_Previews: PreviewProvider {
                     Text("Line 3").tag("3")
                 } content: { source in
                     VariadicViewAdapter {
-                        ForEachSubview(source) { index, subview in
+                        ForEachSubview(
+                            source,
+                            id: .selection(String.self)
+                        ) { index, subview in
                             HStack {
                                 Text(subview.selection(as: String.self) ?? "nil")
 
                                 subview
                             }
-                            .id(subview.selection(as: String.self))
                         }
                     } content: { transformedSource in
                         VStack {
@@ -807,7 +849,10 @@ struct VariadicView_Previews: PreviewProvider {
                         }
 
                         VStack {
-                            views[2...]
+                            ForEachSubview(views[2...]) { index, subview in
+                                subview
+                                    .border(Color.red)
+                            }
                         }
                     }
                 }

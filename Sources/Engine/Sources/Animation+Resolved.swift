@@ -82,9 +82,129 @@ extension Animation {
             case spring(SpringAnimation)
 
             public struct FluidSpringAnimation: Codable, Equatable, Sendable {
-                public var duration: Double
-                public var dampingFraction: Double
-                public var blendDuration: TimeInterval
+                enum Payload: Codable, Equatable, Sendable {
+                    struct V8Payload: Codable, Equatable, Sendable {
+                        var duration: Double
+                        var dampingFraction: Double
+                        var blendDuration: TimeInterval
+                        var delay: TimeInterval
+                    }
+                    case v8(V8Payload)
+
+                    struct V1Payload: Codable, Equatable, Sendable {
+                        var duration: Double
+                        var dampingFraction: Double
+                        var blendDuration: TimeInterval
+                    }
+                    case v1(V1Payload)
+
+                    var duration: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.duration
+                            case .v1(let payload):
+                                return payload.duration
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.duration = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.duration = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var dampingFraction: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.dampingFraction
+                            case .v1(let payload):
+                                return payload.dampingFraction
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.dampingFraction = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.dampingFraction = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var blendDuration: TimeInterval {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.blendDuration
+                            case .v1(let payload):
+                                return payload.blendDuration
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.blendDuration = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.blendDuration = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                    var delay: TimeInterval {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.delay
+                            case .v1:
+                                return 0
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.delay = newValue
+                                self = .v8(payload)
+                            case .v1:
+                                break
+                            }
+                        }
+                    }
+                }
+
+                var payload: Payload
+
+                public var duration: Double {
+                    get { payload.duration }
+                    set { payload.duration = newValue }
+                }
+
+                public var dampingFraction: Double {
+                    get { payload.dampingFraction }
+                    set { payload.dampingFraction = newValue }
+                }
+
+                public var blendDuration: TimeInterval {
+                    get { payload.blendDuration }
+                    set { payload.blendDuration = newValue }
+                }
+
+                @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                public var delay: TimeInterval {
+                    get { payload.delay }
+                    set { payload.delay = newValue }
+                }
             }
             case fluidSpring(FluidSpringAnimation)
 
@@ -106,11 +226,19 @@ extension Animation {
                         let spring = unsafeBitCast(animator, to: SpringAnimation.self)
                         return .spring(spring)
                     case "FluidSpringAnimation":
-                        guard MemoryLayout<FluidSpringAnimation>.size == MemoryLayout<T>.size else {
-                            return nil
+                        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+                            guard MemoryLayout<FluidSpringAnimation.Payload.V8Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: FluidSpringAnimation.Payload.V8Payload.self)
+                            return .fluidSpring(FluidSpringAnimation(payload: .v8(payload)))
+                        } else {
+                            guard MemoryLayout<FluidSpringAnimation.Payload.V1Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: FluidSpringAnimation.Payload.V1Payload.self)
+                            return .fluidSpring(FluidSpringAnimation(payload: .v1(payload)))
                         }
-                        let fluidSpring = unsafeBitCast(animator, to: FluidSpringAnimation.self)
-                        return .fluidSpring(fluidSpring)
                     default:
                         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             guard animator is (any SwiftUI.CustomAnimation) else { return nil }
@@ -216,6 +344,11 @@ extension Animation {
                 guard let timingCurve = TimingCurve(animator: animator) else {
                     return nil
                 }
+                if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *),
+                    case .fluidSpring(let fluidSpring) = timingCurve
+                {
+                    delay += fluidSpring.delay
+                }
                 self.timingCurve = timingCurve
                 self.delay = delay
                 self.speed = speed
@@ -235,7 +368,15 @@ struct AnimationResolved_Previews: PreviewProvider {
 
         var body: some View {
             HStack(alignment: .firstTextBaseline) {
-                Text(label)
+                VStack(alignment: .leading) {
+                    Text(label)
+
+//                    Text({
+//                        var str = ""
+//                        dump(animation, to: &str)
+//                        return str
+//                    }())
+                }
 
                 VStack(alignment: .leading) {
                     Text(verbatim: "Delay: \(animation.delay as Any)")
@@ -270,15 +411,29 @@ struct AnimationResolved_Previews: PreviewProvider {
                 AnimationPreview(label: "Default Repeat", animation: .default.repeatCount(1))
                 AnimationPreview(label: "Default Repeated", animation: .default.repeatForever(autoreverses: true))
 
+                Divider()
+
                 if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
                     AnimationPreview(label: "PreviewAnimation", animation: .init(PreviewAnimation()).speed(2).delay(1))
                 }
 
-                AnimationPreview(label: "SpringAnimation", animation: .spring.speed(2).delay(1))
+                Divider()
+
+                AnimationPreview(label: "SpringAnimation", animation: .interpolatingSpring())
+
+                AnimationPreview(label: "SpringAnimation", animation: .interpolatingSpring(mass: 1, stiffness: 10, damping: 5, initialVelocity: 0).speed(2).delay(1))
+
+                Divider()
+
+                AnimationPreview(label: "FluidSpringAnimation", animation: .interactiveSpring())
 
                 AnimationPreview(label: "FluidSpringAnimation", animation: .bouncy.speed(2).delay(1))
 
+                Divider()
+
                 AnimationPreview(label: "BezierAnimation", animation: .easeInOut.speed(2).delay(1))
+
+                AnimationPreview(label: "BezierAnimation", animation: .linear)
             }
         }
     }
