@@ -87,7 +87,8 @@ extension ProtocolConformance where P: ViewProtocolConformanceDescriptor {
 public protocol ViewProtocolConformanceDescriptor: TypeDescriptor { }
 
 /// The ``TypeDescriptor`` for the `View` protocol
-public struct ViewProtocolDescriptor: ViewProtocolConformanceDescriptor {
+@frozen
+public struct ViewProtocolDescriptor: ViewProtocolConformanceDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _ViewProtocolDescriptor()
     }
@@ -111,7 +112,8 @@ public func _swift_visit_View<Content: View>(
 #if os(iOS) || os(tvOS) || os(visionOS)
 
 /// The ``TypeDescriptor`` for the `UIViewRepresentable` protocol
-public struct UIViewRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor {
+@frozen
+public struct UIViewRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _UIViewRepresentableProtocolDescriptor()
     }
@@ -133,7 +135,8 @@ public func _swift_visit_UIViewRepresentable<Content: UIViewRepresentable>(
 }
 
 /// The ``TypeDescriptor`` for the `UIViewControllerRepresentable` protocol
-public struct UIViewControllerRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor {
+@frozen
+public struct UIViewControllerRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _UIViewControllerRepresentableProtocolDescriptor()
     }
@@ -159,7 +162,8 @@ public func _swift_visit_UIViewControllerRepresentable<Content: UIViewController
 #if os(macOS)
 
 /// The ``TypeDescriptor`` for the `NSViewRepresentable` protocol
-public struct NSViewRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor {
+@frozen
+public struct NSViewRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _NSViewRepresentableProtocolDescriptor()
     }
@@ -181,7 +185,8 @@ public func _swift_visit_NSViewRepresentable<Content: NSViewRepresentable>(
 }
 
 /// The ``TypeDescriptor`` for the `NSViewControllerRepresentable` protocol
-public struct NSViewControllerRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor {
+@frozen
+public struct NSViewControllerRepresentableProtocolDescriptor: ViewProtocolConformanceDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _NSViewControllerRepresentableProtocolDescriptor()
     }

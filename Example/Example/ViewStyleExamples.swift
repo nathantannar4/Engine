@@ -251,8 +251,8 @@ struct Icon: StyledView {
     var label: Text
     var image: Image
 
-    var body: some View {
-        image.accessibilityLabel(label)
+    static func makeDefaultStyleBody(configuration: IconConfiguration) -> some View {
+        configuration.image.accessibilityLabel(configuration.label)
     }
 }
 
@@ -390,11 +390,11 @@ struct _LabeledView<Label: View, Content: View>: StyledView {
     var label: Label
     var content: Content
 
-    var body: some View {
+    static func makeDefaultStyleBody(configuration: _LabeledViewConfiguration) -> some View {
         HStack {
-            label
+            configuration.label
 
-            content
+            configuration.content
         }
     }
 }

@@ -253,6 +253,18 @@ struct ViewAlias_Previews: PreviewProvider {
         }
     }
 
+    struct CustomView: View {
+        @State var value = 0
+
+        var body: some View {
+            Button {
+                value += 1
+            } label: {
+                Text("CustomView \(value)")
+            }
+        }
+    }
+
     static var previews: some View {
         ZStack {
             VStack {
@@ -262,28 +274,52 @@ struct ViewAlias_Previews: PreviewProvider {
                     .viewAlias(PreviewAlias.self) {
                         PreviewAlias()
                     }
-            }
-        }
-        .previewDisplayName("DefaultBody")
-
-        ZStack {
-            VStack {
-                VStack {
-                    PreviewAlias()
-
-                    PreviewAlias()
-                }
-                .viewAlias(PreviewAlias.self) {
-                    Text("Hello, World")
-                }
 
                 PreviewAlias()
                     .viewAlias(PreviewAlias.self) {
                         Text("Hello, World")
                     }
+
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
+                        PreviewAlias()
+                            .viewAlias(PreviewAlias.self) {
+                                Text("Hello, World")
+                            }
+                    }
+
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Line 1")
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Line 2")
+                    }
+
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
+                        PreviewAlias()
+                    }
+                    .viewAlias(PreviewAlias.self) {
+                        Text("Line 2")
+                    }
+
+                PreviewAlias()
+                    .viewAlias(PreviewAlias.self) {
+                        CustomView()
+                    }
+
+                HStack {
+                    PreviewAlias()
+
+                    PreviewAlias()
+                }
+                .viewAlias(PreviewAlias.self) {
+                    CustomView()
+                }
             }
         }
-        .previewDisplayName("Text")
+        .previewDisplayName("ViewAlias")
 
         ZStack {
             VStack {

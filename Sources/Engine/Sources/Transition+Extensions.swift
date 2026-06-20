@@ -16,6 +16,16 @@ extension Transition {
     }
 }
 
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+extension TransitionPhase {
+
+    /// The progress of the transition from the identity
+    @inlinable
+    public var progress: CGFloat {
+        isIdentity ? 1 : 0
+    }
+}
+
 
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
 extension View {

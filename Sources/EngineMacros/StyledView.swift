@@ -91,16 +91,32 @@ import Engine
 ///         }
 ///     }
 ///
-@attached(peer, names: suffixed(Configuration), suffixed(Body), suffixed(Style), suffixed(StyleModifier), suffixed(DefaultStyle))
-@attached(member, names: named(_body), named(init))
+@attached(peer, names: suffixed(Configuration), suffixed(Body), suffixed(Style), prefixed(Styled), suffixed(StyleModifier), suffixed(DefaultStyle))
+@attached(member, names: named(_body), named(init), named(Configuration))
 public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "StyledViewMacro")
 
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.
 @MainActor @preconcurrency
-public protocol StyledView: PrimitiveView {
+public protocol StyledView: PrimitiveView where Body == Never {
+
+    associatedtype Configuration
+
+    associatedtype ResolvedStyleBody: View = Never
+    @ViewBuilder @MainActor @preconcurrency static func makeResolvedStyleBody(configuration: Configuration) -> ResolvedStyleBody
+
+    associatedtype DefaultStyleBody: View
+    @ViewBuilder @MainActor @preconcurrency static func makeDefaultStyleBody(configuration: Configuration) -> DefaultStyleBody
+
     associatedtype _Body: View
     @ViewBuilder @MainActor @preconcurrency var _body: _Body { get }
+}
+
+extension StyledView where ResolvedStyleBody == Never {
+
+    public static func makeResolvedStyleBody(configuration: Configuration) -> Never {
+        fatalError("makeResolvedStyleBody() should not be called on \(String(describing: Self.self))")
+    }
 }
 
 extension StyledView {
@@ -143,14 +159,14 @@ private struct StyledViewBody<Content: StyledView>: View {
 public struct _DefaultStyledView<Content: StyledView>: View {
 
     @usableFromInline
-    var content: Content
+    var configuration: Content.Configuration
 
     @inlinable
-    public init(_ content: Content) {
-        self.content = content
+    public init(_ configuration: Content.Configuration) {
+        self.configuration = configuration
     }
 
     public var body: some View {
-        content.body
+        Content.makeDefaultStyleBody(configuration: configuration)
     }
 }

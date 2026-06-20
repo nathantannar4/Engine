@@ -18,10 +18,19 @@ public struct StaticConditionalContent<
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
-        @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder otherwise: () -> FalseContent
+        @ViewBuilder then: () -> TrueContent = { EmptyView() },
+        @ViewBuilder otherwise: () -> FalseContent = { EmptyView() }
     ) {
-        self.content = Condition.value ? .init(then()) : .init(otherwise())
+        self.init(Condition.self, then: then(), otherwise: otherwise())
+    }
+
+    @inlinable
+    public init(
+        _ : Condition.Type = Condition.self,
+        then: TrueContent = EmptyView(),
+        otherwise: FalseContent = EmptyView()
+    ) {
+        self.content = Condition.value ? .init(then) : .init(otherwise)
     }
 
     private nonisolated var trueContent: TrueContent {
@@ -67,15 +76,6 @@ public struct StaticConditionalContent<
         Condition.value
             ? TrueContent._viewListCount(inputs: inputs)
             : FalseContent._viewListCount(inputs: inputs)
-    }
-}
-
-extension StaticConditionalContent where FalseContent == EmptyView {
-    public init(
-        _ : Condition.Type = Condition.self,
-        @ViewBuilder then: () -> TrueContent
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyView() })
     }
 }
 

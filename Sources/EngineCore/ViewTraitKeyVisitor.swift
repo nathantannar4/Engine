@@ -34,7 +34,8 @@ extension ProtocolConformance where P == ViewTraitKeyProtocolDescriptor {
 }
 
 /// The ``TypeDescriptor`` for the `_ViewTraitKey` protocol
-public struct ViewTraitKeyProtocolDescriptor: TypeDescriptor {
+@frozen
+public struct ViewTraitKeyProtocolDescriptor: TypeDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _ViewTraitKeyProtocolDescriptor()
     }

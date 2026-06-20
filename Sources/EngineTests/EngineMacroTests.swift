@@ -23,10 +23,10 @@ final class MacroTests: XCTestCase {
             @Binding var isEnabled: Bool
             var selection: Binding<Int>?
 
-            var body: some View {
+            static func makeDefaultStyleBody(configuration: LabelViewConfiguration) -> some View {
                 HStack {
-                    label
-                    content
+                    configuration.label
+                    configuration.content
                 }
                 .id(identifier)
             }
@@ -44,10 +44,10 @@ final class MacroTests: XCTestCase {
             @Binding var isEnabled: Bool
             var selection: Binding<Int>?
 
-            var body: some View {
+            static func makeDefaultStyleBody(configuration: LabelViewConfiguration) -> some View {
                 HStack {
-                    label
-                    content
+                    configuration.label
+                    configuration.content
                 }
                 .id(identifier)
             }
@@ -95,6 +95,28 @@ final class MacroTests: XCTestCase {
             }
 
             init(
+                label: Label,
+                content: Content,
+                identifier: String,
+                value: String? = nil,
+                traits: Array<Int>,
+                isEnabled: Binding<Bool>,
+                selection: Binding<Int>? = nil,
+                action: @escaping () -> Void,
+                completion: ((Bool) -> Void)? = nil
+            ) {
+                self.label = label
+                self.content = content
+                self.identifier = identifier
+                self.value = value
+                self.traits = traits
+                self.action = action
+                self.completion = completion
+                self._isEnabled = isEnabled
+                self.selection = selection
+            }
+
+            init(
                 _ configuration: LabelViewConfiguration
             ) where Label == LabelViewConfiguration.Label, Content == LabelViewConfiguration.Content {
                 self.label = configuration.label
@@ -107,7 +129,11 @@ final class MacroTests: XCTestCase {
                 self._isEnabled = configuration.$isEnabled
                 self.selection = configuration.selection
             }
+        
+            typealias Configuration = LabelViewConfiguration
         }
+        
+        typealias StyledLabelView = LabelView<LabelViewConfiguration.Label, LabelViewConfiguration.Content>
 
         struct LabelViewConfiguration {
             struct Label: ViewAlias {
@@ -134,12 +160,16 @@ final class MacroTests: XCTestCase {
 
         struct LabelViewDefaultStyle: LabelViewStyle {
             func makeBody(configuration: LabelViewConfiguration) -> some View {
-                _DefaultStyledView(LabelView(configuration))
+                _DefaultStyledView<StyledLabelView>(configuration)
             }
         }
 
         private struct LabelViewBody: ViewStyledView {
             var configuration: LabelViewConfiguration
+
+            var body: some View {
+                StyledLabelView.makeResolvedStyleBody(configuration: configuration)
+            }
 
             static var defaultStyle: LabelViewDefaultStyle {
                 LabelViewDefaultStyle()
@@ -155,6 +185,121 @@ final class MacroTests: XCTestCase {
 
             func body(content: Content) -> some View {
                 content.styledViewStyle(LabelViewBody.self, style: style)
+            }
+        }
+        """
+        assertMacroExpansion(
+            sourceInput,
+            expandedSource: sourceOutput,
+            macros: [
+                "StyledView": StyledViewMacro.self,
+            ]
+        )
+    }
+
+    func testResolvedBodyStyledViewMacro() throws {
+        let sourceInput = """
+        @StyledView
+        struct ContainerView<Content: View>: StyledView {
+            var content: Content
+        
+            static func makeResolvedStyleBody(configuration: ContainerViewConfiguration) -> some View {
+                StyledContainerView {
+                    configuration.content
+                        .padding()
+                }
+            }
+
+            static func makeDefaultStyleBody(configuration: ContainerViewConfiguration) -> some View {
+                configuration.content
+            }
+        }
+        """
+        let sourceOutput = """
+        struct ContainerView<Content: View>: StyledView {
+            var content: Content
+
+            static func makeResolvedStyleBody(configuration: ContainerViewConfiguration) -> some View {
+                StyledContainerView {
+                    configuration.content
+                        .padding()
+                }
+            }
+
+            static func makeDefaultStyleBody(configuration: ContainerViewConfiguration) -> some View {
+                configuration.content
+            }
+
+            var _body: some View {
+                ContainerViewBody(
+                    configuration: ContainerViewConfiguration()
+                )
+                .viewAlias(ContainerViewConfiguration.Content.self) {
+                    content
+                }
+            }
+
+            init(
+                @ViewBuilder content: () -> Content
+            ) {
+                self.content = content()
+            }
+
+            init(
+                content: Content
+            ) {
+                self.content = content
+            }
+
+            init(
+                _ configuration: ContainerViewConfiguration
+            ) where Content == ContainerViewConfiguration.Content {
+                self.content = configuration.content
+            }
+        
+            typealias Configuration = ContainerViewConfiguration
+        }
+        
+        typealias StyledContainerView = ContainerView<ContainerViewConfiguration.Content>
+
+        struct ContainerViewConfiguration {
+            struct Content: ViewAlias {
+            }
+            var content: Content {
+                .init()
+            }
+        }
+
+        protocol ContainerViewStyle: ViewStyle where Configuration == ContainerViewConfiguration {
+        }
+
+        struct ContainerViewDefaultStyle: ContainerViewStyle {
+            func makeBody(configuration: ContainerViewConfiguration) -> some View {
+                _DefaultStyledView<StyledContainerView>(configuration)
+            }
+        }
+
+        private struct ContainerViewBody: ViewStyledView {
+            var configuration: ContainerViewConfiguration
+
+            var body: some View {
+                StyledContainerView.makeResolvedStyleBody(configuration: configuration)
+            }
+
+            static var defaultStyle: ContainerViewDefaultStyle {
+                ContainerViewDefaultStyle()
+            }
+        }
+
+        struct ContainerViewStyleModifier<Style: ContainerViewStyle>: ViewModifier {
+            var style: Style
+
+            init(_ style: Style) {
+                self.style = style
+            }
+
+            func body(content: Content) -> some View {
+                content.styledViewStyle(ContainerViewBody.self, style: style)
             }
         }
         """

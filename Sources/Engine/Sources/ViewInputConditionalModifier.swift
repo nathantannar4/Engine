@@ -21,21 +21,20 @@ public struct ViewInputConditionalModifier<
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
-        @ViewModifierBuilder then: () -> TrueModifier,
-        @ViewModifierBuilder otherwise: () -> FalseModifier
+        @ViewModifierBuilder then: () -> TrueModifier = { EmptyModifier() },
+        @ViewModifierBuilder otherwise: () -> FalseModifier = { EmptyModifier() }
     ) {
-        self.trueModifier = then()
-        self.falseModifier = otherwise()
+        self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
     @inlinable
     public init(
-        _ : Condition,
-        @ViewModifierBuilder then: () -> TrueModifier,
-        @ViewModifierBuilder otherwise: () -> FalseModifier
+        _ : Condition.Type = Condition.self,
+        then: TrueModifier,
+        otherwise: FalseModifier
     ) {
-        self.trueModifier = then()
-        self.falseModifier = otherwise()
+        self.trueModifier = then
+        self.falseModifier = otherwise
     }
 
     public nonisolated static func makeView(
@@ -66,22 +65,6 @@ public struct ViewInputConditionalModifier<
         Condition.evaluate(ViewInputs(inputs: inputs))
             ? TrueModifier._viewListCount(inputs: inputs, body: body)
             : FalseModifier._viewListCount(inputs: inputs, body: body)
-    }
-}
-
-extension ViewInputConditionalModifier where FalseModifier == EmptyModifier {
-    public init(
-        _ : Condition.Type = Condition.self,
-        @ViewModifierBuilder then: () -> TrueModifier
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyModifier() })
-    }
-
-    public init(
-        _ : Condition,
-        @ViewModifierBuilder then: () -> TrueModifier
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyModifier() })
     }
 }
 
