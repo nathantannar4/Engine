@@ -5,6 +5,7 @@
 import SwiftUI
 
 /// Evaluates ``ViewInputs`` for the existence of `Style`
+@frozen
 public struct StyleInputCondition<Style>: ViewInputsCondition {
 
     public static func evaluate(_ inputs: ViewInputs) -> Bool {

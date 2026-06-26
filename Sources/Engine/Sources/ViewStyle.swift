@@ -590,7 +590,7 @@ struct PreviewCustomView<Content: View>: View {
     }
 
     init(
-        configuration: PreviewCustomViewStyleConfiguration
+        _ configuration: PreviewCustomViewStyleConfiguration
     ) where Content == PreviewCustomViewStyleConfiguration.Content {
         self.content = configuration.content
     }
@@ -609,8 +609,10 @@ struct PreviewCustomViewBody: ViewStyledView {
     var configuration: PreviewCustomViewStyleConfiguration
 
     var body: some View {
-        PreviewCustomView(configuration: configuration)
+        PreviewCustomView(configuration)
+            .padding(4)
             .background(Color.yellow.opacity(0.25))
+            .border(Color.black.opacity(0.3))
     }
 
     static var defaultStyle: DefaultPreviewCustomViewStyle { .init() }
@@ -638,8 +640,8 @@ struct BorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
     @Environment(\.borderColor) var borderColor
 
     func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
-        PreviewCustomView(configuration: configuration)
-            .padding()
+        PreviewCustomView(configuration)
+            .padding(4)
             .border(borderColor)
     }
 }
@@ -662,30 +664,18 @@ struct ConditionalPreviewCustomViewStyle: PreviewCustomViewStyle {
 }
 
 struct PrimitiveBorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
+
     func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
         configuration.content
-            .modifier(Modifier())
-    }
-
-    struct Modifier: ViewModifier {
-        func body(content: Content) -> some View {
-            content
-                .border(Color.red)
-        }
+            .border(Color.red)
     }
 }
 
 struct PrimitiveMultiBorderedPreviewCustomViewStyle: PreviewCustomViewStyle {
+
     func makeBody(configuration: PreviewCustomViewStyleConfiguration) -> some View {
         HStack {
             configuration.content
-                .modifier(Modifier())
-        }
-    }
-
-    struct Modifier: ViewModifier {
-        func body(content: Content) -> some View {
-            content
                 .border(Color.red)
         }
     }

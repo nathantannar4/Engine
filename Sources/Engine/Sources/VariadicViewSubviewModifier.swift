@@ -43,11 +43,10 @@ extension VariadicView {
     >(
         _ modifier: Modifier
     ) -> some View {
-        let id: KeyPath<VariadicView.Subview, Modifier.ID> = .selection(Modifier.ID.self)
-        return ForEachSubview(self, id: id) { index, subview in
+        ForEachSubview(self, id: .selection(Modifier.ID.self)) { index, subview in
             VariadicViewModifiedSubview(
                 content: VariadicViewSubviewModifierContent(
-                    id: subview[keyPath: id],
+                    id: subview[keyPath: KeyPath<VariadicView.Subview, Modifier.ID>.selection(Modifier.ID.self)],
                     index: index,
                     subview: subview
                 ),

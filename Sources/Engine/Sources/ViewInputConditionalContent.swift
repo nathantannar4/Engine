@@ -21,21 +21,20 @@ public struct ViewInputConditionalContent<
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
-        @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder otherwise: () -> FalseContent
+        @ViewBuilder then: () -> TrueContent = { EmptyView() },
+        @ViewBuilder otherwise: () -> FalseContent = { EmptyView() }
     ) {
-        self.trueContent = then()
-        self.falseContent = otherwise()
+        self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
     @inlinable
     public init(
-        _ : Condition,
-        @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder otherwise: () -> FalseContent
+        _ : Condition.Type = Condition.self,
+        then: TrueContent = EmptyView(),
+        otherwise: FalseContent = EmptyView()
     ) {
-        self.trueContent = then()
-        self.falseContent = otherwise()
+        self.trueContent = then
+        self.falseContent = otherwise
     }
 
     public static func makeView(
@@ -63,22 +62,6 @@ public struct ViewInputConditionalContent<
         Condition.evaluate(ViewInputs(inputs: inputs))
             ? TrueContent._viewListCount(inputs: inputs)
             : FalseContent._viewListCount(inputs: inputs)
-    }
-}
-
-extension ViewInputConditionalContent where FalseContent == EmptyView {
-    public init(
-        _ : Condition.Type = Condition.self,
-        @ViewBuilder then: () -> TrueContent
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyView() })
-    }
-
-    public init(
-        _ : Condition,
-        @ViewBuilder then: () -> TrueContent
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyView() })
     }
 }
 

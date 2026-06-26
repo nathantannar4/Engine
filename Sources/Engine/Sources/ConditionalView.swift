@@ -8,11 +8,12 @@ import SwiftUI
 public typealias ConditionalView<TrueContent: View, FalseContent: View> = ConditionalContent<TrueContent, FalseContent>
 
 extension ConditionalView: View where TrueContent: View, FalseContent: View {
+
     @inlinable
     public init(
         if condition: Bool,
-        @ViewBuilder then: () -> TrueContent,
-        @ViewBuilder otherwise: () -> FalseContent
+        @ViewBuilder then: () -> TrueContent = { EmptyView() },
+        @ViewBuilder otherwise: () -> FalseContent = { EmptyView() }
     ) {
         self.storage = condition ? .trueContent(then()) : .falseContent(otherwise())
     }
@@ -24,16 +25,6 @@ extension ConditionalView: View where TrueContent: View, FalseContent: View {
         case .falseContent(let falseContent):
             falseContent
         }
-    }
-}
-
-extension ConditionalView where TrueContent: View, FalseContent == EmptyView {
-    @inlinable
-    public init(
-        if condition: Bool,
-        @ViewBuilder then: () -> TrueContent
-    ) {
-        self.init(if: condition, then: then, otherwise: { EmptyView() })
     }
 }
 

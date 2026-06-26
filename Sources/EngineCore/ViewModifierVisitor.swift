@@ -34,7 +34,8 @@ extension ProtocolConformance where P == ViewModifierProtocolDescriptor {
 }
 
 /// The ``TypeDescriptor`` for the `ViewModifier` protocol
-public struct ViewModifierProtocolDescriptor: TypeDescriptor {
+@frozen
+public struct ViewModifierProtocolDescriptor: TypeDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _ViewModifierProtocolDescriptor()
     }

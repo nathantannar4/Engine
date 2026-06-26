@@ -14,6 +14,7 @@ public typealias MultiViewProtocolDescriptor = EngineCore.MultiViewProtocolDescr
 
 @frozen
 public struct MultiViewSubviewVisitor: MultiViewVisitor {
+
     @frozen
     public struct Subview: View, Identifiable {
         public nonisolated(unsafe) var id: Context.ID
@@ -47,6 +48,7 @@ public struct MultiViewSubviewVisitor: MultiViewVisitor {
 }
 
 extension MultiViewAdapter where Visitor == MultiViewSubviewVisitor {
+
     @inlinable
     public init(
         @ViewBuilder source: () -> Source,
@@ -79,6 +81,7 @@ public struct MultiViewIsEmptyVisitor: MultiViewVisitor {
 }
 
 extension MultiViewAdapter where Visitor == MultiViewIsEmptyVisitor {
+
     @inlinable
     public static func isEmptyVisitor(
         @ViewBuilder source: () -> Source,

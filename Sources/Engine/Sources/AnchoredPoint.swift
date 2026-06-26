@@ -10,6 +10,7 @@ public struct AnchoredPoint: Hashable, Sendable, Animatable {
     public var anchor: UnitPoint
     public var offset: CGPoint
 
+    @inlinable
     public var animatableData: AnimatablePair<UnitPoint.AnimatableData, CGPoint.AnimatableData> {
         get {
             AnimatablePair(
@@ -32,6 +33,7 @@ public struct AnchoredPoint: Hashable, Sendable, Animatable {
         self.offset = offset
     }
 
+    @inlinable
     public func point(in size: CGSize) -> CGPoint {
         anchor.point(in: size, offset: offset)
     }

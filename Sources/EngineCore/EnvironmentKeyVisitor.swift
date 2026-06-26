@@ -34,7 +34,8 @@ extension ProtocolConformance where P == EnvironmentKeyProtocolDescriptor {
 }
 
 /// The ``TypeDescriptor`` for the `EnvironmentKey` protocol
-public struct EnvironmentKeyProtocolDescriptor: TypeDescriptor {
+@frozen
+public struct EnvironmentKeyProtocolDescriptor: TypeDescriptor, Sendable {
     public static var descriptor: UnsafeRawPointer {
         _EnvironmentKeyProtocolDescriptor()
     }

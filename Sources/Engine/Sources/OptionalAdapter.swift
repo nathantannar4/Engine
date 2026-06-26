@@ -60,7 +60,7 @@ public struct OptionalAdapter<
     public init<Value>(
         _ value: Value?,
         @ViewBuilder content: (Value) -> Content,
-        @ViewBuilder placeholder: () -> Placeholder
+        @ViewBuilder placeholder: () -> Placeholder = { EmptyView() }
     ) {
         switch value {
         case .some(let value):
@@ -74,7 +74,7 @@ public struct OptionalAdapter<
     public init<Value>(
         _ value: Binding<Value?>,
         @ViewBuilder content: (Binding<Value>) -> Content,
-        @ViewBuilder placeholder: () -> Placeholder
+        @ViewBuilder placeholder: () -> Placeholder = { EmptyView() }
     ) {
         if let unwrapped = value.unwrap() {
             self.content = .init(content(unwrapped))
@@ -87,7 +87,7 @@ public struct OptionalAdapter<
     public init(
         _ flag: Bool,
         @ViewBuilder content: () -> Content,
-        @ViewBuilder placeholder: () -> Placeholder
+        @ViewBuilder placeholder: () -> Placeholder = { EmptyView() }
     ) {
         self.content = flag ? .init(content()) : .init(placeholder())
     }
@@ -97,56 +97,19 @@ public struct OptionalAdapter<
     }
 }
 
-extension OptionalAdapter where Placeholder == EmptyView {
-    @inlinable
-    public init<Value>(
-        _ value: Value?,
-        @ViewBuilder content: (Value) -> Content
-    ) {
-        self.init(value, content: content, placeholder: { EmptyView() })
-    }
-
-    @inlinable
-    public init<Value>(
-        _ value: Binding<Value?>,
-        @ViewBuilder content: (Binding<Value>) -> Content
-    ) {
-        self.init(value, content: content, placeholder: { EmptyView() })
-    }
-
-    @inlinable
-    public init(
-        _ flag: Bool,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.init(flag, content: content, placeholder: { EmptyView() })
-    }
-}
-
 extension OptionalAdapter {
 
     @inlinable
     public init<each Value>(
         _ values: repeat (each Value)?,
         @ViewBuilder content: (repeat each Value) -> Content,
-        @ViewBuilder placeholder: () -> Placeholder
+        @ViewBuilder placeholder: () -> Placeholder = { EmptyView() }
     ) {
         if let unwrapped = unwrap(repeat each values) {
             self.content = .init(content(repeat each unwrapped))
         } else {
             self.content = .init(placeholder())
         }
-    }
-}
-
-extension OptionalAdapter where Placeholder == EmptyView {
-
-    @inlinable
-    public init<each Value>(
-        _ values: repeat (each Value)?,
-        @ViewBuilder content: (repeat each Value) -> Content
-    ) {
-        self.init(repeat each values, content: content, placeholder: { EmptyView() })
     }
 }
 

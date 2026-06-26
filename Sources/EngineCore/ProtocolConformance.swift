@@ -7,6 +7,7 @@
 /// See also:
 ///  - `https://forums.swift.org/t/calling-swift-runtime-methods/23325`
 ///  - `https://github.com/apple/swift/blob/main/stdlib/toolchain/Compatibility50/ProtocolConformance.cpp`
+@frozen
 public struct ProtocolConformance<P: TypeDescriptor>: @unchecked Sendable {
     public var metadata: UnsafeRawPointer
     public var conformance: UnsafeRawPointer

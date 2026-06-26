@@ -27,10 +27,11 @@ public struct ViewStackAxisReader<
     @inlinable
     public init(
         @ViewBuilder content: (Axis) -> VerticalContent
-    ) where HorizontalContent == VerticalContent, OtherContent == EmptyView {
-        self.vertical = content(.vertical)
+    ) where HorizontalContent == VerticalContent, OtherContent == VerticalContent {
+        let vertical = content(.vertical)
+        self.vertical = vertical
         self.horizontal = content(.horizontal)
-        self.other = EmptyView()
+        self.other = vertical
     }
 
     @inlinable
@@ -42,6 +43,17 @@ public struct ViewStackAxisReader<
         self.vertical = vertical()
         self.horizontal = horizontal()
         self.other = other()
+    }
+
+    @inlinable
+    public init(
+        @ViewBuilder vertical: () -> VerticalContent,
+        @ViewBuilder horizontal: () -> HorizontalContent
+    ) where OtherContent == VerticalContent {
+        let vertical = vertical()
+        self.vertical = vertical
+        self.horizontal = horizontal()
+        self.other = vertical
     }
 
     public var body: some View {

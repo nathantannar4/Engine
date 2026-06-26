@@ -45,37 +45,64 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
             members: members,
             generics: generics
         )
+        let subviewsHash = Set(subviews)
         let properties = getProperties(
             members: members
         )
-        return [
+        var declarations = [DeclSyntax]()
+        declarations.append(
             DeclSyntax(
                 stringLiteral: makeBody(
                     name: name,
                     prefix: prefix,
-                    subviews: subviews,
+                    subviews: subviewsHash,
                     properties: properties
                 )
-            ),
+            )
+        )
+        declarations.append(
             DeclSyntax(
                 stringLiteral: makeInit(
                     name: name,
                     prefix: prefix,
-                    subviews: subviews,
+                    subviews: subviewsHash,
                     properties: properties
                 )
-            ),
+            )
+        )
+        if !subviews.isEmpty {
+            declarations.append(
+                DeclSyntax(
+                    stringLiteral: makeInit(
+                        name: name,
+                        prefix: prefix,
+                        subviews: [],
+                        properties: properties
+                    )
+                )
+            )
+        }
+        declarations.append(
             DeclSyntax(
                 stringLiteral: makeConfigurationInit(
                     name: name,
                     prefix: prefix,
-                    subviews: subviews,
+                    subviews: subviewsHash,
                     properties: properties
                 )
             )
-        ]
+        )
+        declarations.append(
+            DeclSyntax(
+                stringLiteral: makeConfigurationTypealias(
+                    name: name,
+                    prefix: prefix
+                )
+            )
+        )
+        return declarations
     }
-    
+
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -96,15 +123,23 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
             members: members,
             generics: generics
         )
+        let subviewsHash = Set(subviews)
         let properties = getProperties(
             members: members
         )
-        return [
+        let declarations = [
+            DeclSyntax(
+                stringLiteral: makeStyledTypealias(
+                    name: name,
+                    prefix: prefix,
+                    subviews: subviews
+                )
+            ),
             DeclSyntax(
                 stringLiteral: makeConfigurationStruct(
                     name: name,
                     prefix: prefix,
-                    subviews: subviews,
+                    subviews: subviewsHash,
                     properties: properties
                 )
             ),
@@ -132,6 +167,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
                 )
             )
         ]
+        return declarations
     }
 
     private static func getType(
@@ -173,7 +209,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
     private static func getSubviews(
         members: MemberBlockItemListSyntax,
         generics: GenericParameterClauseSyntax?
-    ) -> Set<String> {
+    ) -> [String] {
         guard let generics else {
             return []
         }
@@ -183,7 +219,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
             }
             return type.as(IdentifierTypeSyntax.self)?.name.text == "View"
         }
-        return Set(views.map { $0.name.text })
+        return views.map { $0.name.text }
     }
 
     private struct Property {
@@ -194,7 +230,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         members: MemberBlockItemListSyntax
     ) -> [Property] {
         members.compactMap { member -> Property? in
-            guard 
+            guard
                 let variable = member.decl.as(VariableDeclSyntax.self),
                 variable.bindings.count == 1,
                 let binding = variable.bindings.first,
@@ -208,6 +244,24 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
                 field: field
             )
         }
+    }
+
+    private static func hasBody(
+        members: MemberBlockItemListSyntax
+    ) -> Bool {
+        for member in members {
+            guard
+                let variable = member.decl.as(VariableDeclSyntax.self),
+                variable.bindings.count == 1,
+                let binding = variable.bindings.first,
+                let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
+                identifier.identifier.text == "body"
+            else {
+                continue
+            }
+            return true
+        }
+        return false
     }
 
     private static func makeInit(
@@ -288,6 +342,16 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
             }
             return ".viewAlias(\(name)Configuration.\(property.field.type).self) { \(property.name) }"
         }
+        if params.isEmpty {
+            return """
+            \(prefix)var _body: some View {
+                \(name)Body(
+                    configuration: \(name)Configuration()
+                )
+                \(modifiers.joined(separator: "\n"))
+            }
+            """
+        }
         return """
         \(prefix)var _body: some View {
             \(name)Body(
@@ -326,6 +390,32 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         """
     }
 
+    private static func makeConfigurationTypealias(
+        name: String,
+        prefix: String
+    ) -> String {
+        return """
+        \(prefix)typealias Configuration = \(name)Configuration
+        """
+    }
+
+    private static func makeStyledTypealias(
+        name: String,
+        prefix: String,
+        subviews: [String],
+    ) -> String {
+        if subviews.isEmpty {
+            return """
+            \(prefix)typealias Styled\(name) = \(name)
+            """
+        }
+        let configuration = "\(name)Configuration"
+        let subviews = subviews.map { "\(configuration).\($0)"}
+        return """
+        \(prefix)typealias Styled\(name) = \(name)<\(subviews.joined(separator: ", "))>
+        """
+    }
+
     private static func makeStyleProtocol(
         name: String,
         prefix: String
@@ -343,7 +433,7 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         return """
         \(prefix)struct \(name)DefaultStyle: \(name)Style {
             \(prefix)func makeBody(configuration: \(name)Configuration) -> some View {
-                _DefaultStyledView(\(name)(configuration))
+                _DefaultStyledView<Styled\(name)>(configuration)
             }
         }
         """
@@ -355,6 +445,10 @@ public struct StyledViewMacro: PeerMacro, MemberMacro {
         return """
         private struct \(name)Body: ViewStyledView {
             var configuration: \(name)Configuration
+
+            var body: some View {
+                Styled\(name).makeResolvedStyleBody(configuration: configuration)
+            }
 
             static var defaultStyle: \(name)DefaultStyle {
                 \(name)DefaultStyle()

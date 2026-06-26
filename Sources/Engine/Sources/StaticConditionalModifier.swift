@@ -25,10 +25,19 @@ public struct StaticConditionalModifier<
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
-        @ViewModifierBuilder then: () -> TrueModifier,
-        @ViewModifierBuilder otherwise: () -> FalseModifier
+        @ViewModifierBuilder then: () -> TrueModifier = { EmptyModifier() },
+        @ViewModifierBuilder otherwise: () -> FalseModifier = { EmptyModifier() }
     ) {
-        self.storage = Condition.value ? .trueModifier(then()) : .falseModifier(otherwise())
+        self.init(Condition.self, then: then(), otherwise: otherwise())
+    }
+
+    @inlinable
+    public init(
+        _ : Condition.Type = Condition.self,
+        then: TrueModifier = EmptyModifier(),
+        otherwise: FalseModifier = EmptyModifier()
+    ) {
+        self.storage = Condition.value ? .trueModifier(then) : .falseModifier(otherwise)
     }
 
     private nonisolated var trueModifier: TrueModifier {
@@ -77,15 +86,6 @@ public struct StaticConditionalModifier<
         Condition.value
             ? TrueModifier._viewListCount(inputs: inputs, body: body)
             : FalseModifier._viewListCount(inputs: inputs, body: body)
-    }
-}
-
-extension StaticConditionalModifier where Condition: StaticCondition, FalseModifier == EmptyModifier {
-    public init(
-        _ : Condition.Type = Condition.self,
-        @ViewModifierBuilder then: () -> TrueModifier
-    ) {
-        self.init(Condition.self, then: then, otherwise: { EmptyModifier() })
     }
 }
 
