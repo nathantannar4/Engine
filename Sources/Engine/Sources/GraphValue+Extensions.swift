@@ -6,59 +6,64 @@ import Darwin
 import SwiftUI
 
 @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-private typealias GraphValueUnsafeBitCastFunction<A, B> =
-    @convention(thin) (
+private func GraphValueUnsafeBitCast<A, B>(
+    _ graphValue: _GraphValue<A>,
+    to _: B.Type
+) -> _GraphValue<B> {
+    typealias Function = @convention(thin) (
         _GraphValue<A>,
         B.Type,
         UnsafeRawPointer,
         UnsafeRawPointer
     ) -> _GraphValue<B>
+    let symbol = dlsym(
+        UnsafeMutableRawPointer(bitPattern: -2), // RTLD_DEFAULT
+        "$s7SwiftUI11_GraphValueV13unsafeBitCast2toACyqd__Gqd__m_tlF"
+    )
+    let function = unsafeBitCast(symbol!, to: Function.self)
+    return function(
+        graphValue,
+        B.self,
+        unsafeBitCast(A.self, to: UnsafeRawPointer.self),
+        unsafeBitCast(B.self, to: UnsafeRawPointer.self)
+    )
+}
 
 @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-nonisolated(unsafe) private let graphValueUnsafeBitCastSymbol = dlsym(
-    UnsafeMutableRawPointer(bitPattern: -2), // RTLD_DEFAULT
-    "$s7SwiftUI11_GraphValueV13unsafeBitCast2toACyqd__Gqd__m_tlF"
-)
-
-@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-private typealias GraphValueUnsafeCastFunction<A, B> =
-    @convention(thin) (
+private func GraphValueUnsafeCast<A, B>(
+    _ graphValue: _GraphValue<A>,
+    to _: B.Type
+) -> _GraphValue<B> {
+    typealias Function = @convention(thin) (
         _GraphValue<A>,
         B.Type,
         UnsafeRawPointer,
         UnsafeRawPointer
     ) -> _GraphValue<B>
-
-@available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-nonisolated(unsafe) private let graphValueUnsafeCastSymbol = dlsym(
-    UnsafeMutableRawPointer(bitPattern: -2), // RTLD_DEFAULT
-    "$s7SwiftUI11_GraphValueV10unsafeCast2toACyqd__Gqd__m_tlF"
-)
+    let symbol = dlsym(
+        UnsafeMutableRawPointer(bitPattern: -2), // RTLD_DEFAULT
+        "$s7SwiftUI11_GraphValueV10unsafeCast2toACyqd__Gqd__m_tlF"
+    )
+    let function = unsafeBitCast(symbol!, to: Function.self)
+    return function(
+        graphValue,
+        B.self,
+        unsafeBitCast(A.self, to: UnsafeRawPointer.self),
+        unsafeBitCast(B.self, to: UnsafeRawPointer.self)
+    )
+}
 
 extension _GraphValue {
 
     func unsafeCast<T>(to _: T.Type) -> _GraphValue<T> {
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            let valueMetadata = unsafeBitCast(Value.self, to: UnsafeRawPointer.self)
-            let targetMetadata = unsafeBitCast(T.self, to: UnsafeRawPointer.self)
-
-            if MemoryLayout<Value>.size == MemoryLayout<T>.size,
-                let symbol = graphValueUnsafeBitCastSymbol
-            {
-                let function = unsafeBitCast(
-                    symbol,
-                    to: GraphValueUnsafeBitCastFunction<Value, T>.self
-                )
-                return function(self, T.self, valueMetadata, targetMetadata)
-            } else if let symbol = graphValueUnsafeCastSymbol {
-                let function = unsafeBitCast(
-                    symbol,
-                    to: GraphValueUnsafeCastFunction<Value, T>.self
-                )
-                return function(self, T.self, valueMetadata, targetMetadata)
+            if MemoryLayout<Value>.size == MemoryLayout<T>.size {
+                return GraphValueUnsafeBitCast(self, to: T.self)
+            } else {
+                return GraphValueUnsafeCast(self, to: T.self)
             }
+        } else {
+            return unsafeBitCast(self, to: _GraphValue<T>.self)
         }
-
-        return unsafeBitCast(self, to: _GraphValue<T>.self)
     }
 }

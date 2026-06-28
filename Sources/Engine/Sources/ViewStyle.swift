@@ -402,8 +402,19 @@ private struct ViewStyledViewDefaultBody<
     nonisolated(unsafe) var content: StyledView
 
     var body: some View {
-        StyledView.defaultStyle
-            .makeBody(configuration: content.configuration)
+        StyledBody(
+            style: StyledView.defaultStyle,
+            configuration: content.configuration
+        )
+    }
+
+    struct StyledBody: View {
+        var style: StyledView.DefaultStyle
+        var configuration: StyledView.Configuration
+
+        var body: some View {
+            style.makeBody(configuration: configuration)
+        }
     }
 }
 
