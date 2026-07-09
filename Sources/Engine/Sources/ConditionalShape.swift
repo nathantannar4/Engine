@@ -86,6 +86,19 @@ extension ConditionalShape: InsettableShape where TrueContent: InsettableShape, 
     }
 }
 
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+extension ConditionalShape: RoundedRectangularShape where TrueContent: RoundedRectangularShape, FalseContent: RoundedRectangularShape {
+
+    public func corners(in size: CGSize?) -> Corners? {
+        switch storage {
+        case .trueContent(let shape):
+            return shape.corners(in: size)
+        case .falseContent(let shape):
+            return shape.corners(in: size)
+        }
+    }
+}
+
 // MARK: - Previews
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)

@@ -48,6 +48,14 @@ extension ShapeAdapter: InsettableShape where S: InsettableShape {
     }
 }
 
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+extension ShapeAdapter: RoundedRectangularShape where S: RoundedRectangularShape {
+
+    public func corners(in size: CGSize?) -> Corners? {
+        shape.corners(in: size)
+    }
+}
+
 // MARK: - Previews
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)

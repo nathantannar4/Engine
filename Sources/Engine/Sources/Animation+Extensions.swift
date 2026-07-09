@@ -30,16 +30,17 @@ extension UIViewPropertyAnimator {
         defaultCompletionCurve: UIView.AnimationCurve = .easeInOut
     ) {
         if let resolved = animation?.resolved() {
+            let curve = resolved.speed != 1 && defaultCompletionCurve.rawValue == 7 ? UIView.AnimationCurve.easeInOut : defaultCompletionCurve
             switch resolved.timingCurve {
             case .default:
                 self.init(
                     duration: defaultDuration / resolved.speed,
-                    curve: defaultCompletionCurve
+                    curve: curve
                 )
             case .custom(let animation):
                 self.init(
                     duration: (animation.duration ?? defaultDuration) / resolved.speed,
-                    curve: defaultCompletionCurve
+                    curve: curve
                 )
             case .bezier, .spring, .fluidSpring:
                 let duration = (resolved.timingCurve.duration ?? defaultDuration) / resolved.speed

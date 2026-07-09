@@ -286,14 +286,14 @@ extension SymbolConfiguration {
             }
             return UIImage.SymbolConfiguration.unspecified
         }()
-        if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *), let locale = environment?.locale {
+        if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *), let locale = environment?.locale {
             configuration = configuration
                 .applying(UIImage.SymbolConfiguration(locale: locale))
         }
         #if !os(watchOS)
         if let environment {
             let traitCollection = environment.traitCollectionForImageResolution()
-            if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+            if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                 configuration = configuration
                     .applying(UIImage.SymbolConfiguration(traitCollection: traitCollection))
             } else {
@@ -378,42 +378,50 @@ extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     func traitCollectionForImageResolution() -> UITraitCollection {
-        let traits: [UITraitCollection?] = [
-            UITraitCollection(
-                displayScale: displayScale
-            ),
-            {
-                let contrast: UIAccessibilityContrast? = {
-                    if #available(iOS 14.0, tvOS 14.0, *) {
-                        return UIAccessibilityContrast(colorSchemeContrast)
-                    }
-                    switch colorSchemeContrast {
-                    case .standard: return .normal
-                    case .increased: return .high
-                    @unknown default: return nil
-                    }
-                }()
-                return contrast.map {
-                    UITraitCollection(accessibilityContrast: $0)
+        let contrast: UIAccessibilityContrast? = {
+            if #available(iOS 14.0, tvOS 14.0, *) {
+                return UIAccessibilityContrast(colorSchemeContrast)
+            }
+            switch colorSchemeContrast {
+            case .standard: return .normal
+            case .increased: return .high
+            @unknown default: return nil
+            }
+        }()
+        let userInterfaceStyle: UIUserInterfaceStyle? = {
+            if #available(iOS 14.0, tvOS 14.0, *) {
+                return UIUserInterfaceStyle(colorScheme)
+            }
+            switch colorScheme {
+            case .light: return .light
+            case .dark: return .dark
+            @unknown default: return nil
+            }
+        }()
+        if #available(iOS 17.0, tvOS 17.0, *) {
+            return UITraitCollection().modifyingTraits { mutableTraits in
+                mutableTraits.displayScale = displayScale
+                if let contrast {
+                    mutableTraits.accessibilityContrast = contrast
                 }
-            }(),
-            {
-                let userInterfaceStyle: UIUserInterfaceStyle? = {
-                    if #available(iOS 14.0, tvOS 14.0, *) {
-                        return UIUserInterfaceStyle(colorScheme)
-                    }
-                    switch colorScheme {
-                    case .light: return .light
-                    case .dark: return .dark
-                    @unknown default: return nil
-                    }
-                }()
-                return userInterfaceStyle.map {
-                    UITraitCollection(userInterfaceStyle: $0)
+                if let userInterfaceStyle {
+                    mutableTraits.userInterfaceStyle = userInterfaceStyle
                 }
-            }()
-        ]
-        return UITraitCollection(traitsFrom: traits.compactMap({ $0 }))
+            }
+        } else {
+            var traits: [UITraitCollection] = [
+                UITraitCollection(
+                    displayScale: displayScale
+                )
+            ]
+            if let contrast {
+                traits.append(UITraitCollection(accessibilityContrast: contrast))
+            }
+            if let userInterfaceStyle {
+                traits.append(UITraitCollection(userInterfaceStyle: userInterfaceStyle))
+            }
+            return UITraitCollection(traitsFrom: traits)
+        }
     }
     #endif
 }

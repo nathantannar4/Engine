@@ -65,6 +65,15 @@ extension OptionalShape: InsettableShape where S: InsettableShape {
     }
 }
 
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+extension OptionalShape: RoundedRectangularShape where S: RoundedRectangularShape {
+
+    public func corners(in size: CGSize?) -> Corners? {
+        shape?.corners(in: size)
+    }
+}
+
+
 // MARK: - Previews
 
 struct OptionalShape_Previews: PreviewProvider {

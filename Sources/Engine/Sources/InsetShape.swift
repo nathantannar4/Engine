@@ -66,6 +66,19 @@ public struct InsetShape<S: Shape>: Shape, InsettableShape, Animatable {
     }
 }
 
+@available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
+
+    public func corners(in size: CGSize?) -> Corners? {
+        if var size {
+            size.width -= (insets.leading + insets.trailing)
+            size.height -= (insets.top + insets.bottom)
+            return shape.corners(in: size)
+        }
+        return shape.corners(in: size)
+    }
+}
+
 extension Shape {
 
     @inlinable

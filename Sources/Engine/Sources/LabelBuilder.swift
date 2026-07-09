@@ -35,6 +35,7 @@ public struct LabelElementBuilder {
 
     @frozen
     public enum LabelElementComponent {
+        case element(LabelElement)
         case image(Image)
         case text(Text)
     }
@@ -65,6 +66,12 @@ public struct LabelElementBuilder {
         first component: Label<Text, Image>
     ) -> [LabelElementComponent] {
         [.text(component.title), .image(component.icon)]
+    }
+
+    public static func buildPartialBlock(
+        first component: LabelElement
+    ) -> [LabelElementComponent] {
+        [.element(component)]
     }
 
     public static func buildPartialBlock(
@@ -120,6 +127,16 @@ public struct LabelElementBuilder {
         var subtitle: Text?
         for component in components {
             switch component {
+            case .element(let component):
+                if image == nil {
+                    image = component.image
+                }
+                if title == nil {
+                    title = component.title
+                }
+                if subtitle == nil {
+                    subtitle = component.subtitle
+                }
             case .image(let component) where image == nil:
                 image = component
             case .text(let component) where title == nil:

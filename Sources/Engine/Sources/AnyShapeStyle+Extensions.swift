@@ -224,7 +224,7 @@ extension AnyShapeStyle {
                     return resolved
                 }
             }
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *),
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
                 let style = provider as? (any ShapeStyle)
             {
                 func project<S: ShapeStyle>(_ s: S) -> ResolvedStyle? {

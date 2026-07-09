@@ -830,7 +830,7 @@ extension Text {
                 case "MonospacedDigitTextModifier":
                     attributes.isMonospacedDigit = true
                 case "TextScaleModifier":
-                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *),
+                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
                         let scale = try? swift_getFieldValue("scale", Text.Scale.self, modifier),
                         (try? swift_getFieldValue("isEnabled", Bool.self, modifier)) ?? true
                     {

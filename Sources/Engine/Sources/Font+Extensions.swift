@@ -252,51 +252,57 @@ extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     func traitCollectionForFontResolution() -> UITraitCollection {
-        let traits: [UITraitCollection?] = [
-            {
-                let preferredContentSizeCategory: UIContentSizeCategory? = {
-                    if #available(iOS 15.0, tvOS 15.0, *) {
-                        return UIContentSizeCategory(dynamicTypeSize)
-                    } else if #available(iOS 14.0, tvOS 14.0, *) {
-                        return UIContentSizeCategory(sizeCategory)
-                    }
-                    switch sizeCategory {
-                    case .extraSmall: return .extraSmall
-                    case .small: return .small
-                    case .medium: return .medium
-                    case .large: return .large
-                    case .extraLarge: return .extraLarge
-                    case .extraExtraLarge: return .extraExtraLarge
-                    case .extraExtraExtraLarge: return .extraExtraExtraLarge
-                    case .accessibilityMedium: return .accessibilityMedium
-                    case .accessibilityLarge: return .accessibilityLarge
-                    case .accessibilityExtraLarge: return .accessibilityExtraLarge
-                    case .accessibilityExtraExtraLarge: return .accessibilityExtraExtraLarge
-                    case .accessibilityExtraExtraExtraLarge: return .accessibilityExtraExtraExtraLarge
-                    @unknown default: return nil
-                    }
-                }()
-                return preferredContentSizeCategory.map {
-                    UITraitCollection(preferredContentSizeCategory: $0)
+        let preferredContentSizeCategory: UIContentSizeCategory? = {
+            if #available(iOS 15.0, tvOS 15.0, *) {
+                return UIContentSizeCategory(dynamicTypeSize)
+            } else if #available(iOS 14.0, tvOS 14.0, *) {
+                return UIContentSizeCategory(sizeCategory)
+            }
+            switch sizeCategory {
+            case .extraSmall: return .extraSmall
+            case .small: return .small
+            case .medium: return .medium
+            case .large: return .large
+            case .extraLarge: return .extraLarge
+            case .extraExtraLarge: return .extraExtraLarge
+            case .extraExtraExtraLarge: return .extraExtraExtraLarge
+            case .accessibilityMedium: return .accessibilityMedium
+            case .accessibilityLarge: return .accessibilityLarge
+            case .accessibilityExtraLarge: return .accessibilityExtraLarge
+            case .accessibilityExtraExtraLarge: return .accessibilityExtraExtraLarge
+            case .accessibilityExtraExtraExtraLarge: return .accessibilityExtraExtraExtraLarge
+            @unknown default: return nil
+            }
+        }()
+        let legibilityWeight = legibilityWeight.flatMap { legibilityWeight in
+            if #available(iOS 14.0, tvOS 14.0, *) {
+                return UILegibilityWeight(legibilityWeight)
+            }
+            switch legibilityWeight {
+            case .regular: return .regular
+            case .bold: return .bold
+            @unknown default: return nil
+            }
+        }
+        if #available(iOS 17.0, tvOS 17.0, *) {
+            return UITraitCollection().modifyingTraits { mutableTraits in
+                if let preferredContentSizeCategory {
+                    mutableTraits.preferredContentSizeCategory = preferredContentSizeCategory
                 }
-            }(),
-            {
-                let legibilityWeight = legibilityWeight.flatMap { legibilityWeight in
-                    if #available(iOS 14.0, tvOS 14.0, *) {
-                        return UILegibilityWeight(legibilityWeight)
-                    }
-                    switch legibilityWeight {
-                    case .regular: return .regular
-                    case .bold: return .bold
-                    @unknown default: return nil
-                    }
+                if let legibilityWeight {
+                    mutableTraits.legibilityWeight = legibilityWeight
                 }
-                return legibilityWeight.map {
-                    UITraitCollection(legibilityWeight: $0)
-                }
-            }()
-        ]
-        return UITraitCollection(traitsFrom: traits.compactMap({ $0 }))
+            }
+        } else {
+            var traits: [UITraitCollection] = []
+            if let preferredContentSizeCategory {
+                traits.append(UITraitCollection(preferredContentSizeCategory: preferredContentSizeCategory))
+            }
+            if let legibilityWeight {
+                traits.append(UITraitCollection(legibilityWeight: legibilityWeight))
+            }
+            return UITraitCollection(traitsFrom: traits)
+        }
     }
     #endif
 }
