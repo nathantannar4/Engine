@@ -19,7 +19,7 @@ import EngineCore
 /// to aide with backwards compatibility.
 ///
 @MainActor @preconcurrency
-public protocol VersionedView: PrimitiveView {
+public protocol VersionedView: View {
 
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     associatedtype V8Body: View = V7Body
@@ -107,45 +107,58 @@ extension VersionedView where V1Body == EmptyView {
     public var v1Body: V1Body { EmptyView() }
 }
 
-extension VersionedView {
+extension VersionedView where Body == _VersionedViewBody<Self> {
+
+    public var body: _VersionedViewBody<Self> {
+        _VersionedViewBody(content: self)
+    }
+}
+
+@frozen
+public struct _VersionedViewBody<Content: VersionedView>: PrimitiveView {
+
+    nonisolated(unsafe) var content: Content
+}
+
+extension _VersionedViewBody {
 
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
-    private nonisolated var _v8Body: VersionedViewV8Body<Self> {
-        VersionedViewV8Body(content: self)
+    private nonisolated var _v8Body: VersionedViewV8Body<Content> {
+        VersionedViewV8Body(content: content)
     }
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
-    private nonisolated var _v7Body: VersionedViewV7Body<Self> {
-        VersionedViewV7Body(content: self)
+    private nonisolated var _v7Body: VersionedViewV7Body<Content> {
+        VersionedViewV7Body(content: content)
     }
 
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
-    private nonisolated var _v6Body: VersionedViewV6Body<Self> {
-        VersionedViewV6Body(content: self)
+    private nonisolated var _v6Body: VersionedViewV6Body<Content> {
+        VersionedViewV6Body(content: content)
     }
 
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
-    private nonisolated var _v5Body: VersionedViewV5Body<Self> {
-        VersionedViewV5Body(content: self)
+    private nonisolated var _v5Body: VersionedViewV5Body<Content> {
+        VersionedViewV5Body(content: content)
     }
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
-    private nonisolated var _v4Body: VersionedViewV4Body<Self> {
-        VersionedViewV4Body(content: self)
+    private nonisolated var _v4Body: VersionedViewV4Body<Content> {
+        VersionedViewV4Body(content: content)
     }
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    private nonisolated var _v3Body: VersionedViewV3Body<Self> {
-        VersionedViewV3Body(content: self)
+    private nonisolated var _v3Body: VersionedViewV3Body<Content> {
+        VersionedViewV3Body(content: content)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    private nonisolated var _v2Body: VersionedViewV2Body<Self> {
-        VersionedViewV2Body(content: self)
+    private nonisolated var _v2Body: VersionedViewV2Body<Content> {
+        VersionedViewV2Body(content: content)
     }
 
-    private nonisolated var _v1Body: VersionedViewV1Body<Self> {
-        VersionedViewV1Body(content: self)
+    private nonisolated var _v1Body: VersionedViewV1Body<Content> {
+        VersionedViewV1Body(content: content)
     }
 
     #if DEBUG
@@ -160,42 +173,42 @@ extension VersionedView {
     ) -> _ViewOutputs {
         #if !DEBUG
         if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-            return VersionedViewV8Body<Self>._makeView(
+            return VersionedViewV8Body<Content>._makeView(
                 view: view[\._v8Body],
                 inputs: inputs
             )
         } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-            return VersionedViewV7Body<Self>._makeView(
+            return VersionedViewV7Body<Content>._makeView(
                 view: view[\._v7Body],
                 inputs: inputs
             )
         } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            return VersionedViewV6Body<Self>._makeView(
+            return VersionedViewV6Body<Content>._makeView(
                 view: view[\._v6Body],
                 inputs: inputs
             )
         } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-            return VersionedViewV5Body<Self>._makeView(
+            return VersionedViewV5Body<Content>._makeView(
                 view: view[\._v5Body],
                 inputs: inputs
             )
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-            return VersionedViewV4Body<Self>._makeView(
+            return VersionedViewV4Body<Content>._makeView(
                 view: view[\._v4Body],
                 inputs: inputs
             )
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-            return VersionedViewV3Body<Self>._makeView(
+            return VersionedViewV3Body<Content>._makeView(
                 view: view[\._v3Body],
                 inputs: inputs
             )
         } else if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-            return VersionedViewV2Body<Self>._makeView(
+            return VersionedViewV2Body<Content>._makeView(
                 view: view[\._v2Body],
                 inputs: inputs
             )
         } else {
-            return VersionedViewV1Body<Self>._makeView(
+            return VersionedViewV1Body<Content>._makeView(
                 view: view[\._v1Body],
                 inputs: inputs
             )
@@ -206,55 +219,55 @@ extension VersionedView {
         switch version {
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-                return VersionedViewV8Body<Self>._makeView(
+                return VersionedViewV8Body<Content>._makeView(
                     view: view[\._v8Body],
                     inputs: inputs
                 )
             }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                return VersionedViewV7Body<Self>._makeView(
+                return VersionedViewV7Body<Content>._makeView(
                     view: view[\._v7Body],
                     inputs: inputs
                 )
             }
         case .v6:
             if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-                return VersionedViewV6Body<Self>._makeView(
+                return VersionedViewV6Body<Content>._makeView(
                     view: view[\._v6Body],
                     inputs: inputs
                 )
             }
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-                return VersionedViewV5Body<Self>._makeView(
+                return VersionedViewV5Body<Content>._makeView(
                     view: view[\._v5Body],
                     inputs: inputs
                 )
             }
         case .v4:
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                return VersionedViewV4Body<Self>._makeView(
+                return VersionedViewV4Body<Content>._makeView(
                     view: view[\._v4Body],
                     inputs: inputs
                 )
             }
         case .v3:
             if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-                return VersionedViewV3Body<Self>._makeView(
+                return VersionedViewV3Body<Content>._makeView(
                     view: view[\._v3Body],
                     inputs: inputs
                 )
             }
         case .v2:
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-                return VersionedViewV2Body<Self>._makeView(
+                return VersionedViewV2Body<Content>._makeView(
                     view: view[\._v2Body],
                     inputs: inputs
                 )
             }
         case .v1:
-            return VersionedViewV1Body<Self>._makeView(
+            return VersionedViewV1Body<Content>._makeView(
                 view: view[\._v1Body],
                 inputs: inputs
             )
@@ -274,42 +287,42 @@ extension VersionedView {
     ) -> _ViewListOutputs {
         #if !DEBUG
         if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-            return VersionedViewV8Body<Self>._makeViewList(
+            return VersionedViewV8Body<Content>._makeViewList(
                 view: view[\._v8Body],
                 inputs: inputs
             )
         } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-            return VersionedViewV7Body<Self>._makeViewList(
+            return VersionedViewV7Body<Content>._makeViewList(
                 view: view[\._v7Body],
                 inputs: inputs
             )
         } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            return VersionedViewV6Body<Self>._makeViewList(
+            return VersionedViewV6Body<Content>._makeViewList(
                 view: view[\._v6Body],
                 inputs: inputs
             )
         } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-            return VersionedViewV5Body<Self>._makeViewList(
+            return VersionedViewV5Body<Content>._makeViewList(
                 view: view[\._v5Body],
                 inputs: inputs
             )
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-            return VersionedViewV4Body<Self>._makeViewList(
+            return VersionedViewV4Body<Content>._makeViewList(
                 view: view[\._v4Body],
                 inputs: inputs
             )
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-            return VersionedViewV3Body<Self>._makeViewList(
+            return VersionedViewV3Body<Content>._makeViewList(
                 view: view[\._v3Body],
                 inputs: inputs
             )
         } else if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-            return VersionedViewV2Body<Self>._makeViewList(
+            return VersionedViewV2Body<Content>._makeViewList(
                 view: view[\._v2Body],
                 inputs: inputs
             )
         } else {
-            return VersionedViewV1Body<Self>._makeViewList(
+            return VersionedViewV1Body<Content>._makeViewList(
                 view: view[\._v1Body],
                 inputs: inputs
             )
@@ -320,55 +333,55 @@ extension VersionedView {
         switch version {
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-                return VersionedViewV8Body<Self>._makeViewList(
+                return VersionedViewV8Body<Content>._makeViewList(
                     view: view[\._v8Body],
                     inputs: inputs
                 )
             }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                return VersionedViewV7Body<Self>._makeViewList(
+                return VersionedViewV7Body<Content>._makeViewList(
                     view: view[\._v7Body],
                     inputs: inputs
                 )
             }
         case .v6:
             if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-                return VersionedViewV6Body<Self>._makeViewList(
+                return VersionedViewV6Body<Content>._makeViewList(
                     view: view[\._v6Body],
                     inputs: inputs
                 )
             }
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-                return VersionedViewV5Body<Self>._makeViewList(
+                return VersionedViewV5Body<Content>._makeViewList(
                     view: view[\._v5Body],
                     inputs: inputs
                 )
             }
         case .v4:
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                return VersionedViewV4Body<Self>._makeViewList(
+                return VersionedViewV4Body<Content>._makeViewList(
                     view: view[\._v4Body],
                     inputs: inputs
                 )
             }
         case .v3:
             if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-                return VersionedViewV3Body<Self>._makeViewList(
+                return VersionedViewV3Body<Content>._makeViewList(
                     view: view[\._v3Body],
                     inputs: inputs
                 )
             }
         case .v2:
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-                return VersionedViewV2Body<Self>._makeViewList(
+                return VersionedViewV2Body<Content>._makeViewList(
                     view: view[\._v2Body],
                     inputs: inputs
                 )
             }
         case .v1:
-            return VersionedViewV1Body<Self>._makeViewList(
+            return VersionedViewV1Body<Content>._makeViewList(
                 view: view[\._v1Body],
                 inputs: inputs
             )
@@ -385,31 +398,31 @@ extension VersionedView {
     ) -> Int? {
         #if !DEBUG
         if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-            return VersionedViewV8Body<Self>._viewListCount(
+            return VersionedViewV8Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-            return VersionedViewV7Body<Self>._viewListCount(
+            return VersionedViewV7Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-            return VersionedViewV6Body<Self>._viewListCount(
+            return VersionedViewV6Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            return VersionedViewV5Body<Self>._viewListCount(
+            return VersionedViewV5Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-            return VersionedViewV4Body<Self>._viewListCount(
+            return VersionedViewV4Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-            return VersionedViewV3Body<Self>._viewListCount(
+            return VersionedViewV3Body<Content>._viewListCount(
                 inputs: inputs
             )
         } else {
-            return VersionedViewV2Body<Self>._viewListCount(
+            return VersionedViewV2Body<Content>._viewListCount(
                 inputs: inputs
             )
         }
@@ -419,42 +432,42 @@ extension VersionedView {
         switch version {
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
-                return VersionedViewV8Body<Self>._viewListCount(
+                return VersionedViewV8Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                return VersionedViewV7Body<Self>._viewListCount(
+                return VersionedViewV7Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v6:
             if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-                return VersionedViewV6Body<Self>._viewListCount(
+                return VersionedViewV6Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v5:
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-                return VersionedViewV5Body<Self>._viewListCount(
+                return VersionedViewV5Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v4:
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
-                return VersionedViewV4Body<Self>._viewListCount(
+                return VersionedViewV4Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v3:
             if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
-                return VersionedViewV3Body<Self>._viewListCount(
+                return VersionedViewV3Body<Content>._viewListCount(
                     inputs: inputs
                 )
             }
         case .v2:
-            return VersionedViewV2Body<Self>._viewListCount(
+            return VersionedViewV2Body<Content>._viewListCount(
                 inputs: inputs
             )
         default:
