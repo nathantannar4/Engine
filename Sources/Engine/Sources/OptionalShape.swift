@@ -18,7 +18,7 @@ public struct OptionalShape<S: Shape>: Shape {
             return AnyAnimatableData(EmptyAnimatableData())
         }
         set {
-            if let newValue = newValue.as(S.AnimatableData.self) {
+            if let newValue = newValue.value(as: S.AnimatableData.self) {
                 shape?.animatableData = newValue
             }
         }
@@ -65,6 +65,7 @@ extension OptionalShape: InsettableShape where S: InsettableShape {
     }
 }
 
+#if canImport(FoundationModels) // Xcode 26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension OptionalShape: RoundedRectangularShape where S: RoundedRectangularShape {
 
@@ -72,7 +73,7 @@ extension OptionalShape: RoundedRectangularShape where S: RoundedRectangularShap
         shape?.corners(in: size)
     }
 }
-
+#endif
 
 // MARK: - Previews
 

@@ -11,10 +11,20 @@ import SwiftUI
 @available(watchOS, deprecated: 9.0, message: "Use the builtin SwiftUI.AnyShape")
 @available(visionOS, deprecated: 1.1, message: "Use the builtin SwiftUI.AnyShape")
 @frozen
-public struct AnyShape: Shape {
+public struct AnyShape: Shape, InsettableShape {
 
     @usableFromInline
     var storage: AnyShapeStorageBase
+
+    public var animatableData: AnyAnimatableData {
+        get { storage.animatableData }
+        set {
+            if !isKnownUniquelyReferenced(&storage) {
+                storage = storage.copy()
+            }
+            storage.animatableData = newValue
+        }
+    }
 
     @available(iOS, deprecated: 16.0, renamed: "init(_:)")
     @available(macOS, deprecated: 13.0, renamed: "init(_:)")
@@ -40,19 +50,29 @@ public struct AnyShape: Shape {
         storage.sizeThatFits(proposal)
     }
 
-    public var animatableData: AnyAnimatableData {
-        get { storage.animatableData }
-        set {
-            if !isKnownUniquelyReferenced(&storage) {
-                storage = storage.copy()
-            }
-            storage.animatableData = newValue
-        }
+    public func inset(by amount: CGFloat) -> AnyShape {
+        storage.inset(by: amount)
     }
 }
 
+#if canImport(FoundationModels) // Xcode 26
+extension AnyShape: RoundedRectangularShape {
+
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    public func corners(in size: CGSize?) -> Corners? {
+        storage.corners(in: size)
+    }
+}
+#endif
+
 @usableFromInline
 class AnyShapeStorageBase: @unchecked Sendable {
+
+    var animatableData: AnyAnimatableData {
+        get { fatalError("base") }
+        set { fatalError("base") }
+    }
+
     func path(in rect: CGRect) -> Path {
         fatalError("base")
     }
@@ -67,10 +87,16 @@ class AnyShapeStorageBase: @unchecked Sendable {
         fatalError("base")
     }
 
-    public var animatableData: AnyAnimatableData {
-        get { fatalError("base") }
-        set { fatalError("base") }
+    func inset(by amount: CGFloat) -> AnyShape {
+        fatalError("base")
     }
+
+    #if canImport(FoundationModels) // Xcode 26
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
+        fatalError("base")
+    }
+    #endif
 
     func copy() -> AnyShapeStorageBase {
         fatalError("base")
@@ -81,6 +107,17 @@ class AnyShapeStorageBase: @unchecked Sendable {
 final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable {
 
     var shape: S
+
+    override var animatableData: AnyAnimatableData {
+        get {
+            AnyAnimatableData(shape.animatableData)
+        }
+        set {
+            if let newValue = newValue.value(as: S.AnimatableData.self) {
+                shape.animatableData = newValue
+            }
+        }
+    }
 
     @usableFromInline
     init(_ shape: S) {
@@ -101,16 +138,23 @@ final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable 
         shape.sizeThatFits(proposal)
     }
 
-    override var animatableData: AnyAnimatableData {
-        get {
-            AnyAnimatableData(shape.animatableData)
+    override func inset(by amount: CGFloat) -> AnyShape {
+        guard let shape = shape as? (any InsettableShape) else {
+            return AnyShape(shape: shape.inset(dx: amount, dy: amount))
         }
-        set {
-            if let newValue = newValue.as(S.AnimatableData.self) {
-                shape.animatableData = newValue
-            }
+        func project<T: InsettableShape>(_ shape: T) -> AnyShape {
+            return AnyShape(shape: shape.inset(by: amount))
         }
+        return _openExistential(shape, do: project)
     }
+
+    #if canImport(FoundationModels) // Xcode 26
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    override func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
+        guard let shape = shape as? (any RoundedRectangularShape) else { return nil }
+        return shape.corners(in: size)
+    }
+    #endif
 
     override func copy() -> AnyShapeStorageBase {
         AnyShapeStorage(shape)
@@ -130,7 +174,7 @@ struct AnyShape_Previews: PreviewProvider {
 
         var body: some View {
             VStack(alignment: .leading) {
-                Text("Engine.AnyShape ")
+                Text("Engine.AnyShape")
 
                 HStack {
                     let shape = flag ? AnyShape(shape: Circle()) : AnyShape(shape: Rectangle())

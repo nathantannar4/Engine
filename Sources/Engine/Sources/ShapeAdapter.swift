@@ -48,6 +48,7 @@ extension ShapeAdapter: InsettableShape where S: InsettableShape {
     }
 }
 
+#if canImport(FoundationModels) // Xcode 26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension ShapeAdapter: RoundedRectangularShape where S: RoundedRectangularShape {
 
@@ -55,6 +56,7 @@ extension ShapeAdapter: RoundedRectangularShape where S: RoundedRectangularShape
         shape.corners(in: size)
     }
 }
+#endif
 
 // MARK: - Previews
 

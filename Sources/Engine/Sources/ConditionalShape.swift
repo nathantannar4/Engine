@@ -21,12 +21,12 @@ extension ConditionalShape: Shape {
         set {
             switch storage {
             case .trueContent(var shape):
-                if let newValue = newValue.as(TrueContent.AnimatableData.self) {
+                if let newValue = newValue.value(as: TrueContent.AnimatableData.self) {
                     shape.animatableData = newValue
                     storage = .trueContent(shape)
                 }
             case .falseContent(var shape):
-                if let newValue = newValue.as(FalseContent.AnimatableData.self) {
+                if let newValue = newValue.value(as: FalseContent.AnimatableData.self) {
                     shape.animatableData = newValue
                     storage = .falseContent(shape)
                 }
@@ -86,6 +86,7 @@ extension ConditionalShape: InsettableShape where TrueContent: InsettableShape, 
     }
 }
 
+#if canImport(FoundationModels) // Xcode 26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension ConditionalShape: RoundedRectangularShape where TrueContent: RoundedRectangularShape, FalseContent: RoundedRectangularShape {
 
@@ -98,6 +99,7 @@ extension ConditionalShape: RoundedRectangularShape where TrueContent: RoundedRe
         }
     }
 }
+#endif
 
 // MARK: - Previews
 

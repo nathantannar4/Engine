@@ -46,12 +46,12 @@ extension ConditionalContent: Animatable where TrueContent: Animatable, FalseCon
         set {
             switch storage {
             case .trueContent(var layout):
-                if let newValue = newValue.as(TrueContent.AnimatableData.self) {
+                if let newValue = newValue.value(as: TrueContent.AnimatableData.self) {
                     layout.animatableData = newValue
                     storage = .trueContent(layout)
                 }
             case .falseContent(var layout):
-                if let newValue = newValue.as(FalseContent.AnimatableData.self) {
+                if let newValue = newValue.value(as: FalseContent.AnimatableData.self) {
                     layout.animatableData = newValue
                     storage = .falseContent(layout)
                 }

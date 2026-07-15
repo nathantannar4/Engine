@@ -79,33 +79,6 @@ extension UIView {
         }
         animator.startAnimation(afterDelay: animation.delay ?? 0)
     }
-
-    public static func animate(
-        with animation: Animation?,
-        changes: @escaping () -> Void
-    ) {
-        animate(with: animation, changes: changes, completion: nil)
-    }
-
-    public static func animate(
-        with animation: Animation?,
-        changes: @escaping () -> Void,
-        completion: (() -> Void)? = nil
-    ) {
-        if #available(iOS 18.0, visionOS 2.0, *), let animation {
-            UIView.animate(
-                animation,
-                changes: changes,
-                completion: completion
-            )
-        } else {
-            animate(
-                with: animation,
-                animations: changes,
-                completion: completion.map({ handler in {  _ in handler() } })
-            )
-        }
-    }
 }
 
 @objc(EngineAnimationTimingCurveProvider)

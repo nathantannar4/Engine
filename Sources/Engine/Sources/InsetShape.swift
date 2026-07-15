@@ -5,7 +5,7 @@
 import SwiftUI
 
 @frozen
-public struct InsetShape<S: Shape>: Shape, InsettableShape, Animatable {
+public struct InsetShape<S: Shape>: Shape, Animatable {
 
     public var shape: S
     public var insets: EdgeInsets
@@ -27,6 +27,11 @@ public struct InsetShape<S: Shape>: Shape, InsettableShape, Animatable {
     public init(shape: S, insets: EdgeInsets) {
         self.insets = insets
         self.shape = shape
+    }
+
+    @inlinable
+    public init(shape: S, by amount: CGFloat) {
+        self.init(shape: shape, insets: EdgeInsets(top: amount, leading: amount, bottom: amount, trailing: amount))
     }
 
     public nonisolated func path(in rect: CGRect) -> Path {
@@ -53,19 +58,18 @@ public struct InsetShape<S: Shape>: Shape, InsettableShape, Animatable {
     public func sizeThatFits(_ proposal: ProposedViewSize) -> CGSize {
         shape.sizeThatFits(proposal)
     }
+}
+
+extension InsetShape: InsettableShape where S: InsettableShape {
 
     public nonisolated func inset(
         by amount: CGFloat
-    ) -> InsetShape<S> {
-        var insets = insets
-        insets.top += amount
-        insets.bottom += amount
-        insets.leading += amount
-        insets.trailing += amount
-        return InsetShape(shape: shape, insets: insets)
+    ) -> InsetShape<S.InsetShape> {
+        return InsetShape(shape: shape.inset(by: amount), insets: insets)
     }
 }
 
+#if canImport(FoundationModels) // Xcode 26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
 
@@ -78,6 +82,7 @@ extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
         return shape.corners(in: size)
     }
 }
+#endif
 
 extension Shape {
 
@@ -101,69 +106,95 @@ struct InsetShape_Previews: PreviewProvider {
         }
     }
 
+    struct ShapePreview<S: InsettableShape>: View {
+        var shape: S
+        var inset: CGFloat
+
+        var body: some View {
+            HStack(spacing: 32) {
+                ZStack {
+                    shape
+                        .inset(dx: -inset, dy: -inset)
+                        .fill(Color.red)
+
+                    shape
+                        .fill(Color.black)
+
+                    shape
+                        .inset(dx: inset, dy: inset)
+                        .fill(Color.blue)
+
+                    Text("InsetShape")
+                        .foregroundColor(.white)
+                }
+
+                ZStack {
+                    shape
+                        .inset(by: -inset)
+                        .fill(Color.red)
+
+                    shape
+                        .fill(Color.black)
+
+                    shape
+                        .inset(by: inset)
+                        .fill(Color.blue)
+
+                    Text("Inset Modifier")
+                        .foregroundColor(.white)
+                }
+            }
+        }
+    }
+
     struct Preview: View {
         @State var flag = false
 
         var body: some View {
             let inset: CGFloat = flag ? 20 : 10
             VStack(spacing: 48) {
-                ZStack {
-                    Rectangle()
-                        .inset(dx: -inset, dy: -inset)
-                        .fill(Color.red)
+                ShapePreview(
+                    shape: Rectangle(),
+                    inset: inset
+                )
 
-                    Rectangle()
-                        .fill(Color.black)
+                ShapePreview(
+                    shape: RoundedRectangle(
+                        cornerRadius: 16
+                    ),
+                    inset: inset
+                )
 
-                    Rectangle()
-                        .inset(dx: inset, dy: inset)
-                        .fill(Color.blue)
+                if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                    ShapePreview(
+                        shape: UnevenRoundedRectangle(
+                            topLeadingRadius: inset,
+                            bottomLeadingRadius: inset,
+                            bottomTrailingRadius: inset,
+                            topTrailingRadius: inset
+                        ),
+                        inset: inset
+                    )
                 }
-                .frame(width: 100, height: 100)
 
-                ZStack {
-                    Capsule()
-                        .inset(dx: -inset, dy: -inset)
-                        .fill(Color.red)
+                ShapePreview(
+                    shape: Capsule(),
+                    inset: inset
+                )
+                .frame(height: 32)
 
-                    Capsule()
-                        .fill(Color.black)
+                ShapePreview(
+                    shape: CapsuleRoundedRectangle(
+                        maxCornerRadius: 16
+                    ),
+                    inset: inset
+                )
+                .frame(height: 32)
 
-                    Capsule()
-                        .inset(dx: inset, dy: inset)
-                        .fill(Color.blue)
-                }
-                .frame(width: 100, height: 100)
-
-                ZStack {
-                    Capsule()
-                        .inset(dx: -inset, dy: -inset)
-                        .fill(Color.red)
-
-                    Capsule()
-                        .fill(Color.black)
-
-                    Capsule()
-                        .inset(dx: inset, dy: inset)
-                        .fill(Color.blue)
-                }
-                .frame(width: 100, height: 60)
-
-                ZStack {
-                    Circle()
-                        .inset(dx: -inset, dy: -inset)
-                        .inset(dx: -inset, dy: -inset)
-                        .fill(Color.red)
-
-                    Circle()
-                        .fill(Color.black)
-
-                    Circle()
-                        .inset(dx: inset, dy: inset)
-                        .inset(dx: inset, dy: inset)
-                        .fill(Color.blue)
-                }
-                .frame(width: 100, height: 100)
+                ShapePreview(
+                    shape: Circle(),
+                    inset: inset
+                )
 
                 Button {
                     withAnimation {

@@ -5,7 +5,7 @@
 import SwiftUI
 
 @frozen
-public struct CapsuleRoundedRectangle: Shape, InsettableShape, RoundedRectangularShape {
+public struct CapsuleRoundedRectangle: Shape, InsettableShape {
 
     @frozen
     public enum Style: Hashable, Sendable {
@@ -60,16 +60,6 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape, RoundedRectangula
         return copy
     }
 
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
-    public func corners(in size: CGSize?) -> Corners? {
-        if let size {
-            let cornerRadius = cornerRadius(height: size.height)
-            let style = roundedCornerStyle(cornerRadius: cornerRadius)
-            return RoundedRectangle(cornerRadius: cornerRadius, style: style).corners(in: size)
-        }
-        return .concentric
-    }
-
     private func cornerRadius(height: CGFloat) -> CGFloat {
         let idealCornerRadius = height / 2
         let cornerRadius = maxCornerRadius.map { min($0, idealCornerRadius) } ?? idealCornerRadius
@@ -91,6 +81,21 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape, RoundedRectangula
         }
     }
 }
+
+#if canImport(FoundationModels) // Xcode 26
+extension CapsuleRoundedRectangle: RoundedRectangularShape {
+
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
+    public func corners(in size: CGSize?) -> Corners? {
+        if let size {
+            let cornerRadius = cornerRadius(height: size.height) + inset
+            let style = roundedCornerStyle(cornerRadius: cornerRadius)
+            return RoundedRectangle(cornerRadius: cornerRadius, style: style).corners(in: size)
+        }
+        return .concentric
+    }
+}
+#endif
 
 // MARK: - Previews
 
