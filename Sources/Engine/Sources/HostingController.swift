@@ -97,11 +97,13 @@ open class HostingController<
         )
         // Fixes `.transition` modifier
         #if os(iOS) || os(tvOS) || os(visionOS)
-        view.layoutIfNeeded()
+        if transitionCoordinator == nil {
+            view.layoutIfNeeded()
+        }
         #elseif os(macOS)
         view.layoutSubtreeIfNeeded()
         #endif
-        #if os(iOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         if shouldRenderForContentUpdate {
             withCATransaction {
                 self._render(seconds: 1 / 60)
@@ -161,7 +163,7 @@ extension PlatformHostingController: AnyHostingController {
 }
 #endif
 
-#if os(iOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 extension AnyHostingController {
 
     public var shouldRenderForContentUpdate: Bool {

@@ -6,19 +6,18 @@ import SwiftUI
 import os.log
 
 /// A protocol for defining a transform for a `Binding`
-public protocol BindingTransform: Sendable {
+public protocol BindingTransform {
     associatedtype Input
     associatedtype Output
 
     func get(_ value: Input) -> Output
-    func set(_ newValue: Output, oldValue: @autoclosure () -> Input) throws -> Input
+    func set(_ newValue: Output) throws -> Input
 }
 
 extension Binding {
 
-    /// Projects a `Binding` with the `transform`
-    @inlinable
-    @MainActor @preconcurrency
+    /// Projects a `Binding` with the ``BindingTransform``
+    @MainActor
     public func projecting<Transform: BindingTransform>(
         _ transform: Transform
     ) -> Binding<Transform.Output> where Transform.Input == Value {
@@ -26,7 +25,7 @@ extension Binding {
             transform.get(wrappedValue)
         } set: { newValue, transaction in
             do {
-                self.transaction(transaction).wrappedValue = try transform.set(newValue, oldValue: wrappedValue)
+                self.transaction(transaction).wrappedValue = try transform.set(newValue)
             } catch {
                 os_log(.debug, log: .default, "Projection %{public}@ failed with error: %{public}@", String(describing: Self.self), error.localizedDescription)
             }

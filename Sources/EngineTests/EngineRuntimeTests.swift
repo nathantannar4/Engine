@@ -45,7 +45,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(Animation.linear(duration: 0.3).speed(0.5).duration(defaultDuration: 1), 0.6)
         XCTAssertEqual(Animation.linear(duration: 0.3).speed(0.5).delay(1).duration(defaultDuration: 1), 0.6)
         XCTAssertEqual(Animation.spring(duration: 0.5).duration(defaultDuration: 1), 0.5)
-        XCTAssertEqual(Animation.interpolatingSpring(duration: 0.5).duration(defaultDuration: 1), 0.5)
+        XCTAssertEqual(Animation.interpolatingSpring(duration: 0.5).duration(defaultDuration: 1), 0.5174358110562187)
 
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
             struct MyAnimation: CustomAnimation {

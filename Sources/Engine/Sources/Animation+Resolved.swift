@@ -8,15 +8,16 @@ import EngineCore
 
 extension Animation {
 
-    /// The duration of the animation
-    public func duration(defaultDuration: CGFloat) -> TimeInterval {
+    /// The duration of the animation, factoring in the speed
+    public func duration(defaultDuration: TimeInterval) -> TimeInterval {
         guard let resolved = Resolved(animation: self) else { return defaultDuration }
-        switch resolved.timingCurve {
-        case .default:
-            return defaultDuration / resolved.speed
-        default:
-            return (resolved.timingCurve.duration ?? defaultDuration) / resolved.speed
-        }
+        return resolved.duration(defaultDuration: defaultDuration)
+    }
+
+    /// The duration of the animation
+    public func timingCurveDuration(defaultDuration: TimeInterval) -> TimeInterval {
+        guard let resolved = Resolved(animation: self) else { return defaultDuration }
+        return resolved.timingCurveDuration(defaultDuration: defaultDuration)
     }
 
     /// The delay of the animation
@@ -26,7 +27,7 @@ extension Animation {
     }
 
     /// The speed of the animation
-    public var speed: Double? {
+    public var speed: TimeInterval? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.speed
     }
@@ -42,6 +43,19 @@ extension Animation {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.autoreverses
     }
+
+    /// The timing curve of the animation
+    public var timingCurve: Resolved.TimingCurve? {
+        guard let resolved = Resolved(animation: self) else { return nil }
+        return resolved.timingCurve
+    }
+
+    #if os(iOS) || os(visionOS) || os(macOS)
+    public func toCoreAnimation() -> CABasicAnimation? {
+        guard let resolved = Resolved(animation: self) else { return nil }
+        return resolved.toCoreAnimation()
+    }
+    #endif
 
     /// The delay of the animation
     public func resolved() -> Resolved? {
@@ -78,6 +92,22 @@ extension Animation {
                 public var stiffness: Double
                 public var damping: Double
                 public var initialVelocity: Double
+
+                public var duration: TimeInterval {
+                    guard mass > 0, stiffness > 0, damping > 0 else { return 0 }
+                    let naturalFrequency = sqrt(stiffness / mass)
+                    let dampingRatio = damping / (2.0 * mass * naturalFrequency)
+                    let threshold = 0.0015
+                    if dampingRatio < 1.0 {
+                        let decayRate = dampingRatio * naturalFrequency
+                        return -log(threshold) / decayRate
+                    } else {
+                        let root = dampingRatio - sqrt(max(0, dampingRatio * dampingRatio - 1.0))
+                        let decayRate = naturalFrequency * root
+                        guard decayRate > 0 else { return 0 }
+                        return -log(threshold) / decayRate
+                    }
+                }
             }
             case spring(SpringAnimation)
 
@@ -205,6 +235,12 @@ extension Animation {
                     get { payload.delay }
                     set { payload.delay = newValue }
                 }
+
+                public var initialVelocity: Double {
+                    guard duration > 0, dampingFraction > 0 else { return 0 }
+                    let initialVelocity = duration > 0 ? log(dampingFraction) / duration : 0
+                    return initialVelocity
+                }
             }
             case fluidSpring(FluidSpringAnimation)
 
@@ -258,29 +294,21 @@ extension Animation {
                 switch self {
                 case .default:
                     return nil
-                case .custom(let custom):
-                    return custom.duration
+                case .custom(let customCurve):
+                    return customCurve.duration
                 case .bezier(let bezierCurve):
                     return bezierCurve.duration
                 case .spring(let springCurve):
-                    let naturalFrequency = sqrt(springCurve.stiffness / springCurve.mass)
-                    let dampingRatio = springCurve.damping / (2.0 * naturalFrequency)
-                    guard dampingRatio < 1 else {
-                        let duration = 2 * .pi / (naturalFrequency * dampingRatio)
-                        return duration
-                    }
-                    let decayRate = dampingRatio * naturalFrequency
-                    let duration = -log(0.01) / decayRate
-                    return duration
+                    return springCurve.duration
                 case .fluidSpring(let fluidSpringCurve):
-                    return fluidSpringCurve.duration + fluidSpringCurve.blendDuration
+                    return fluidSpringCurve.duration
                 }
             }
         }
 
         public var timingCurve: TimingCurve
         public var delay: TimeInterval
-        public var speed: Double
+        public var speed: TimeInterval
         public var repeatCount: Int
         public var autoreverses: Bool
 
@@ -320,7 +348,8 @@ extension Animation {
                         switch name {
                         case "RepeatAnimation":
                             if let r = try? swift_getFieldValue("repeatCount", Optional<Int>.self, modifier) {
-                                repeatCount += r
+                                let (sum, overflowed) = repeatCount.addingReportingOverflow(r)
+                                repeatCount = overflowed ? .max : sum
                             } else {
                                 repeatCount = .max
                             }
@@ -356,8 +385,87 @@ extension Animation {
                 self.autoreverses = autoreverses
             }
         }
+
+        /// The duration of the animation, factoring in the speed
+        public func duration(defaultDuration: TimeInterval) -> TimeInterval {
+            let timingCurveDuration = timingCurveDuration(defaultDuration: defaultDuration)
+            return timingCurveDuration / speed
+        }
+
+        /// The duration of the animation
+        public func timingCurveDuration(defaultDuration: TimeInterval) -> TimeInterval {
+            return timingCurve.duration ?? defaultDuration
+        }
     }
 }
+
+#if os(iOS) || os(visionOS) || os(macOS)
+
+extension Animation.Resolved {
+
+    public func toCoreAnimation() -> CABasicAnimation {
+        switch timingCurve {
+        case .default, .custom:
+            let duration = timingCurveDuration(defaultDuration: 0.35)
+            let basicAnimation = CABasicAnimation()
+            basicAnimation.timingFunction = CAMediaTimingFunction(name: .default)
+            basicAnimation.duration = duration
+            basicAnimation.speed = Float(speed)
+            basicAnimation.beginTime = CACurrentMediaTime() + delay
+            basicAnimation.fillMode = .backwards
+            return basicAnimation
+
+        case .bezier(let bezierAnimation):
+            let basicAnimation = CABasicAnimation()
+            basicAnimation.timingFunction = bezierAnimation.curve.toCoreAnimation()
+            basicAnimation.duration = bezierAnimation.duration
+            basicAnimation.speed = Float(speed)
+            basicAnimation.beginTime = CACurrentMediaTime() + delay
+            basicAnimation.fillMode = .backwards
+            return basicAnimation
+
+        case .spring(let springCurve):
+            let springAnimation = CASpringAnimation()
+            springAnimation.mass = springCurve.mass
+            springAnimation.stiffness = springCurve.stiffness
+            springAnimation.damping = springCurve.damping
+            springAnimation.initialVelocity = springCurve.initialVelocity
+            springAnimation.speed = Float(speed)
+            springAnimation.beginTime = CACurrentMediaTime() + delay
+            springAnimation.fillMode = .backwards
+            return springAnimation
+
+        case .fluidSpring(let fluidSpringCurve):
+            let initialVelocity = fluidSpringCurve.initialVelocity
+            let dampingRatio = fluidSpringCurve.dampingFraction
+            let stiffness = pow((2 * .pi) / fluidSpringCurve.duration, 2)
+            let damping = dampingRatio * 2 * sqrt(stiffness)
+            let springAnimation = CASpringAnimation()
+            springAnimation.initialVelocity = initialVelocity
+            springAnimation.mass = 1
+            springAnimation.stiffness = stiffness
+            springAnimation.damping = damping
+            springAnimation.speed = Float(speed)
+            springAnimation.beginTime = CACurrentMediaTime() + delay
+            springAnimation.fillMode = .backwards
+            return springAnimation
+
+        }
+    }
+}
+
+extension Animation.Resolved.TimingCurve.BezierAnimation.AnimationCurve {
+
+    public func toCoreAnimation() -> CAMediaTimingFunction {
+        return CAMediaTimingFunction(
+            controlPoints:
+                Float(ax / 3), Float(ay / 3),
+                Float(cx - (cx - bx) / 3), Float(cy - (cy - by) / 3)
+        )
+    }
+}
+
+#endif
 
 // MARK: - Previews
 

@@ -6,13 +6,13 @@ import SwiftUI
 
 extension Binding {
 
-    /// A ``BindingTransform`` that transforms the value to `true` when `nil`
+    /// Transforms the value to `true` when `nil`
     @inlinable
     public func isNil<Wrapped>() -> Binding<Bool> where Optional<Wrapped> == Value {
         self[keyPath: \.isNone]
     }
 
-    /// A ``BindingTransform`` that transforms the value to `true` when `.some`
+    /// Transforms the value to `true` when `.some`
     @inlinable
     public func isNotNil<Wrapped>() -> Binding<Bool> where Optional<Wrapped> == Value {
         self[keyPath: \.isNotNone]
@@ -21,7 +21,16 @@ extension Binding {
 
 extension Binding where Value == Optional<String> {
 
-    /// A ``BindingTransform`` that transforms a `nil` `String` to an empty string, and an empty `String` to `nil`
+    /// Transforms a `nil` `String` to an empty string, and an empty `String` to `nil`
+    @inlinable
+    public func value() -> Binding<String> {
+        self[keyPath: \.value]
+    }
+}
+
+extension Binding where Value == Optional<Int> {
+
+    /// Transforms a `nil` `Int` to an empty string, and an empty `String` to `nil`
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]
@@ -30,13 +39,13 @@ extension Binding where Value == Optional<String> {
 
 extension Binding where Value == Optional<Bool> {
 
-    /// A ``BindingTransform`` that transforms the value to `true` when `true`
+    /// Transforms the value to `true` when `true`
     @inlinable
     public func isTrue() -> Binding<Bool> {
         self[keyPath: \.isTrue]
     }
 
-    /// A ``BindingTransform`` that transforms the value to `true` when `false`
+    /// Transforms the value to `true` when `false`
     @inlinable
     public func isFalse() -> Binding<Bool> {
         self[keyPath: \.isFalse]
@@ -45,7 +54,7 @@ extension Binding where Value == Optional<Bool> {
 
 extension Binding where Value == Optional<URL> {
 
-    /// A ``BindingTransform`` that transforms a `URL` to a `String`
+    /// Transforms a `URL` to a `String`
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]

@@ -48,6 +48,24 @@ extension Optional where Wrapped == String {
     }
 }
 
+extension Optional where Wrapped == Int {
+
+    @usableFromInline
+    var value: String {
+        get {
+            switch self {
+            case .none:
+                return ""
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = newValue.isEmpty ? .none : Int(newValue)
+        }
+    }
+}
+
 extension Optional where Wrapped == Bool {
 
     @usableFromInline

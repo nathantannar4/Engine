@@ -6,6 +6,9 @@ import SwiftUI
 import EngineCore
 import os.log
 
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
+public protocol TextAttributeKey: Sendable, TextAttribute, AttributedStringKey where Value == Self { }
+
 extension Text {
 
     @inlinable
@@ -16,13 +19,19 @@ extension Text {
 
     @inlinable
     @inline(__always)
+    public static var dotSeparator: Text {
+        Text(" · ")
+    }
+
+    @inlinable
+    @inline(__always)
     public static var newline: Text {
         Text("\n")
     }
 
     @inlinable
     @inline(__always)
-    public static var bulletPoint: Text {
+    public static var bulletPointSeparator: Text {
         Text("• ")
     }
 
@@ -289,6 +298,7 @@ extension Text {
         var isMonospaced: Bool = false
         var isMonospacedDigit: Bool = false
         var scale: Scale?
+        var customAttributes: [Any] = []
         var environment: EnvironmentValues
 
         struct LineStyle {
@@ -446,6 +456,19 @@ extension Text {
                 }
             }
             #endif
+
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+                for attribute in customAttributes {
+                    if let key = attribute as? any TextAttributeKey {
+                        func project<Key: TextAttributeKey>(_ key: Key) {
+                            if let value = attribute as? Key.Value {
+                                attributes[Key.self] = value
+                            }
+                        }
+                        _openExistential(key, do: project)
+                    }
+                }
+            }
             return attributes
         }
 
@@ -837,8 +860,14 @@ extension Text {
                         attributes.scale = .init(scale: scale)
                     }
                 default:
-                    os_log(.debug, log: .default, "Failed to resolve Text modifier %{public}@. Please file an issue.", className)
-                    break
+                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
+                        className.hasPrefix("TextAttributeModifier"),
+                        let value = try? swift_getFieldValue("value", Any.self, modifier)
+                    {
+                        attributes.customAttributes.append(value)
+                    } else {
+                        os_log(.debug, log: .default, "Failed to resolve Text modifier %{public}@. Please file an issue.", className)
+                    }
                 }
             }
         }
@@ -1027,6 +1056,13 @@ extension NSAttributedString {
 // MARK: - Previews
 
 struct Text_Previews: PreviewProvider {
+
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
+    struct PreviewAttribute: TextAttributeKey {
+        var value: Int
+        static let name: String = "PreviewAttribute"
+    }
+
     static var previews: some View {
         VStack {
             let optionalText: Optional<String> = "Hello, World"
@@ -1050,11 +1086,23 @@ struct Text_Previews: PreviewProvider {
 
             Text("Search", suffix: .ellipsis)
 
-            Text(prefix: .bulletPoint, "Line 1")
+            Text(prefix: .bulletPointSeparator, "Line 1")
 
-            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-                Text("Search", suffix: .ellipsis)
-                    .redacted(reason: .placeholder)
+            Text(separator: .dotSeparator) {
+                Text("One")
+                Text("Two")
+            }
+
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                AttributedStringReader(
+                    Text("Hello, World")
+                        .customAttribute(PreviewAttribute(value: 1))
+                ) { attributedString in
+                    Text(attributedString)
+                        .onAppear {
+                            print(attributedString)
+                        }
+                }
             }
         }
     }

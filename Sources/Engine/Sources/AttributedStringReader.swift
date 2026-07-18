@@ -4,79 +4,102 @@
 
 import SwiftUI
 
+@MainActor @preconcurrency
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+public protocol AttributedStringReaderRenderer: DynamicProperty {
+
+    associatedtype Body: View
+    @ViewBuilder @MainActor @preconcurrency func makeBody(attributedString: AttributedString) -> Body
+}
+
 /// A view that resolves `Text` with the current environment
 @frozen
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-public struct AttributedStringReader<Content: View>: View {
+public struct AttributedStringReader<
+    Renderer: AttributedStringReaderRenderer
+>: View {
 
     @usableFromInline
-    var text: Text?
+    var text: Text
 
     @usableFromInline
-    var content: (AttributedString?) -> Content
-
-    @Environment(\.self) var environment
+    var renderer: Renderer
 
     @inlinable
     public init(
         _ text: Text,
-        @ViewBuilder content: @escaping (AttributedString) -> Content
+        renderer: Renderer
     ) {
         self.text = text
-        self.content = { content($0!) }
-    }
-
-    @inlinable
-    public init(
-        _ text: Text?,
-        @ViewBuilder content: @escaping (AttributedString?) -> Content
-    ) {
-        self.text = text
-        self.content = content
+        self.renderer = renderer
     }
 
     @inlinable
     public init(
         _ text: LocalizedStringKey,
-        @ViewBuilder content: @escaping (AttributedString) -> Content
+        renderer: Renderer
     ) {
+        self.init(Text(text), renderer: renderer)
+    }
+
+    @inlinable
+    public init<Content: View>(
+        _ text: Text,
+        @ViewBuilder content: @escaping (AttributedString) -> Content
+    ) where Renderer == AttributedStringReaderDefaultRenderer<Content> {
+        self.init(text, renderer: AttributedStringReaderDefaultRenderer(content: content))
+    }
+
+    @inlinable
+    public init<Content: View>(
+        _ text: LocalizedStringKey,
+        @ViewBuilder content: @escaping (AttributedString) -> Content
+    ) where Renderer == AttributedStringReaderDefaultRenderer<Content> {
         self.init(Text(text), content: content)
     }
 
     public var body: some View {
-        AttributedStringReaderBody(text: text, content: content)
-            .equatable()
+        AttributedStringReaderBody(
+            text: text,
+            renderer: renderer
+        )
+    }
+}
+
+@frozen
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+public struct AttributedStringReaderDefaultRenderer<
+    Content: View
+>: AttributedStringReaderRenderer {
+
+    public var content: (AttributedString) -> Content
+
+    public init(
+        content: @escaping (AttributedString) -> Content
+    ) {
+        self.content = content
+    }
+
+    public func makeBody(attributedString: AttributedString) -> some View {
+        content(attributedString)
     }
 }
 
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private struct AttributedStringReaderBody<Content: View>: View, Equatable {
+private struct AttributedStringReaderBody<
+    Renderer: AttributedStringReaderRenderer
+>: View {
 
-    var text: Text?
-    var content: (AttributedString?) -> Content
-
-    var body: some View {
-        AttributedStringReaderResolvedBody(text: text, content: content)
-    }
-
-    static nonisolated func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.text == rhs.text
-    }
-}
-
-@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-private struct AttributedStringReaderResolvedBody<Content: View>: View {
-
-    var text: Text?
-    var content: (AttributedString?) -> Content
+    var text: Text
+    var renderer: Renderer
 
     @Environment(\.self) var environment
 
     var body: some View {
-        content(text?.resolveAttributed(in: environment))
+        let attributedString = text.resolveAttributed(in: environment)
+        renderer.makeBody(attributedString: attributedString)
     }
 }
-
 
 // MARK: - Previews
 

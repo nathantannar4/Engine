@@ -24,18 +24,20 @@ public struct DebugOverlayModifier: ViewModifier {
             .overlay(
                 GeometryReader { proxy in
                     let size = proxy.size
+                    let lineWidth: CGFloat = 2
                     ZStack {
                         Rectangle()
-                            .strokeBorder(color, lineWidth: 2)
+                            .inset(by: -lineWidth)
+                            .strokeBorder(color, lineWidth: lineWidth)
 
                         Text(verbatim: "\(size.width.rounded(decimalPoints: 1)), \(size.height.rounded(decimalPoints: 1))")
                             .fixedSize()
                             .background(color.opacity(0.3))
                             .alignmentGuide(VerticalAlignment.center) { d in
-                                d[VerticalAlignment.center] + (size.height + d.height) / 2
+                                d[VerticalAlignment.center] + (size.height + d.height) / 2 + lineWidth
                             }
                             .alignmentGuide(HorizontalAlignment.center) { d in
-                                d[HorizontalAlignment.center] + (size.width - d.width) / 2
+                                d[HorizontalAlignment.center] + (size.width - d.width) / 2 + lineWidth
                             }
                             .frame(width: size.width, height: size.height, alignment: .center)
 
@@ -43,10 +45,10 @@ public struct DebugOverlayModifier: ViewModifier {
                             .background(color.opacity(0.3))
                             .fixedSize()
                             .alignmentGuide(VerticalAlignment.center) { d in
-                                d[VerticalAlignment.center] - (size.height + d.height) / 2
+                                d[VerticalAlignment.center] - (size.height + d.height) / 2 - lineWidth
                             }
                             .alignmentGuide(HorizontalAlignment.center) { d in
-                                d[HorizontalAlignment.center] - (size.width - d.width) / 2
+                                d[HorizontalAlignment.center] - (size.width - d.width) / 2 - lineWidth
                             }
                             .frame(width: size.width, height: size.height, alignment: .center)
                     }
@@ -82,6 +84,14 @@ struct DebugOverlayModifier_Previews: PreviewProvider {
                 .withDebugOverlay(label: "Padding", color: .blue)
 
             Text("Text")
+                .withDebugOverlay(label: "Label", color: .red)
+
+            Text("Text")
+                .padding()
+                .background {
+                    Rectangle()
+                        .strokeBorder(Color.blue, lineWidth: 2)
+                }
                 .withDebugOverlay(label: "Label", color: .red)
         }
     }
