@@ -53,7 +53,7 @@ extension UIView {
     public func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)? = nil
+        completion: (@MainActor @Sendable (Bool) -> Void)? = nil
     ) {
         UIView.animate(with: animation, animations: animations, completion: completion)
     }
@@ -61,7 +61,7 @@ extension UIView {
     public static func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)? = nil
+        completion: (@MainActor @Sendable (Bool) -> Void)? = nil
     ) {
         guard let animation else {
             animations()
@@ -186,7 +186,7 @@ extension NSView {
     public func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)? = nil
+        completion: (@MainActor @Sendable (Bool) -> Void)? = nil
     ) {
         NSView.animate(self, with: animation, animations: animations, completion: completion)
     }
@@ -195,7 +195,7 @@ extension NSView {
         _ view: NSView,
         with animation: Animation?,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)? = nil
+        completion: (@MainActor @Sendable (Bool) -> Void)? = nil
     ) {
         view.endDelayedAnimations(cancel: true)
 
@@ -248,7 +248,7 @@ extension NSView {
                 )
             }
 
-        case .spring(let springCurve):
+        case .spring:
             if let layer = view.layer, let animation = resolved.toCoreAnimation() as? CASpringAnimation {
                 layer.animate(
                     duration: animation.settlingDuration,
@@ -268,7 +268,7 @@ extension NSView {
                 )
             }
 
-        case .fluidSpring(let fluidSpringCurve):
+        case .fluidSpring:
             if let layer = view.layer, let animation = resolved.toCoreAnimation() as? CASpringAnimation {
                 layer.animate(
                     duration: animation.settlingDuration,
@@ -296,7 +296,7 @@ extension NSView {
         delay: TimeInterval,
         timingFunction: CAMediaTimingFunction,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)?
+        completion: (@MainActor @Sendable (Bool) -> Void)?
     ) {
         if delay > 0 {
             let changes = DispatchWorkItem { [weak view] in
@@ -353,7 +353,7 @@ extension CALayer {
         duration: TimeInterval,
         animation: CABasicAnimation,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)?
+        completion: (@MainActor @Sendable (Bool) -> Void)?
     ) {
         CALayer.animate(
             self,
@@ -369,7 +369,7 @@ extension CALayer {
         duration: TimeInterval,
         animation: CABasicAnimation,
         animations: @escaping () -> Void,
-        completion: (@Sendable (Bool) -> Void)?
+        completion: (@MainActor @Sendable (Bool) -> Void)?
     ) {
         var delegate = layer.delegate
         while let provider = delegate as? AnimationTimingCurveDelegate {
@@ -386,7 +386,7 @@ extension CALayer {
             if layer.delegate === provider {
                 layer.delegate = provider.delegate
             }
-            completion?(true)
+            MainActor.assumeIsolated { completion?(true) }
         }
         #if os(macOS)
         NSAnimationContext.runAnimationGroup { context in
