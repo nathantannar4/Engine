@@ -377,7 +377,7 @@ extension SymbolConfiguration {
 extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
-    func traitCollectionForImageResolution() -> UITraitCollection {
+    public func traitCollectionForImageResolution() -> UITraitCollection {
         let contrast: UIAccessibilityContrast? = {
             if #available(iOS 14.0, tvOS 14.0, *) {
                 return UIAccessibilityContrast(colorSchemeContrast)

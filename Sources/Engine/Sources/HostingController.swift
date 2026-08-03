@@ -24,6 +24,10 @@ public protocol AnyHostingController: PlatformViewController {
     #if os(iOS) || os(tvOS) || os(visionOS)
     var disableSafeArea: Bool { get set }
     #endif
+    #if os(iOS)
+    @available(iOS 16.4, *)
+    var disablesKeyboardSafeArea: Bool { get set }
+    #endif
     func render()
 }
 #endif
@@ -67,6 +71,48 @@ open class HostingController<
     private var shouldAutomaticallyAllowUIKitAnimationsForNextUpdate: Bool = true
     #endif
 
+    #if os(iOS)
+    @available(iOS 16.4, *)
+    public var automaticallyDisableKeyboardSafeArea: Bool {
+        get { shouldAutomaticallyDisableKeyboardSafeArea }
+        set { shouldAutomaticallyDisableKeyboardSafeArea = newValue }
+    }
+    private var shouldAutomaticallyDisableKeyboardSafeArea = true {
+        didSet {
+            guard oldValue != shouldAutomaticallyDisableKeyboardSafeArea else { return }
+            if shouldAutomaticallyDisableKeyboardSafeArea {
+                if view.window != nil {
+                    isObservingKeyboardNotifications = true
+                    if !hasFirstResponder() {
+                        isKeyboardSafeAreaDisabled = true
+                    }
+                }
+            } else {
+                isObservingKeyboardNotifications = false
+                isKeyboardSafeAreaDisabled = false
+            }
+        }
+    }
+
+    private var isKeyboardSafeAreaDisabled: Bool = false {
+        didSet {
+            guard oldValue != isKeyboardSafeAreaDisabled else { return }
+            isKeyboardSafeAreaDisabledDidChange()
+        }
+    }
+
+    private var isObservingKeyboardNotifications: Bool = false {
+        didSet {
+            guard oldValue != isObservingKeyboardNotifications else { return }
+            if isObservingKeyboardNotifications {
+                registerForKeyboardNotifications()
+            } else {
+                unregisterForKeyboardNotifications()
+            }
+        }
+    }
+    #endif
+
     public init(content: Content) {
         let rootView = HostingRootView(content: content, transaction: Transaction())
         #if os(watchOS)
@@ -96,17 +142,19 @@ open class HostingController<
             transaction: transaction
         )
         // Fixes `.transition` modifier
-        #if os(iOS) || os(tvOS) || os(visionOS)
-        if transitionCoordinator == nil {
-            view.layoutIfNeeded()
+        if transaction.isAnimated {
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            if transitionCoordinator == nil {
+                view.layoutIfNeeded()
+            }
+            #elseif os(macOS)
+            view.layoutSubtreeIfNeeded()
+            #endif
         }
-        #elseif os(macOS)
-        view.layoutSubtreeIfNeeded()
-        #endif
         #if os(iOS) || os(tvOS) || os(visionOS)
         if shouldRenderForContentUpdate {
-            withCATransaction {
-                self._render(seconds: 1 / 60)
+            withCATransaction { [weak self] in
+                self?.render()
             }
         }
         #endif
@@ -137,6 +185,111 @@ open class HostingController<
     }
     #endif
 
+    #if os(iOS)
+    open override func viewDidLoad() {
+        super.viewDidLoad()
+
+        if shouldAutomaticallyDisableKeyboardSafeArea {
+            isKeyboardSafeAreaDisabled = true
+        }
+    }
+
+    open override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if shouldAutomaticallyDisableKeyboardSafeArea {
+            isObservingKeyboardNotifications = true
+        }
+    }
+
+    open override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if shouldAutomaticallyDisableKeyboardSafeArea {
+            isObservingKeyboardNotifications = false
+            isKeyboardSafeAreaDisabled = true
+        }
+    }
+
+    static var keyboardNotifications: [Notification.Name]  {
+        if #available(iOS 16.4, *) {
+            return [
+                UIResponder.keyboardWillShowNotification,
+                UIResponder.keyboardDidShowNotification,
+                UIResponder.keyboardWillChangeFrameNotification,
+                UIResponder.keyboardWillHideNotification,
+                UIResponder.keyboardDidHideNotification,
+            ]
+        }
+        return []
+    }
+
+    private func registerForKeyboardNotifications() {
+        for name in Self.keyboardNotifications {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(onKeyboardChange(_:)),
+                name: name,
+                object: nil
+            )
+        }
+    }
+
+    private func unregisterForKeyboardNotifications() {
+        for name in Self.keyboardNotifications {
+            NotificationCenter.default.removeObserver(
+                self,
+                name: name,
+                object: nil
+            )
+        }
+    }
+
+    @objc
+    private func onKeyboardChange(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            userInfo[UIResponder.keyboardIsLocalUserInfoKey] as? Bool != false
+        else {
+            return
+        }
+        switch notification.name {
+        case UIResponder.keyboardDidShowNotification:
+            enableKeyboardSafeAreaIfNeeded()
+        case UIResponder.keyboardWillShowNotification, UIResponder.keyboardWillChangeFrameNotification:
+            if let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect, let window = view.window {
+                let isVisible = endFrame.minY < window.bounds.height
+                if isVisible {
+                    enableKeyboardSafeAreaIfNeeded()
+                } else {
+                    isKeyboardSafeAreaDisabled = true
+                }
+            }
+        case UIResponder.keyboardWillHideNotification, UIResponder.keyboardDidHideNotification:
+            isKeyboardSafeAreaDisabled = true
+        default:
+            break
+        }
+    }
+
+    private func enableKeyboardSafeAreaIfNeeded() {
+        guard #available(iOS 16.4, *) else { return }
+        guard isKeyboardSafeAreaDisabled, disablesKeyboardSafeArea else { return }
+        if hasFirstResponder() {
+            isKeyboardSafeAreaDisabled = false
+        }
+    }
+
+    private func hasFirstResponder() -> Bool {
+        guard let firstResponder = UIResponder.current else { return false }
+        return firstResponder.isInResponderChain(of: self)
+    }
+
+    private func isKeyboardSafeAreaDisabledDidChange() {
+        guard #available(iOS 16.4, *) else { return }
+        disablesKeyboardSafeArea = isKeyboardSafeAreaDisabled
+        view.layoutIfNeeded()
+    }
+    #endif
+
     #if os(iOS) || os(tvOS) || os(visionOS)
     open override func viewWillLayoutSubviews() {
         if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
@@ -157,6 +310,20 @@ extension PlatformHostingController: AnyHostingController {
     }
     #endif
 
+    #if os(iOS)
+    @available(iOS 16.4, *)
+    public var disablesKeyboardSafeArea: Bool {
+        get { !safeAreaRegions.contains(.keyboard) }
+        set {
+            if newValue {
+                safeAreaRegions.remove(.keyboard)
+            } else {
+                safeAreaRegions.insert(.keyboard)
+            }
+        }
+    }
+    #endif
+
     public func render() {
         _render(seconds: 1 / 60)
     }
@@ -172,5 +339,49 @@ extension AnyHostingController {
         }
         return false
     }
+}
+#endif
+
+#if os(iOS)
+extension UIResponder {
+
+    public func _isInResponderChain(of parent: UIResponder) -> Bool {
+        isInResponderChain(of: parent)
+    }
+
+    func isInResponderChain(of parent: UIResponder) -> Bool {
+        var responder: UIResponder? = self
+        while let current = responder {
+            if current === parent {
+                return true
+            }
+            responder = current.next
+        }
+        return false
+    }
+
+    public static var _current: UIResponder? {
+        current
+    }
+
+    static var current: UIResponder? {
+        if lastCapturedFirstResponder?.isFirstResponder == true {
+            return lastCapturedFirstResponder
+        }
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.captureCurrentFirstResponder(_:)),
+            to: nil,
+            from: nil,
+            for: nil
+        )
+        return UIResponder.lastCapturedFirstResponder
+    }
+
+    @objc
+    private func captureCurrentFirstResponder(_ sender: Any) {
+        UIResponder.lastCapturedFirstResponder = self
+    }
+
+    private weak static var lastCapturedFirstResponder: UIResponder?
 }
 #endif

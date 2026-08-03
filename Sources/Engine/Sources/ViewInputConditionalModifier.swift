@@ -42,7 +42,7 @@ public struct ViewInputConditionalModifier<
         inputs: _ViewInputs,
         body: @escaping (_Graph, _ViewInputs) -> _ViewOutputs
     ) -> _ViewOutputs {
-        Condition.evaluate(ViewInputs(inputs: inputs))
+        Condition.evaluate(inputs)
             ? TrueModifier._makeView(modifier: modifier[\.trueModifier], inputs: inputs, body: body)
             : FalseModifier._makeView(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
@@ -52,7 +52,7 @@ public struct ViewInputConditionalModifier<
         inputs: _ViewListInputs,
         body: @escaping (_Graph, _ViewListInputs) -> _ViewListOutputs
     ) -> _ViewListOutputs {
-        Condition.evaluate(ViewInputs(inputs: inputs))
+        Condition.evaluate(inputs)
             ? TrueModifier._makeViewList(modifier: modifier[\.trueModifier], inputs: inputs, body: body)
             : FalseModifier._makeViewList(modifier: modifier[\.falseModifier], inputs: inputs, body: body)
     }
@@ -62,7 +62,7 @@ public struct ViewInputConditionalModifier<
         inputs: _ViewListCountInputs,
         body: (_ViewListCountInputs) -> Int?
     ) -> Int? {
-        Condition.evaluate(ViewInputs(inputs: inputs))
+        Condition.evaluate(inputs)
             ? TrueModifier._viewListCount(inputs: inputs, body: body)
             : FalseModifier._viewListCount(inputs: inputs, body: body)
     }

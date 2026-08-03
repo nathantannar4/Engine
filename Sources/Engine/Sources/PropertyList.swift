@@ -5,6 +5,7 @@
 import SwiftUI
 import EngineCore
 
+@usableFromInline
 struct PropertyList {
 
     struct ID {
@@ -331,7 +332,7 @@ struct PropertyList {
                 let value = getValue(Value.self)
                 if T.self == Value.self {
                     return value as? T
-                } else if T.self == Any.self {
+                } else if T.self == Any.self || T.self == Optional<Any>.self {
                     return (value as Any) as? T
                 } else if MemoryLayout<T>.size == MemoryLayout<Value>.size {
                     return unsafeBitCast(value, to: T.self)
@@ -520,12 +521,12 @@ struct PropertyList {
         set { add(Input.self, newValue) }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { value(Input.self, as: Input.Value.self) }
-        set { add(Input.self, newValue ?? Input.defaultValue) }
+        get { value(Input.self, as: Input.Value.self) ?? defaultValue() }
+        set { add(Input.self, newValue ?? defaultValue() ?? Input.defaultValue) }
     }
 
     public subscript<Value>(

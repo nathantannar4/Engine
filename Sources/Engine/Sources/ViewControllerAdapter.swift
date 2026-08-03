@@ -14,7 +14,7 @@ open class ViewControllerAdapter<
     Representable: PlatformViewRepresentable
 > {
 
-    public var viewController: PlatformViewController!
+    public private(set) var viewController: PlatformViewController!
 
     var context: Any! // Context<Coordinator>
     var conformance: ProtocolConformance<PlatformViewControllerRepresentableProtocolDescriptor>? = nil
@@ -34,6 +34,7 @@ open class ViewControllerAdapter<
                 content: content,
                 context: context
             )
+            updateHostingController(content: content, context: context)
         }
     }
 

@@ -99,12 +99,11 @@ public struct VariadicViewVisitor<
     }
 }
 
-@MainActor @preconcurrency
 public protocol VariadicViewLayout: DynamicProperty {
 
     associatedtype Body: View
 
-    @ViewBuilder func body(children: VariadicView) -> Body
+    @ViewBuilder @MainActor @preconcurrency func body(children: VariadicView) -> Body
 }
 
 @frozen
@@ -124,9 +123,6 @@ public struct AnyVariadicViewLayout<
         content(children)
     }
 }
-
-@available(*, deprecated, renamed: "VariadicView")
-public typealias AnyVariadicView = VariadicView
 
 extension KeyPath where Root == VariadicView.Subview {
 
@@ -335,11 +331,6 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
     }
 
     // MARK: Sections
-
-    @available(*, deprecated, message: "Use `self` directly")
-    public var children: VariadicView {
-        return self
-    }
 
     public var sections: [VariadicSectionView] {
         var sections: [VariadicSectionView] = [

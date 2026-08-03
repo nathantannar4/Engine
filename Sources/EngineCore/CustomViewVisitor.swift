@@ -81,7 +81,7 @@ extension View {
                 }
             }
         } catch {
-            os_log(.debug, log: .default, "Failed to resolve fields of %{public}@. Please file an issue.", String(describing: Self.self))
+            os_log(.debug, log: .default, "Failed to resolve fields of %{public}@ with error: %{public}@. Please file an issue.", String(describing: Self.self), error.localizedDescription)
         }
         return false
     }

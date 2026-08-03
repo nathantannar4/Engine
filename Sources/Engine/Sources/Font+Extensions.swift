@@ -251,7 +251,7 @@ private enum FontProvider {
 extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
-    func traitCollectionForFontResolution() -> UITraitCollection {
+    public func traitCollectionForFontResolution() -> UITraitCollection {
         let preferredContentSizeCategory: UIContentSizeCategory? = {
             if #available(iOS 15.0, tvOS 15.0, *) {
                 return UIContentSizeCategory(dynamicTypeSize)

@@ -84,7 +84,7 @@ extension VariadicView.Subview {
             let value = subview.element[Key.self]
             if K.Value.self == Key.Value.self {
                 output = value as? K.Value
-            } else if K.Value.self == Any.self {
+            } else if K.Value.self == Any.self || K.Value.self == Optional<Any>.self {
                 output = (value as Any) as? K.Value
             } else if MemoryLayout<K.Value>.size == MemoryLayout<Key.Value>.size {
                 output = unsafeBitCast(value, to: K.Value.self)
@@ -129,7 +129,7 @@ extension Layout.Subviews.Element {
             let trait = subview._trait(key: Key.self)
             if K.Value.self == Key.Value.self {
                 output = trait as? K.Value
-            } else if K.Value.self == Any.self {
+            } else if K.Value.self == Any.self || K.Value.self == Optional<Any>.self {
                 output = (trait as Any) as? K.Value
             } else if MemoryLayout<K.Value>.size == MemoryLayout<Key.Value>.size {
                 output = unsafeBitCast(trait, to: K.Value.self)

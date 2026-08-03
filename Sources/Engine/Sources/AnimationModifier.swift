@@ -65,7 +65,7 @@ extension View {
     }
 }
 
-/// Applies the animation to the transaction if it does not have an animation
+/// Applies the animation to the transaction if it does not have an animation or is the default animation
 @frozen
 public struct OptionalAnimationModifier<Value: Equatable>: VersionedViewModifier {
 
@@ -87,7 +87,7 @@ public struct OptionalAnimationModifier<Value: Equatable>: VersionedViewModifier
             .transaction(
                 value: value
             ) { value in
-                if value.animation == nil, !value.disablesAnimations {
+                if !value.disablesAnimations, value.animation == nil || value.animation == .default {
                     value.animation = animation
                 }
             }
@@ -111,9 +111,9 @@ public struct OptionalAnimationModifier<Value: Equatable>: VersionedViewModifier
         func body(content: Content) -> some View {
             content
                 .transaction { value in
-                    guard !value.disablesAnimations, oldValue != newValue else { return }
+                    guard oldValue != newValue else { return }
                     oldValue = newValue
-                    if value.animation == nil {
+                    if !value.disablesAnimations, value.animation == nil || value.animation == .default {
                         value.animation = animation
                     }
                 }

@@ -9,7 +9,6 @@ import SwiftUI
 /// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
 /// to aide with cross platform compatibility.
 ///
-@MainActor @preconcurrency
 public protocol UserInterfaceIdiomModifier: ViewModifier {
     associatedtype PhoneBody: View = Content
     @ViewBuilder @MainActor @preconcurrency func phoneBody(content: Content) -> PhoneBody

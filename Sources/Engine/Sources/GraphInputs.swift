@@ -25,6 +25,7 @@ private struct GraphInputsLayout {
 
 extension _GraphInputs {
 
+    @usableFromInline
     var customInputs: PropertyList {
         get {
             withUnsafePointer(to: self) { ptr -> PropertyList in
@@ -49,12 +50,12 @@ extension _GraphInputs {
         set { customInputs[Input.self] = newValue }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { customInputs[Input.self] }
-        set { customInputs[Input.self] = newValue }
+        get { customInputs[Input.self, default: defaultValue()] }
+        set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
     public subscript<Value>(

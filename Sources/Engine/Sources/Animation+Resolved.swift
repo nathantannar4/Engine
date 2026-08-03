@@ -50,7 +50,7 @@ extension Animation {
         return resolved.timingCurve
     }
 
-    #if os(iOS) || os(visionOS) || os(macOS)
+    #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
     public func toCoreAnimation() -> CABasicAnimation? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.toCoreAnimation()
@@ -399,7 +399,7 @@ extension Animation {
     }
 }
 
-#if os(iOS) || os(visionOS) || os(macOS)
+#if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
 
 extension Animation.Resolved {
 

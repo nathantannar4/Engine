@@ -6,8 +6,10 @@ import SwiftUI
 import EngineCore
 import os.log
 
+@frozen
 public struct ViewInputs {
 
+    @frozen
     public struct Options: OptionSet, Sendable {
         public var rawValue: UInt32
 
@@ -22,11 +24,13 @@ public struct ViewInputs {
         public static let isAxisHorizontal = Options(rawValue: 1 << 3)
     }
 
+    @usableFromInline
     var customInputs: PropertyList
 
     public let options: Options
 
-    init(inputs: _GraphInputs) {
+    @inlinable
+    public init(inputs: _GraphInputs) {
         self.customInputs = inputs.customInputs
         do {
             let rawValue = try swift_getFieldValue("options", UInt32.self, inputs)
@@ -36,16 +40,19 @@ public struct ViewInputs {
         }
     }
 
-    init(inputs: _ViewInputs) {
+    @inlinable
+    public init(inputs: _ViewInputs) {
         self.init(inputs: inputs.graphInputs)
     }
 
-    init(inputs: _ViewListInputs) {
+    @inlinable
+    public init(inputs: _ViewListInputs) {
         self.init(inputs: inputs.graphInputs)
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    init(inputs: _ViewListCountInputs) {
+    @inlinable
+    public init(inputs: _ViewListCountInputs) {
         self.customInputs = inputs.customInputs
         do {
             let rawValue = try swift_getFieldValue("baseOptions", UInt32.self, inputs)
@@ -62,12 +69,12 @@ public struct ViewInputs {
         set { customInputs[Input.self] = newValue }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { customInputs[Input.self] }
-        set { customInputs[Input.self] = newValue }
+        get { customInputs[Input.self, default: defaultValue()] }
+        set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
     public subscript<Value>(
@@ -125,6 +132,15 @@ public struct _ViewInputsLogModifier: ViewInputsModifier {
     }
 }
 
+private struct PreferencesInputsLayout {
+
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    struct V6 {
+        var keys: [any PreferenceKey.Type]
+        var hostKeys: UInt32
+    }
+}
+
 extension _ViewInputs {
 
     public var graphInputs: _GraphInputs {
@@ -145,6 +161,22 @@ extension _ViewInputs {
         }
     }
 
+    public mutating func bridgeHostingView() {
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+            do {
+                var preferences = try swift_getFieldValue("preferences", PreferencesInputsLayout.V6.self, self)
+                if let key = _typeByName("7SwiftUI21AccessibilityNodesKeyV") as? any PreferenceKey.Type {
+                    preferences.keys.append(key)
+                } else {
+                    os_log(.debug, log: .default, "Failed to bridge hosting view accessibility. Please file an issue.")
+                }
+                try swift_setFieldValue("preferences", preferences, &self)
+            } catch {
+                os_log(.debug, log: .default, "Failed to bridge hosting view with error: %{public}@. Please file an issue.", error.localizedDescription)
+            }
+        }
+    }
+
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -152,12 +184,12 @@ extension _ViewInputs {
         set { graphInputs[Input.self] = newValue }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { graphInputs[Input.self] }
-        set { graphInputs[Input.self] = newValue }
+        get { graphInputs[Input.self, default: defaultValue()] }
+        set { graphInputs[Input.self, default: defaultValue()] = newValue }
     }
 
     public subscript<Value>(
@@ -196,12 +228,12 @@ extension _ViewListInputs {
         set { graphInputs[Input.self] = newValue }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { graphInputs[Input.self] }
-        set { graphInputs[Input.self] = newValue }
+        get { graphInputs[Input.self, default: defaultValue()] }
+        set { graphInputs[Input.self, default: defaultValue()] = newValue }
     }
 
     public subscript<Value>(
@@ -220,6 +252,7 @@ private struct ViewListCountInputsLayout {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension _ViewListCountInputs {
 
+    @usableFromInline
     var customInputs: PropertyList {
         get {
             withUnsafePointer(to: self) { ptr -> PropertyList in
@@ -244,12 +277,12 @@ extension _ViewListCountInputs {
         set { customInputs[Input.self] = newValue }
     }
 
-    @_disfavoredOverload
     public subscript<Input: ViewInputKey>(
-        _ : Input.Type
+        _ : Input.Type,
+        default defaultValue: @autoclosure () -> Input.Value?
     ) -> Input.Value? {
-        get { customInputs[Input.self] }
-        set { customInputs[Input.self] = newValue }
+        get { customInputs[Input.self, default: defaultValue()] }
+        set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
     public subscript<Value>(

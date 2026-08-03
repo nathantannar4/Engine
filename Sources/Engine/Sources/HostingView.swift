@@ -49,8 +49,8 @@ open class HostingView<
                 do {
                     return try swift_getFieldValue("_rootView", HostingRootView<Content>.self, self)
                 } catch {
-                    os_log(.debug, log: .default, "Failed to get `_rootView`. Please file an issue.")
-                    fatalError(error.localizedDescription)
+                    os_log(.debug, log: .default, "Failed to get `_rootView` with error: %{public}@. Please file an issue.", error.localizedDescription)
+                    fatalError()
                 }
             }
             #endif
@@ -69,7 +69,7 @@ open class HostingView<
                     try swift_setFieldValue("propertiesNeedingUpdate", flags, self)
                     setNeedsLayout()
                 } catch {
-                    os_log(.debug, log: .default, "Failed to set `_rootView`. Please file an issue.")
+                    os_log(.debug, log: .default, "Failed to set `_rootView` with error: %{public}@. Please file an issue.", error.localizedDescription)
                 }
             }
             #endif
@@ -98,9 +98,12 @@ open class HostingView<
     /// Set to `true` when embedded in a `UIViewRepresentable` to trigger a layout if `Content` size changes outside of a rootView update
     public var invalidatesIntrinsicContentSizeOnIdealSizeChange: Bool = false
 
+    /// When `true`, an animated layout on the parent hosting view will be triggered when the intrinsic content size changes
+    public var automaticallyLayoutIntrinsicContentSizeChange: Bool = true
+
     private var cachedIntrinsicContentSize: CGSize? {
         didSet {
-            guard oldValue != nil, oldValue != cachedIntrinsicContentSize else { return }
+            guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating else { return }
             invalidateIntrinsicContentSize()
         }
     }
@@ -161,11 +164,13 @@ open class HostingView<
             transaction: transaction
         )
         // Fixes `.transition` modifier
-        #if os(iOS) || os(tvOS) || os(visionOS)
-        layoutIfNeeded()
-        #elseif os(macOS)
-        layout()
-        #endif
+        if transaction.isAnimated {
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            layoutIfNeeded()
+            #elseif os(macOS)
+            layout()
+            #endif
+        }
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
@@ -199,8 +204,36 @@ open class HostingView<
             enableUIKitAnimationsIfNeeded()
         }
         super.layoutSubviews()
-        if invalidatesIntrinsicContentSizeOnIdealSizeChange, !isUpdating {
+        if invalidatesIntrinsicContentSizeOnIdealSizeChange {
             cachedIntrinsicContentSize = intrinsicContentSize
+        }
+    }
+
+    open override func invalidateIntrinsicContentSize() {
+        super.invalidateIntrinsicContentSize()
+        if window != nil {
+            layoutIntrinsicContentSizeChange()
+        }
+    }
+
+    open func layoutIntrinsicContentSizeChange() {
+        let hostingView: AnyHostingView? = {
+            var ancestor = superview
+            while let current = ancestor {
+                if let hostingView = current as? AnyHostingView {
+                    return hostingView
+                }
+                ancestor = current.superview
+            }
+            return nil
+        }()
+        if let hostingView {
+            UIView.animate(with: .default) {
+                if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
+                    hostingView.enableUIKitAnimationsIfNeeded()
+                }
+                hostingView.layoutIfNeeded()
+            }
         }
     }
     #endif
@@ -305,7 +338,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 return try swift_getFieldValue("allowUIKitAnimations", Int32.self, self)
             } catch {
-                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimations`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimations` with error: %{public}@. Please file an issue.", error.localizedDescription)
                 return 0
             }
         }
@@ -313,7 +346,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 try swift_setFieldValue("allowUIKitAnimations", newValue, self)
             } catch {
-                os_log(.debug, log: .default, "Failed to set `allowUIKitAnimations`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to set `allowUIKitAnimations` with error: %{public}@. Please file an issue.", error.localizedDescription)
             }
         }
     }
@@ -326,7 +359,7 @@ extension PlatformHostingView: AnyHostingView {
             do {
                 return try swift_getFieldValue("allowUIKitAnimationsForNextUpdate", Bool.self, self)
             } catch {
-                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                os_log(.debug, log: .default, "Failed to get `allowUIKitAnimationsForNextUpdate` with error: %{public}@. Please file an issue.", error.localizedDescription)
                 return false
             }
         }
@@ -339,7 +372,7 @@ extension PlatformHostingView: AnyHostingView {
                 do {
                     try swift_setFieldValue("allowUIKitAnimationsForNextUpdate", newValue, self)
                 } catch {
-                    os_log(.debug, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate`. Please file an issue.")
+                    os_log(.debug, log: .default, "Failed to set `allowUIKitAnimationsForNextUpdate` with error: %{public}@. Please file an issue.", error.localizedDescription)
                 }
             }
         }
@@ -414,6 +447,7 @@ struct HostingView_Previews: PreviewProvider {
 
         func makeUIView(context: Context) -> UIViewType {
             let uiView = HostingView(content: content)
+            uiView.invalidatesIntrinsicContentSizeOnIdealSizeChange = true
             return uiView
         }
 

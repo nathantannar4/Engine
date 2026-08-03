@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import EngineCore
 
 /// Accessors to internal keys ``Engine.EnvironmentKeyVisitor``
 extension EnvironmentValues {
@@ -13,9 +14,13 @@ extension EnvironmentValues {
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
-    @available(iOS 17.0, tvOS 17.0, visionOS 1.0, *)
     public var hostingController: UIViewController? {
-        self["WithCurrentHostingControllerKey"]
+        if #available(iOS 17.0, tvOS 17.0, visionOS 1.0, *) {
+            return self["WithCurrentHostingControllerKey"]
+        } else if let context = self["ToolbarUpdateContextKey", as: Any.self] {
+            return try? swift_getFieldValue("targetController", UIViewController?.self, context)
+        }
+        return nil
     }
     #endif
 
@@ -89,13 +94,13 @@ extension EnvironmentValues {
         self["DefaultBaselineOffsetKey", default: 0]
     }
 
-    /// The value for the ``.lineLimit(_, reservesSpace: Bool)`` modifier
+    /// The value for the ``.lineLimit(_)`` modifier
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var lineLimitMininum: Int? {
         self["LowerLineLimitKey"]
     }
 
-    /// The value for the ``.lineLimit(_, reservesSpace: Bool)`` modifier
+    /// The value for the ``.lineLimit(_)`` modifier
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var lineLimitRange: ClosedRange<Int>? {
         let min = lineLimitMininum ?? 0

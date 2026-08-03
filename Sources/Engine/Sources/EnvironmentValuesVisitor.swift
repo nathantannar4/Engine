@@ -177,7 +177,7 @@ private struct EnvironmentValuesGetterVisitor<Value>: EnvironmentKeyVisitor {
         let value = environment[Key.self]
         if Key.Value.self == Value.self {
             output = value as? Value
-        } else if Value.self == Any.self {
+        } else if Value.self == Any.self || Value.self == Optional<Any>.self {
             output = (value as Any) as? Value
         } else if MemoryLayout<Key.Value>.size == MemoryLayout<Value>.size {
             output = unsafeBitCast(value, to: Value.self)

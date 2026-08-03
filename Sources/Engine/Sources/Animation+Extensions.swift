@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-#if os(iOS) || os(visionOS)
+#if os(iOS) || os(tvOS) || os(visionOS)
 
 import UIKit
 
@@ -345,7 +345,7 @@ extension NSView {
 
 #endif
 
-#if os(iOS) || os(visionOS) || os(macOS)
+#if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
 
 extension CALayer {
 
@@ -465,7 +465,7 @@ private class AnimationTimingCurveDelegate: NSObject, CALayerDelegate {
 
 // MARK: - Previews
 
-@available(iOS 14.0, macOS 11.0,  *)
+@available(iOS 14.0, tvOS 14.0, macOS 11.0,  *)
 struct Animation_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
@@ -493,7 +493,7 @@ struct Animation_Previews: PreviewProvider {
                     Text("Engine")
                 }
 
-                if #available(iOS 18.0, macOS 15.0, visionOS 2.0, *) {
+                if #available(iOS 18.0, tvOS 18.0, macOS 15.0, visionOS 2.0, *) {
                     SwiftUIAnimatedPlatformView(
                         cornerRadius: cornerRadius,
                         backgroundColor: backgroundColor
@@ -505,7 +505,7 @@ struct Animation_Previews: PreviewProvider {
             }
         }
 
-        #if os(iOS) || os(visionOS)
+        #if os(iOS) || os(tvOS) || os(visionOS)
         struct EngineAnimatedPlatformView: UIViewRepresentable {
             var cornerRadius: CGFloat
             var backgroundColor: Color
@@ -524,7 +524,7 @@ struct Animation_Previews: PreviewProvider {
             }
         }
 
-        @available(iOS 18.0, visionOS 2.0, *)
+        @available(iOS 18.0, tvOS 18.0, visionOS 2.0, *)
         struct SwiftUIAnimatedPlatformView: UIViewRepresentable {
             var cornerRadius: CGFloat
             var backgroundColor: Color
@@ -608,6 +608,7 @@ struct Animation_Previews: PreviewProvider {
                 }
 
 
+                #if !os(tvOS)
                 Slider(value: $delay, in: 0...3, step: 0.25) {
                     Text("Delay")
                 }
@@ -615,6 +616,7 @@ struct Animation_Previews: PreviewProvider {
                 Slider(value: $speed, in: 0...2, step: 0.25) {
                     Text("Speed")
                 }
+                #endif
 
                 Button {
                     flag.toggle()

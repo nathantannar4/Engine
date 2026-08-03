@@ -37,6 +37,12 @@ extension Text {
 
     @inlinable
     @inline(__always)
+    public static var backSlashSeparator: Text {
+        Text(" / ")
+    }
+
+    @inlinable
+    @inline(__always)
     public static var ellipsis: Text {
         Text("…")
     }
@@ -82,6 +88,10 @@ extension Text {
         self = Text(key, tableName: tableName, bundle: bundle, comment: comment)
     }
 
+    public var isVerbatim: Bool {
+        verbatim != nil
+    }
+
     /// Returns the verbatim value if the text stores a `String`
     public var verbatim: String? {
         guard
@@ -93,9 +103,30 @@ extension Text {
         return verbatim
     }
 
-    /// Returns `true` if the text stores a `String` that is empty
+    public var attachment: Image? {
+        guard
+            MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size,
+            case .anyTextStorage(let storage) = layout.storage
+        else {
+            return nil
+        }
+        return try? swift_getFieldValue("image", Image.self, storage)
+    }
+
+    /// Returns `true` if there are any attributed styling modifiers or attachments on the `Text`
+    public var isAttributed: Bool {
+        guard MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size else {
+            return false
+        }
+        return resolveHasAttributes()
+    }
+
+    /// Returns `true` if the text would resolve to empty
     public var isEmpty: Bool {
-        verbatim?.isEmpty ?? false
+        guard MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size else {
+            return false
+        }
+        return resolveIsEmpty()
     }
 }
 
@@ -140,13 +171,37 @@ extension Text {
         self = Text(content)
     }
 
-    @_disfavoredOverload
     public init?<F>(
         _ input: F.FormatInput?,
         format: F
     ) where F: FormatStyle, F.FormatInput: Equatable, F.FormatOutput == String {
         guard let input else { return nil }
         self.init(input, format: format)
+    }
+
+    public init<T: Dimension>(
+        _ input: Measurement<T>,
+        format: Measurement<T>.FormatStyle,
+        unitsFont: Font
+    ) {
+        var str = format.attributed.format(input)
+        str = str.transformingAttributes(
+            \.measurement, \.font
+        ) { metadata, font in
+            if metadata.value == .unit {
+                font.value = unitsFont
+            }
+        }
+        self.init(str)
+    }
+
+    public init?<T: Dimension>(
+        _ input: Measurement<T>?,
+        format: Measurement<T>.FormatStyle,
+        unitsFont: Font
+    ) {
+        guard let input else { return nil }
+        self.init(input, format: format, unitsFont: unitsFont)
     }
 }
 
@@ -162,7 +217,6 @@ extension Text {
     }
 }
 
-
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Text {
 
@@ -170,7 +224,10 @@ extension Text {
     /// string keys if necessary.
     @inlinable
     public func resolve(in environment: EnvironmentValues) -> String {
-        _resolveText(in: environment)
+        if let verbatim {
+            return verbatim
+        }
+        return _resolveText(in: environment)
     }
 
     /// Transforms the `Text` to a `AttributedString`, using the environment to resolve localized
@@ -191,16 +248,6 @@ extension Text {
             return NSAttributedString(string: resolve(in: environment))
         }
         return _resolve(in: environment).storage.resolveNSAttributedString()
-    }
-
-    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    public var attachment: Image? {
-        guard let storage else { return nil }
-        return try? swift_getFieldValue("image", Image.self, storage)
-    }
-
-    public var isVerbatim: Bool {
-        storage == nil
     }
 
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -234,6 +281,7 @@ extension Text {
 }
 
 extension Text {
+
     private enum Storage {
         case verbatim(String)
         case anyTextStorage(AnyObject)
@@ -249,6 +297,19 @@ extension Text {
         case baseline(CGFloat)
         case rounded
         case anyTextModifier(AnyObject)
+
+        var hasAttributes: Bool {
+            switch self {
+            case .color(let color):
+                return color != nil
+            case .font(let font):
+                return font != nil
+            case .weight(let weight):
+                return weight != nil
+            case .italic, .kerning, .tracking, .baseline, .rounded, .anyTextModifier:
+                return true
+            }
+        }
     }
 
     private struct TypeLayout {
@@ -263,19 +324,6 @@ extension Text {
     struct AttachmentTextStorageTypeLayout {
         var metadata: (Any.Type, UInt)
         var image: Image?
-    }
-
-    private var storageLayout: Text.TypeLayout {
-        unsafeBitCast(self, to: Text.TypeLayout.self)
-    }
-
-    private var storage: AnyObject? {
-        switch layout.storage {
-        case .verbatim:
-            return nil
-        case .anyTextStorage(let storage):
-            return storage
-        }
     }
 }
 
@@ -859,6 +907,13 @@ extension Text {
                     {
                         attributes.scale = .init(scale: scale)
                     }
+                case "TextForegroundStyleModifier":
+                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
+                        let style = try? swift_getFieldValue("style", AnyShapeStyle.self, modifier),
+                        let color = style.color(in: attributes.environment)
+                    {
+                        attributes.foregroundColor = color
+                    }
                 default:
                     if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
                         className.hasPrefix("TextAttributeModifier"),
@@ -956,6 +1011,77 @@ extension Text {
                     )
                 )
             )
+        }
+    }
+}
+
+extension Text {
+
+    private func resolveIsEmpty() -> Bool {
+        switch layout.storage {
+        case .verbatim(let text):
+            return text.isEmpty
+        case .anyTextStorage(let storage):
+            let className = String(describing: type(of: storage))
+            switch className {
+            case "ConcatenatedTextStorage":
+                guard
+                    let first = try? swift_getFieldValue("first", Text.self, storage),
+                    let second = try? swift_getFieldValue("second", Text.self, storage)
+                else {
+                    fallthrough
+                }
+                return first.resolveIsEmpty() || second.resolveIsEmpty()
+
+            default:
+                return false
+            }
+        }
+    }
+
+    private func resolveHasAttributes() -> Bool {
+        if layout.modifiers.contains(where: { $0.hasAttributes }) {
+            return true
+        }
+        switch layout.storage {
+        case .verbatim:
+            return false
+        case .anyTextStorage(let storage):
+            let className = String(describing: type(of: storage))
+            switch className {
+            case "ConcatenatedTextStorage":
+                guard
+                    let first = try? swift_getFieldValue("first", Text.self, storage),
+                    let second = try? swift_getFieldValue("second", Text.self, storage)
+                else {
+                    fallthrough
+                }
+                return first.resolveHasAttributes() || second.resolveHasAttributes()
+
+            case "AttachmentTextStorage":
+                return true
+
+            case "LocalizedTextStorage":
+                guard
+                    layout.modifiers.isEmpty,
+                    let key = try? swift_getFieldValue("key", LocalizedStringKey.self, storage),
+                    let hasFormatting = try? swift_getFieldValue("hasFormatting", Bool.self, key),
+                    hasFormatting,
+                    let rawArguments = try? swift_getFieldValue("arguments", Any.self, key) as? [Any],
+                    rawArguments.count > 0
+                else {
+                    fallthrough
+                }
+
+                let arguments = rawArguments
+                    .compactMap { try? swift_getFieldValue("storage", Any.self, $0) }
+                    .compactMap { Mirror(reflecting: $0).descendant("text", ".0") as? Text }
+
+                return arguments.contains(where: { $0.resolveHasAttributes() })
+
+            default:
+                return false
+            }
         }
     }
 }
@@ -1093,15 +1219,59 @@ struct Text_Previews: PreviewProvider {
                 Text("Two")
             }
 
+            let plainText = Text("Hello, World")
+            HStack {
+                Text(plainText.isAttributed ? "isAttributed" : "plain")
+
+                plainText
+            }
+
+            let boldText = Text("Hello, World").fontWeight(.bold)
+            HStack {
+                Text(boldText.isAttributed ? "isAttributed" : "plain")
+
+                boldText
+            }
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                let boldSubText = Text("Hello, \(Text("World").fontWeight(.bold))")
+                HStack {
+                    Text(boldSubText.isAttributed ? "isAttributed" : "plain")
+
+                    boldSubText
+                }
+            }
+
+            if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+                let attributedString: Optional<AttributedString> = AttributedString("Hello, World")
+                Text(attributedString)
+
+                let number: Optional<Int> = 42
+                Text(number, format: .number)
+
+                let measurement: Optional<Measurement<UnitLength>> = Measurement(value: 1234, unit: .meters)
+                Text(measurement, format: .measurement(width: .narrow))
+
+                Text(measurement, format: .measurement(width: .narrow), unitsFont: .caption)
+            }
+
             if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
                 AttributedStringReader(
                     Text("Hello, World")
                         .customAttribute(PreviewAttribute(value: 1))
                 ) { attributedString in
+                    VStack {
+                        Text(attributedString)
+
+                        Text(attributedString.description)
+                    }
+                }
+
+                AttributedStringReader(
+                    Text("Hello, World")
+                        .foregroundStyle(Color.red.gradient)
+                ) { attributedString in
                     Text(attributedString)
-                        .onAppear {
-                            print(attributedString)
-                        }
                 }
             }
         }

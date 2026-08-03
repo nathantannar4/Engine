@@ -20,9 +20,22 @@ public func withCATransaction(
 }
 
 extension Transaction {
+
     public var isAnimated: Bool {
         let isAnimated = animation != nil
         return isAnimated
+    }
+
+    public func animation(_ animation: Animation?) -> Transaction {
+        var copy = self
+        copy.animation = animation
+        return copy
+    }
+
+    public func disablesAnimations(_ disablesAnimations: Bool) -> Transaction {
+        var copy = self
+        copy.disablesAnimations = disablesAnimations
+        return copy
     }
 }
 
