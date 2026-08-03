@@ -24,18 +24,6 @@ extension ViewInputFlag {
     public static var defaultValue: Bool { false }
 }
 
-/// A static condition that is conditional on a view's inputs.
-public protocol ViewInputsCondition {
-    static func evaluate(_ inputs: ViewInputs) -> Bool
-}
-
-extension ViewInputsCondition where Self: ViewInputFlag {
-    /// Evaluates to `true` when the input value is `true`
-    public static func evaluate(_ inputs: ViewInputs) -> Bool {
-        inputs[Self.Key.self] == true
-    }
-}
-
 extension View {
     /// Modifies the view inputs to set the ``ViewInput/value``
     @inlinable
@@ -62,6 +50,30 @@ public struct ViewInputModifier<Input: ViewInput>: ViewModifier {
     private struct Modifier: ViewInputsModifier {
         static func makeInputs(inputs: inout ViewInputs) {
             inputs[Input.Key.self] = Input.value
+        }
+    }
+}
+
+// MARK: - Previews
+
+struct ViewInput_Previews: PreviewProvider {
+
+    struct PreviewFlag: ViewInputFlag { }
+
+    static var previews: some View {
+        VStack {
+            ViewInputConditionalContent(PreviewFlag.self) {
+                Text("TRUE")
+            } otherwise: {
+                Text("FALSE")
+            }
+            .input(PreviewFlag.self)
+
+            ViewInputConditionalContent(PreviewFlag.self) {
+                Text("TRUE")
+            } otherwise: {
+                Text("FALSE")
+            }
         }
     }
 }

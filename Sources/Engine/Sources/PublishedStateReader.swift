@@ -1,3 +1,7 @@
+//
+// Copyright (c) Nathan Tannar
+//
+
 import SwiftUI
 
 @frozen

@@ -17,7 +17,6 @@ import SwiftUI
 /// > Tip: Use ``VersionedView`` and ``VersionedViewModifier``
 /// to aide with backwards compatibility.
 ///
-@MainActor @preconcurrency
 public protocol VersionedViewModifier: ViewModifier {
 
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)

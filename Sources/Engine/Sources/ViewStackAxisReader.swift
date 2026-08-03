@@ -69,18 +69,6 @@ public struct ViewStackAxisReader<
     }
 }
 
-private struct IsAxisDefined: ViewInputsCondition {
-    static func evaluate(_ inputs: ViewInputs) -> Bool {
-        inputs.options.contains(.isAxisDefined)
-    }
-}
-
-private struct IsAxisHorizontal: ViewInputsCondition {
-    static func evaluate(_ inputs: ViewInputs) -> Bool {
-        inputs.options.contains(.isAxisHorizontal)
-    }
-}
-
 // MARK: - Previews
 
 private struct CustomDivider: View {

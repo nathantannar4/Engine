@@ -159,7 +159,6 @@ import SwiftUI
 /// > Note: ``ViewStyle``'s stack when applied to a view, so the order you apply them
 /// does matter.
 ///
-@MainActor @preconcurrency
 public protocol ViewStyle: DynamicProperty {
     associatedtype Configuration
     associatedtype Body: View
@@ -171,7 +170,6 @@ public protocol ViewStyle: DynamicProperty {
 ///
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
-@MainActor @preconcurrency
 public protocol ViewStyledView: PrimitiveView {
     associatedtype Configuration
     var configuration: Configuration { get }

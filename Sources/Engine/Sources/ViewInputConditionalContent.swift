@@ -68,6 +68,7 @@ public struct ViewInputConditionalContent<
 // MARK: - Previews
 
 struct ViewInputConditionalContent_Previews: PreviewProvider {
+
     struct PreviewFlag: ViewInputFlag { }
 
     struct Preview: View {

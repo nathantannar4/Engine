@@ -9,7 +9,6 @@ import SwiftUI
 /// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
 /// to aide with cross platform compatibility.
 ///
-@MainActor @preconcurrency
 public protocol UserInterfaceIdiomContent: PrimitiveView {
     associatedtype PhoneBody: View = EmptyView
     @ViewBuilder @MainActor @preconcurrency var phoneBody: PhoneBody { get }

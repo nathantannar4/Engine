@@ -5,7 +5,6 @@
 import SwiftUI
 
 /// A modifier that is applied to a ``AnyVariadicView.Element``
-@MainActor @preconcurrency
 public protocol VariadicViewElementModifier: DynamicProperty {
 
     associatedtype Body: View

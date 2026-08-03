@@ -4,7 +4,6 @@
 
 import SwiftUI
 
-@MainActor @preconcurrency
 public protocol PrimitiveView: View, DynamicProperty {
 
     nonisolated static func makeView(

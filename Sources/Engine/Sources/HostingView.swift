@@ -161,11 +161,13 @@ open class HostingView<
             transaction: transaction
         )
         // Fixes `.transition` modifier
-        #if os(iOS) || os(tvOS) || os(visionOS)
-        layoutIfNeeded()
-        #elseif os(macOS)
-        layout()
-        #endif
+        if transaction.isAnimated {
+            #if os(iOS) || os(tvOS) || os(visionOS)
+            layoutIfNeeded()
+            #elseif os(macOS)
+            layout()
+            #endif
+        }
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)

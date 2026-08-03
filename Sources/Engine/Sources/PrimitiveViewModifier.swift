@@ -4,7 +4,6 @@
 
 import SwiftUI
 
-@MainActor @preconcurrency
 public protocol PrimitiveViewModifier: ViewModifier, DynamicProperty {
 
     nonisolated static func makeView(

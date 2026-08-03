@@ -34,6 +34,7 @@ open class ViewControllerAdapter<
                 content: content,
                 context: context
             )
+            updateHostingController(content: content, context: context)
         }
     }
 

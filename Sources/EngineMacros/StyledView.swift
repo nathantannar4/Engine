@@ -97,7 +97,6 @@ public macro StyledView() = #externalMacro(module: "EngineMacrosCore", type: "St
 
 /// A protocol intended to be used with the ``@StyledView`` macro define a
 /// ``ViewStyle`` and all it's related components.
-@MainActor @preconcurrency
 public protocol StyledView: PrimitiveView where Body == Never {
 
     associatedtype Configuration
