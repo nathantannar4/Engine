@@ -318,7 +318,11 @@ struct PropertyList {
                 if newOffset < ptr.pointee.fields.storage.nextOffset {
                     return .v8(ptr, newOffset)
                 }
-                return after
+                var next = after
+                while case .v8(let ptr, _) = next, ptr.pointee.fields.storage.count == 0 {
+                    next = ptr.pointee.fields.after.map { .v8($0, 0) }
+                }
+                return next
             }
         }
 

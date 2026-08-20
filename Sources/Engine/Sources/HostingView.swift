@@ -105,6 +105,7 @@ open class HostingView<
         didSet {
             guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating else { return }
             invalidateIntrinsicContentSize()
+            layoutIntrinsicContentSizeChange()
         }
     }
     #endif
@@ -209,13 +210,6 @@ open class HostingView<
         }
     }
 
-    open override func invalidateIntrinsicContentSize() {
-        super.invalidateIntrinsicContentSize()
-        if window != nil {
-            layoutIntrinsicContentSizeChange()
-        }
-    }
-
     open func layoutIntrinsicContentSizeChange() {
         let hostingView: AnyHostingView? = {
             var ancestor = superview
@@ -228,10 +222,14 @@ open class HostingView<
             return nil
         }()
         if let hostingView {
-            UIView.animate(with: .default) {
-                if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
-                    hostingView.enableUIKitAnimationsIfNeeded()
+            if shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+                UIView.animate(with: .default) {
+                    if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
+                        hostingView.enableUIKitAnimationsIfNeeded()
+                    }
+                    hostingView.layoutIfNeeded()
                 }
+            } else {
                 hostingView.layoutIfNeeded()
             }
         }
