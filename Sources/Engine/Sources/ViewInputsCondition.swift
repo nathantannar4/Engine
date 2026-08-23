@@ -149,6 +149,10 @@ struct ViewInputsCondition_Previews: PreviewProvider {
     struct HostingConfigurationWrapper<Content: View>: UIViewRepresentable {
         var content: Content
 
+        init(@ViewBuilder content: () -> Content) {
+            self.content = content()
+        }
+
         func makeUIView(context: Context) -> UIView {
             UIHostingConfiguration {
                 content
@@ -158,6 +162,22 @@ struct ViewInputsCondition_Previews: PreviewProvider {
         }
 
         func updateUIView(_ uiView: UIView, context: Context) { }
+    }
+
+    struct HostingViewWrapper<Content: View>: UIViewRepresentable {
+        var content: Content
+
+        init(@ViewBuilder content: () -> Content) {
+            self.content = content()
+        }
+
+        func makeUIView(context: Context) -> HostingView<Content> {
+            HostingView(content: content)
+        }
+
+        func updateUIView(_ uiView: HostingView<Content>, context: Context) {
+            uiView.update(content: content, transaction: context.transaction)
+        }
     }
     #endif
 
@@ -185,8 +205,17 @@ struct ViewInputsCondition_Previews: PreviewProvider {
             if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 IsInHostingConfigurationPreview()
 
-                HostingConfigurationWrapper(content: IsInHostingConfigurationPreview())
-                    .fixedSize()
+                HostingConfigurationWrapper {
+                    IsInHostingConfigurationPreview()
+                }
+                .fixedSize()
+
+                HostingConfigurationWrapper {
+                    HostingViewWrapper {
+                        IsInHostingConfigurationPreview()
+                    }
+                }
+                .fixedSize()
             }
             #endif
 
@@ -203,6 +232,15 @@ struct ViewInputsCondition_Previews: PreviewProvider {
                     VerticalAxisPreview()
                     HorizontalAxisPreview()
                     IsInLazyContainerPreview()
+                    ScrollView(.horizontal) {
+                        IsInLazyContainerPreview()
+                    }
+                    .fixedSize()
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    HostingViewWrapper {
+                        IsInLazyContainerPreview()
+                    }
+                    #endif
                 }
 
                 LazyVGrid(columns: [.init()]) {
@@ -224,6 +262,15 @@ struct ViewInputsCondition_Previews: PreviewProvider {
                     VerticalAxisPreview()
                     HorizontalAxisPreview()
                     IsInLazyContainerPreview()
+                    ScrollView(.vertical) {
+                        IsInLazyContainerPreview()
+                    }
+                    .fixedSize()
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    HostingViewWrapper {
+                        IsInLazyContainerPreview()
+                    }
+                    #endif
                 }
                 .fixedSize()
 
@@ -241,14 +288,25 @@ struct ViewInputsCondition_Previews: PreviewProvider {
 
             ScrollView {
                 IsInScrollViewPreview()
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                HostingViewWrapper {
+                    IsInScrollViewPreview()
+                }
+                #endif
             }
             .fixedSize()
 
-            HStack {
-                ScrollView(.horizontal) {
+            ScrollView(.horizontal) {
+                HStack {
                     IsInScrollViewPreview()
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    HostingViewWrapper {
+                        IsInScrollViewPreview()
+                    }
+                    #endif
                 }
             }
+            .fixedSize()
         }
     }
 }

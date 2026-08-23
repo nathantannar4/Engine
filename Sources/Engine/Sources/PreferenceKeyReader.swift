@@ -24,7 +24,7 @@ public struct PreferenceKeyReader<
 
     @inlinable
     public init(
-        _ key: Key.Type,
+        _ key: Key.Type = Key.self,
         @ViewBuilder content: @escaping (Value) -> Content
     ) {
         self.content = content

@@ -107,7 +107,7 @@ public struct ViewOutputAliasReader<
 
     @inlinable
     public init(
-        _ alias: Alias.Type,
+        _ alias: Alias.Type = Alias.self,
         @ViewBuilder content: () -> Content
     ) {
         self.content = content()

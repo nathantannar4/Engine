@@ -117,11 +117,16 @@ extension Optional where Wrapped == URL {
     }
 }
 
-extension Hashable {
+extension Equatable {
 
     @usableFromInline
     var optional: Optional<Self> {
-        Optional.some(self)
+        get { Optional.some(self) }
+        set {
+            if case .some(let wrapped) = newValue {
+                self = wrapped
+            }
+        }
     }
 }
 
