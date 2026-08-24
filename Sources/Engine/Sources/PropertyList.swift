@@ -425,7 +425,7 @@ struct PropertyList {
             if typeName == key {
                 return p.value(as: Value.self)
             }
-            ptr = p.after
+            ptr = p.advanced()
         }
         return nil
     }
@@ -444,7 +444,7 @@ struct PropertyList {
                 _openExistential(p.keyType, do: project)
                 break
             }
-            ptr = p.after
+            ptr = p.advanced()
         }
     }
 

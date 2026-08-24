@@ -57,7 +57,7 @@ extension Animation {
     }
     #endif
 
-    /// The delay of the animation
+    /// The deconstructed animation
     public func resolved() -> Resolved? {
         Resolved(animation: self)
     }
@@ -94,10 +94,13 @@ extension Animation {
                 public var initialVelocity: Double
 
                 public var duration: TimeInterval {
+                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                        return Spring(mass: mass, stiffness: stiffness, damping: damping).duration
+                    }
                     guard mass > 0, stiffness > 0, damping > 0 else { return 0 }
                     let naturalFrequency = sqrt(stiffness / mass)
                     let dampingRatio = damping / (2.0 * mass * naturalFrequency)
-                    let threshold = 0.0015
+                    let threshold = 0.00185
                     if dampingRatio < 1.0 {
                         let decayRate = dampingRatio * naturalFrequency
                         return -log(threshold) / decayRate

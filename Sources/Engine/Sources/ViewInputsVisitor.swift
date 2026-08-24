@@ -22,7 +22,7 @@ extension ViewInputs {
         var ptr = customInputs.elements
         var stop = false
         while !stop, let p = ptr {
-            let next = p.after
+            let next = p.advanced()
             defer { ptr = next }
             stop = next == nil
             let key = _typeName(p.keyType, qualified: true)

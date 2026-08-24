@@ -24,17 +24,60 @@ public protocol AnyHostingController: PlatformViewController {
     #if os(iOS) || os(tvOS) || os(visionOS)
     var disableSafeArea: Bool { get set }
     #endif
-    #if os(iOS)
-    @available(iOS 16.4, *)
-    var disablesKeyboardSafeArea: Bool { get set }
-    #endif
     func render()
 }
 #endif
 
+#if os(iOS)
+@frozen
+public struct HostingControllerRootView<Content: View>: View {
+
+    public var content: Content
+    public var transaction: Transaction
+    public var disablesKeyboardSafeArea: Bool
+
+    @inlinable
+    public init(
+        content: Content,
+        transaction: Transaction,
+        disablesKeyboardSafeArea: Bool = false
+    ) {
+        self.content = content
+        self.transaction = transaction
+        self.disablesKeyboardSafeArea = disablesKeyboardSafeArea
+    }
+
+    public var body: some View {
+        _Body(
+            content: content,
+            transaction: transaction,
+            disablesKeyboardSafeArea: disablesKeyboardSafeArea
+        )
+    }
+
+    private struct _Body: VersionedView {
+        var content: Content
+        var transaction: Transaction
+        var disablesKeyboardSafeArea: Bool
+
+        @available(iOS 14.0, *)
+        var v2Body: some View {
+            HostingRootView(content: content, transaction: transaction)
+                .ignoresSafeArea(disablesKeyboardSafeArea ? .keyboard : [])
+        }
+
+        var v1Body: some View {
+            HostingRootView(content: content, transaction: transaction)
+        }
+    }
+}
+#else
+public typealias HostingControllerRootView<Content: View> = HostingRootView<Content>
+#endif
+
 open class HostingController<
     Content: View
->: PlatformHostingController<HostingRootView<Content>> {
+>: PlatformHostingController<HostingControllerRootView<Content>> {
 
     public var content: Content {
         get { rootView.content }
@@ -72,7 +115,7 @@ open class HostingController<
     #endif
 
     #if os(iOS)
-    @available(iOS 16.4, *)
+    @available(iOS 14.0, *)
     public var automaticallyDisableKeyboardSafeArea: Bool {
         get { shouldAutomaticallyDisableKeyboardSafeArea }
         set { shouldAutomaticallyDisableKeyboardSafeArea = newValue }
@@ -114,7 +157,7 @@ open class HostingController<
     #endif
 
     public init(content: Content) {
-        let rootView = HostingRootView(content: content, transaction: Transaction())
+        let rootView = HostingControllerRootView(content: content, transaction: Transaction())
         #if os(watchOS)
         self.rootView = rootView
         super.init()
@@ -127,7 +170,7 @@ open class HostingController<
     @available(iOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(tvOS, obsoleted: 13.0, renamed: "init(content:)")
     @available(macOS, obsoleted: 10.15, renamed: "init(content:)")
-    override init(rootView: HostingRootView<Content>) {
+    override init(rootView: HostingControllerRootView<Content>) {
         fatalError("init(rootView:) has not been implemented")
     }
 
@@ -137,10 +180,18 @@ open class HostingController<
     #endif
 
     open func update(content: Content, transaction: Transaction) {
-        rootView = HostingRootView(
+        #if os(iOS)
+        rootView = HostingControllerRootView(
+            content: content,
+            transaction: transaction,
+            disablesKeyboardSafeArea: isKeyboardSafeAreaDisabled
+        )
+        #else
+        rootView = HostingControllerRootView(
             content: content,
             transaction: transaction
         )
+        #endif
         // Fixes `.transition` modifier
         if transaction.isAnimated {
             #if os(iOS) || os(tvOS) || os(visionOS)
@@ -210,10 +261,9 @@ open class HostingController<
     }
 
     static var keyboardNotifications: [Notification.Name]  {
-        if #available(iOS 16.4, *) {
+        if #available(iOS 14.0, *) {
             return [
                 UIResponder.keyboardWillShowNotification,
-                UIResponder.keyboardDidShowNotification,
                 UIResponder.keyboardWillChangeFrameNotification,
                 UIResponder.keyboardWillHideNotification,
                 UIResponder.keyboardDidHideNotification,
@@ -252,8 +302,6 @@ open class HostingController<
             return
         }
         switch notification.name {
-        case UIResponder.keyboardDidShowNotification:
-            enableKeyboardSafeAreaIfNeeded()
         case UIResponder.keyboardWillShowNotification, UIResponder.keyboardWillChangeFrameNotification:
             if let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect, let window = view.window {
                 let isVisible = endFrame.minY < window.bounds.height
@@ -271,21 +319,21 @@ open class HostingController<
     }
 
     private func enableKeyboardSafeAreaIfNeeded() {
-        guard #available(iOS 16.4, *) else { return }
-        guard isKeyboardSafeAreaDisabled, disablesKeyboardSafeArea else { return }
+        guard #available(iOS 14.0, *) else { return }
+        guard isKeyboardSafeAreaDisabled, rootView.disablesKeyboardSafeArea else { return }
         if hasFirstResponder() {
             isKeyboardSafeAreaDisabled = false
         }
     }
 
     private func hasFirstResponder() -> Bool {
-        guard let firstResponder = UIResponder.current else { return false }
+        guard presentedViewController == nil, let firstResponder = UIResponder.current else { return false }
         return firstResponder.isInResponderChain(of: self)
     }
 
     private func isKeyboardSafeAreaDisabledDidChange() {
-        guard #available(iOS 16.4, *) else { return }
-        disablesKeyboardSafeArea = isKeyboardSafeAreaDisabled
+        guard #available(iOS 14.0, *) else { return }
+        rootView.disablesKeyboardSafeArea = isKeyboardSafeAreaDisabled
         view.layoutIfNeeded()
     }
     #endif
@@ -307,20 +355,6 @@ extension PlatformHostingController: AnyHostingController {
     public var disableSafeArea: Bool {
         get { _disableSafeArea }
         set { _disableSafeArea = newValue }
-    }
-    #endif
-
-    #if os(iOS)
-    @available(iOS 16.4, *)
-    public var disablesKeyboardSafeArea: Bool {
-        get { !safeAreaRegions.contains(.keyboard) }
-        set {
-            if newValue {
-                safeAreaRegions.remove(.keyboard)
-            } else {
-                safeAreaRegions.insert(.keyboard)
-            }
-        }
     }
     #endif
 
