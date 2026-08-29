@@ -15,9 +15,6 @@ extension Optional {
             }
         }
     }
-}
-
-extension Optional {
 
     @usableFromInline
     var isNotNone: Bool {
@@ -26,6 +23,21 @@ extension Optional {
             if !newValue {
                 self = .none
             }
+        }
+    }
+
+    @usableFromInline
+    subscript(defaultValue: Wrapped) -> Wrapped where Wrapped: Hashable {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
+            case .some(let wrapped):
+                return wrapped
+            }
+        }
+        set {
+            self = .some(newValue)
         }
     }
 }
@@ -46,6 +58,21 @@ extension Optional where Wrapped == String {
             self = newValue.isEmpty ? .none : .some(newValue)
         }
     }
+
+    @usableFromInline
+    subscript(defaultValue: String) -> String {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
+            case .some(let wrapped):
+                return wrapped
+            }
+        }
+        set {
+            self = .some(newValue)
+        }
+    }
 }
 
 extension Optional where Wrapped == Int {
@@ -62,6 +89,87 @@ extension Optional where Wrapped == Int {
         }
         set {
             self = newValue.isEmpty ? .none : Int(newValue)
+        }
+    }
+
+    @usableFromInline
+    subscript(defaultValue: String) -> String {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = Int(newValue)
+        }
+    }
+}
+
+extension Optional where Wrapped == Double {
+
+    @usableFromInline
+    var value: String {
+        get {
+            switch self {
+            case .none:
+                return ""
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = newValue.isEmpty ? .none : Double(newValue)
+        }
+    }
+
+    @usableFromInline
+    subscript(defaultValue: String) -> String {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = Double(newValue)
+        }
+    }
+}
+
+extension Optional where Wrapped == Float {
+
+    @usableFromInline
+    var value: String {
+        get {
+            switch self {
+            case .none:
+                return ""
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = newValue.isEmpty ? .none : Float(newValue)
+        }
+    }
+
+    @usableFromInline
+    subscript(defaultValue: String) -> String {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
+            case .some(let wrapped):
+                return String(wrapped)
+            }
+        }
+        set {
+            self = Float(newValue)
         }
     }
 }
@@ -107,6 +215,21 @@ extension Optional where Wrapped == URL {
             switch self {
             case .none:
                 return ""
+            case .some(let wrapped):
+                return wrapped.absoluteString
+            }
+        }
+        set {
+            self = URL(string: newValue)
+        }
+    }
+
+    @usableFromInline
+    subscript(defaultValue: String) -> String {
+        get {
+            switch self {
+            case .none:
+                return defaultValue
             case .some(let wrapped):
                 return wrapped.absoluteString
             }

@@ -211,6 +211,7 @@ open class HostingView<
     }
 
     open func layoutIntrinsicContentSizeChange() {
+        guard automaticallyLayoutIntrinsicContentSizeChange else { return }
         let hostingView: AnyHostingView? = {
             var ancestor = superview
             while let current = ancestor {
@@ -245,11 +246,7 @@ open class HostingView<
         return result
     }
     #else
-    struct HitTestEvent {
-        var point: CGPoint
-        var timestamp: TimeInterval
-    }
-    private var lastHitTestEvent: HitTestEvent?
+    private var lastHitTestEvent: TimeInterval?
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         let result = super.hitTest(point, with: event)
         if #available(iOS 26.0, tvOS 26.0, visionOS 26.0, *) {
@@ -303,17 +300,14 @@ open class HostingView<
             }
             return result
         } else if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
-            defer {
-                lastHitTestEvent = event.map {
-                    HitTestEvent(
-                        point: point,
-                        timestamp: $0.timestamp
-                    )
+            if let result, isHitTestingPassthrough {
+                if result == self, lastHitTestEvent == event?.timestamp {
+                    return self
+                } else if result == self {
+                    return nil
+                } else {
+                    lastHitTestEvent = event?.timestamp
                 }
-            }
-            if result == self, isHitTestingPassthrough,
-                lastHitTestEvent?.timestamp != event?.timestamp || lastHitTestEvent?.point.rounded() != point.rounded()
-            {
                 return nil
             }
             return result

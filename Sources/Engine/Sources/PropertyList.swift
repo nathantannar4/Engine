@@ -95,19 +95,23 @@ struct PropertyList {
                 return type
             }
 
-            func value<Value>(offset: Int, as _: Value.Type) -> Value {
+            func value<Value>(offset: Int, as _: Value.Type) -> Value? {
+                guard offset < nextOffset else { return nil }
                 let element = buf.load(fromByteOffset: offset, as: TypedElement<Value>.self)
                 let value = element.value
                 return value
             }
 
             func element(offset: Int) -> Element {
+                guard offset < nextOffset else {
+                    return Element(keyType: Never.self, keyFilter: 0, type: Never.self)
+                }
                 let element = buf.load(fromByteOffset: offset, as: Element.self)
                 return element
             }
 
             func size(offset: Int) -> Int {
-                let element = buf.load(fromByteOffset: offset, as: Element.self)
+                let element = element(offset: offset)
                 let typeSize = swift_getSize(of: element.type)
                 return ((typeSize + Int(alignMask)) & ~Int(alignMask)) + MemoryLayout<Element>.stride
             }
@@ -208,6 +212,9 @@ struct PropertyList {
                     return .v6(after)
                 case .v8(let ptr, _):
                     guard let after = ptr.pointee.fields.after else { return nil }
+                    guard after.pointee.fields.storage.nextOffset > 0 else {
+                        return .v8(after, 0).after
+                    }
                     return .v8(after, 0)
                 }
             }
@@ -318,11 +325,7 @@ struct PropertyList {
                 if newOffset < ptr.pointee.fields.storage.nextOffset {
                     return .v8(ptr, newOffset)
                 }
-                var next = after
-                while case .v8(let ptr, _) = next, ptr.pointee.fields.storage.count == 0 {
-                    next = ptr.pointee.fields.after.map { .v8($0, 0) }
-                }
-                return next
+                return after
             }
         }
 
@@ -333,7 +336,7 @@ struct PropertyList {
 
         func value<T>(as _: T.Type) -> T? {
             func project<Value>(_ value: Value.Type) -> T? {
-                let value = getValue(Value.self)
+                guard let value = getValue(Value.self) else { return nil }
                 if T.self == Value.self {
                     return value as? T
                 } else if T.self == Any.self || T.self == Optional<Any>.self {
@@ -366,7 +369,7 @@ struct PropertyList {
 
         private func getValue<T>(
             _ type: T.Type
-        ) -> T {
+        ) -> T? {
             switch self {
             case .v1(let ptr):
                 return ptr.withUnsafeValuePointer(T.self, fields: ElementFieldsV1.self) { ptr in

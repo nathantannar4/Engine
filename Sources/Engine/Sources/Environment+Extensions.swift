@@ -55,8 +55,16 @@ extension EnvironmentValues {
 
     /// The color for the ``.tint(_)`` modifier
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    public var tint: Color? {
+        return tintStyle.color(in: self)
+    }
+
+    /// The tint color resolved from the ``.tint(_)`` or  ``.accentColor(_)`` modifier
     public var tintColor: Color? {
-        tintStyle.color(in: self)
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), let tint {
+            return tint
+        }
+        return accentColor
     }
 
     /// The value for the ``.accentColor(_)`` modifier
@@ -277,7 +285,7 @@ struct EnvironmentValues_Previews: PreviewProvider {
             .tint(.green)
 
             HStack {
-                EnvironmentValuePreview(keyPath: \.tintColor) {
+                EnvironmentValuePreview(keyPath: \.tint) {
                     Button("Action") { }
                 } content: { tintColor in
                     Circle()
