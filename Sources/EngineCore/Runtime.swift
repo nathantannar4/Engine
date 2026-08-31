@@ -19,7 +19,14 @@ public struct MetadataField {
     public let type: Any.Type
 }
 
-public func swift_getFields<InstanceType>(_ instance: InstanceType) throws -> [(field: MetadataField, value: Any)] {
+public func swift_getFields<InstanceType>(
+    _ instance: InstanceType
+) throws -> [(field: MetadataField, value: Any)] {
+    if swift_getIsEnumType(InstanceType.self) {
+        return [
+            try swift_getEnumCase(instance)
+        ]
+    }
     let fields = swift_getFields(InstanceType.self)
     return try fields.compactMap { field in
         return (field, try swift_getFieldValue(field.key, field.type, instance))
@@ -43,36 +50,63 @@ public func swift_getFields(
     }
 }
 
-public func swift_getFieldType(_ key: String, _ instance: Any) throws -> Any.Type {
+public func swift_getFieldType(
+    _ key: String,
+    _ instance: Any
+) throws -> Any.Type {
     try swift_getField(key, type(of: instance)).type
 }
 
-public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType) throws -> Value {
+public func swift_getFieldValue<Value, InstanceType>(
+    _ key: String,
+    _ value: Value.Type,
+    _ instance: InstanceType
+) throws -> Value {
     try getFieldValue(key, value, instance)
 }
 
-public func swift_getFieldValue<Value, InstanceType>(_ key: String, _ value: Value.Type, _ instance: InstanceType?) throws -> Value? {
+public func swift_getFieldValue<Value, InstanceType>(
+    _ key: String,
+    _ value: Value.Type,
+    _ instance: InstanceType?
+) throws -> Value? {
     guard let instance else {
         return nil
     }
     return try getFieldValue(key, value, instance)
 }
 
-public func swift_setFieldValue<Value, InstanceType>(_ key: String, _ value: Value, _ instance: inout InstanceType) throws {
+public func swift_setFieldValue<Value, InstanceType>(
+    _ key: String,
+    _ value: Value,
+    _ instance: inout InstanceType
+) throws {
     try setFieldValue(key, value, &instance)
 }
 
-public func swift_setFieldValue<Value, InstanceType>(_ key: String, _ value: Value, _ instance: inout InstanceType?) throws {
+public func swift_setFieldValue<Value, InstanceType>(
+    _ key: String,
+    _ value: Value,
+    _ instance: inout InstanceType?
+) throws {
     guard instance != nil else { return }
     try setFieldValue(key, value, &instance!)
 }
 
-public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _ value: Value, _ instance: InstanceType) throws {
+public func swift_setFieldValue<Value, InstanceType: AnyObject>(
+    _ key: String,
+    _ value: Value,
+    _ instance: InstanceType
+) throws {
     var instance = instance
     try setFieldValue(key, value, &instance)
 }
 
-public func swift_setFieldValue<Value, InstanceType: AnyObject>(_ key: String, _ value: Value, _ instance: InstanceType?) throws {
+public func swift_setFieldValue<Value, InstanceType: AnyObject>(
+    _ key: String,
+    _ value: Value,
+    _ instance: InstanceType?
+) throws {
     guard var instance else { return }
     try setFieldValue(key, value, &instance)
 }
@@ -106,6 +140,47 @@ public func swift_getIsClassType(_ instance: Any) -> Bool {
     return c_swift_isClassType(type(of: instance))
 }
 
+public func swift_getIsStructType(_ type: Any.Type) -> Bool {
+    var type = type
+    if type == Any.self {
+        func project<T>(_: T.Type) -> Any.Type {
+            return T.self
+        }
+        type = _openExistential(type, do: project)
+    }
+    return Metadata<StructMetadata>(type) != nil
+}
+
+public func swift_getIsStructType(_ instance: Any) -> Bool {
+    return swift_getIsStructType(type(of: instance))
+}
+
+public func swift_getIsEnumType(_ type: Any.Type) -> Bool {
+    var type = type
+    if type == Any.self {
+        func project<T>(_: T.Type) -> Any.Type {
+            return T.self
+        }
+        type = _openExistential(type, do: project)
+    }
+    return Metadata<EnumMetadata>(type) != nil
+}
+
+public func swift_getIsEnumType(_ instance: Any) -> Bool {
+    return swift_getIsEnumType(type(of: instance))
+}
+
+public func swift_getEnumCase<InstanceType>(_ instance: InstanceType) throws -> String {
+    guard
+        swift_getIsEnumType(InstanceType.self),
+        let ptr = swift_getEnumCaseNameRaw(instance)
+    else {
+        throw SwiftCaseNotFoundError(instance: InstanceType.self)
+    }
+    let label = String(cString: ptr)
+    return label
+}
+
 public func swift_getMangledTypeName(of type: Any.Type) -> String? {
     guard let namePtr = swift_getMangledTypeName(type) else { return nil }
     return String(cString: namePtr)
@@ -127,6 +202,14 @@ struct SwiftFieldNotFoundError: Error, CustomStringConvertible {
     }
 }
 
+struct SwiftCaseNotFoundError: Error, CustomStringConvertible {
+    var instance: Any.Type
+
+    var description: String {
+        "<enum case> was not found on instance type \(instance)"
+    }
+}
+
 struct SwiftFieldTypeMismatchError: Error, CustomStringConvertible {
     var key: String
     var expected: Any.Type
@@ -138,11 +221,24 @@ struct SwiftFieldTypeMismatchError: Error, CustomStringConvertible {
     }
 }
 
+struct SwiftEnumFieldMutationUnsupportedError: Error, CustomStringConvertible {
+    var key: String
+    var instance: Any.Type
+
+    var description: String {
+        "Setting associated value \(key) is not supported on enum instance type \(instance); enum payload layout is not a fixed offset."
+    }
+}
+
 private func getFieldValue<Value, InstanceType>(
     _ key: String,
     _ valueType: Value.Type,
     _ instance: InstanceType
 ) throws -> Value {
+    if swift_getIsEnumType(InstanceType.self) {
+        return try swift_getEnumPayload(key, valueType, instance)
+    }
+
     let field = try swift_getField(key, type(of: instance))
     guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || valueType == Any.self else {
         throw SwiftFieldTypeMismatchError(
@@ -166,12 +262,69 @@ private func getFieldValue<Value, InstanceType>(
     }
 }
 
+private func swift_getEnumPayload<Value, InstanceType>(
+    _ key: String,
+    _ valueType: Value.Type,
+    _ instance: InstanceType
+) throws -> Value {
+    let (field, value) = try swift_getEnumCase(instance)
+    guard field.key == key else {
+        throw SwiftFieldNotFoundError(key: key, instance: InstanceType.self)
+    }
+    guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || valueType == Any.self else {
+        throw SwiftFieldTypeMismatchError(
+            key: key,
+            expected: field.type,
+            received: Value.self,
+            instance: InstanceType.self
+        )
+    }
+    func project<P>(_ payload: P) -> Value {
+        if valueType == Any.self {
+            return payload as! Value
+        }
+        let value = unsafeBitCast(payload, to: valueType)
+        return value
+    }
+    return _openExistential(value, do: project)
+}
+
+private func swift_getEnumCase<InstanceType>(
+    _ instance: InstanceType
+) throws -> (field: MetadataField, value: Any) {
+    let count = swift_reflectionMirror_count(instance, type: InstanceType.self)
+    guard count > 0 else {
+        throw SwiftCaseNotFoundError(instance: InstanceType.self)
+    }
+    var namePtr: UnsafePointer<CChar>? = nil
+    var freeFunc: NameFreeFunc? = nil
+    let value = swift_reflectionMirror_subscript(
+        instance,
+        type: type(of: instance),
+        index: 0,
+        outName: &namePtr,
+        outFreeFunc: &freeFunc
+    )
+    defer { freeFunc?(namePtr) }
+    guard let namePtr, let label = String(utf8String: namePtr) else {
+        throw SwiftCaseNotFoundError(instance: InstanceType.self)
+    }
+    func project<T>(_ value: T) -> (field: MetadataField, value: Any) {
+        return (MetadataField(key: label, type: T.self), value)
+    }
+    return _openExistential(value, do: project)
+}
+
 private func setFieldValue<Value, InstanceType>(
     _ key: String,
     _ value: Value,
     _ instance: inout InstanceType
 ) throws {
     let type = type(of: instance)
+    if swift_getIsEnumType(InstanceType.self) {
+        throw SwiftEnumFieldMutationUnsupportedError(key: key, instance: type)
+    }
+
     let field = try swift_getField(key, type)
     guard MemoryLayout<Value>.size == swift_getSize(of: field.type) || Value.self == Any.self else {
         throw SwiftFieldTypeMismatchError(
@@ -336,6 +489,23 @@ private struct FieldReflectionMetadata {
 
 @_silgen_name("c_swift_isClassType")
 private func c_swift_isClassType(_: Any.Type) -> Bool
+
+private typealias NameFreeFunc = @convention(c) (UnsafePointer<CChar>?) -> Void
+
+@_silgen_name("swift_reflectionMirror_count")
+private func swift_reflectionMirror_count<T>(_ value: T, type: Any.Type) -> Int
+
+@_silgen_name("swift_reflectionMirror_subscript")
+private func swift_reflectionMirror_subscript<T>(
+    _ value: T,
+    type: Any.Type,
+    index: Int,
+    outName: UnsafeMutablePointer<UnsafePointer<CChar>?>,
+    outFreeFunc: UnsafeMutablePointer<NameFreeFunc?>
+) -> Any
+
+@_silgen_name("swift_EnumCaseName")
+private func swift_getEnumCaseNameRaw<T>(_ value: T) -> UnsafePointer<CChar>?
 
 @_silgen_name("swift_reflectionMirror_recursiveCount")
 private func swift_reflectionMirror_recursiveCount(_: Any.Type) -> Int

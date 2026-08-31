@@ -89,7 +89,7 @@ private enum FontProvider {
                 break
 
             case "MonospacedDigitModifier":
-                font = font.with(featureType: kNumberSpacingType, selector: kMonospacedNumbersSelector) ?? font
+                font = font.monospacedDigit ?? font
                 break
 
             case "WeightModifier":
@@ -307,7 +307,7 @@ extension EnvironmentValues {
     #endif
 }
 
-fileprivate extension Font.PlatformRepresentable {
+extension Font.PlatformRepresentable {
     func with(
         design: Font.PlatformRepresentableDescriptor.SystemDesign
     ) -> Font.PlatformRepresentable? {
@@ -376,6 +376,10 @@ fileprivate extension Font.PlatformRepresentable {
         #else
         return with(design: .monospaced)?.with(weight: weight)
         #endif
+    }
+
+    var monospacedDigit: Font.PlatformRepresentable? {
+        with(featureType: kNumberSpacingType, selector: kMonospacedNumbersSelector)
     }
 
     @available(watchOS 9.0, *)
@@ -556,6 +560,8 @@ struct Font_Previews: PreviewProvider {
 
             FontPreview(font: .body.italic())
 
+            FontPreview(font: .body.monospacedDigit())
+
             FontPreview(font: .body.bold())
 
             if #available(iOS 16.0, macOS 13.0, *) {
@@ -578,8 +584,6 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .body.monospaced(true))
             }
             #endif
-
-            FontPreview(font: .body.monospacedDigit())
 
             if #available(iOS 16.0, macOS 13.0, *) {
                 FontPreview(font: Font(Font.PlatformRepresentable.systemFont(ofSize: 15, weight: .thin, width: .expanded)))

@@ -30,6 +30,31 @@ extension AttributedString {
         return result
     }
     #endif
+
+    func toPlatformValue(
+        in environment: EnvironmentValues = EnvironmentValues()
+    ) -> AttributedString {
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        return toUIKit(in: environment)
+        #else
+        return toAppKit(in: environment)
+        #endif
+    }
+
+    public func toNSAttributedString(
+        in environment: EnvironmentValues = EnvironmentValues()
+    ) -> NSAttributedString {
+        let attributedString = toPlatformValue(in: environment)
+        do {
+            #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+            return try NSAttributedString(attributedString, including: \.uiKit)
+            #else
+            return try NSAttributedString(attributedString, including: \.appKit)
+            #endif
+        } catch {
+            return NSAttributedString(attributedString)
+        }
+    }
 }
 
 @available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *)
@@ -39,29 +64,21 @@ extension AttributedString {
     public init<Content: View>(
         attachment: Content
     ) {
-        self = .attachment
+        self = AttributedString(String.attachment)
         self.attachment = HostingTextAttachment(content: attachment)
     }
     #endif
+}
 
-    static let attachment: AttributedString = {
+extension String {
+
+    static let attachment: String = {
         #if os(macOS)
-        return AttributedString("\u{FFFC}")
+        return "\u{FFFC}"
         #else
-        return AttributedString("\(Character(UnicodeScalar(NSTextAttachment.character)!))")
+        return "\(Character(UnicodeScalar(NSTextAttachment.character)!))"
         #endif
     }()
-
-    static func attachment(attributes: AttributeContainer) -> AttributedString {
-        #if os(macOS)
-        return AttributedString("\u{FFFC}", attributes: attributes)
-        #else
-        return AttributedString(
-            "\(Character(UnicodeScalar(NSTextAttachment.character)!))",
-            attributes: attributes
-        )
-        #endif
-    }
 }
 
 #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)

@@ -285,27 +285,20 @@ struct AttributedText_Previews: PreviewProvider {
                     .withDebugOverlay(label: "Label", color: .green)
                 #endif
 
-                text
-                    .hidden()
-                    .overlay {
-                        GeometryReader { proxy in
-                            let size = text.sizeThatFits(proxy.size, environment: environment)
-                            Rectangle()
-                                .hidden()
-                                .frame(width: size.width, height: size.height)
-                                .overlay {
-                                    ZStack {
-                                        AttributedText(text)
-                                        text
-                                    }
-                                }
-                                .withDebugOverlay(label: "sizeThatFits", color: .yellow)
-                        }
-                    }
+                GeometryReader { proxy in
+                    let size = text.sizeThatFits(CGSize(width: proxy.size.width, height: 1000), environment: environment)
+                    Rectangle()
+                        .hidden()
+                        .frame(width: size.width, height: size.height)
+                        .withDebugOverlay(label: "sizeThatFits", color: .yellow)
+                        .frame(maxWidth: .infinity)
+                }
             }
-            .frame(width: 400)
             .fixedSize(horizontal: false, vertical: true)
             .padding(32)
+            #if os(macOS)
+            .frame(width: 500, height: 600)
+            #endif
         }
 
         #if os(iOS) || os(tvOS) || os(visionOS)
@@ -314,15 +307,21 @@ struct AttributedText_Previews: PreviewProvider {
 
             func makeUIView(context: Context) -> UILabel {
                 let uiView = UILabel()
+                uiView.adjustsFontSizeToFitWidth = true
                 return uiView
             }
 
             func updateUIView(_ uiView: UILabel, context: Context) {
+                uiView.minimumScaleFactor = context.environment.minimumScaleFactor
                 uiView.numberOfLines = max(context.environment.lineLimit ?? 0, 0)
                 uiView.lineBreakMode = context.environment.truncationMode.toNSLineBreakMode(lineLimit: context.environment.lineLimit)
                 let attributedText = NSMutableAttributedString(attributedString: attributedText)
                 attributedText.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: attributedText.length)) { value, range, _ in
                     attributedText.removeAttribute(.paragraphStyle, range: range)
+                    if let style = (value as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle {
+                        style.lineBreakMode = uiView.lineBreakMode
+                        attributedText.addAttribute(.paragraphStyle, value: style, range: range)
+                }
                 }
                 uiView.attributedText = attributedText
             }
@@ -364,20 +363,35 @@ struct AttributedText_Previews: PreviewProvider {
         struct Label: NSViewRepresentable {
             var attributedText: NSAttributedString
 
-            func makeNSView(context: Context) -> NSTextField {
-                let nsView = NSTextField()
-                nsView.isEditable = false
-                nsView.isSelectable = false
-                nsView.isBezeled = false
-                nsView.drawsBackground = false
-                nsView.focusRingType = .none
-                nsView.lineBreakMode = .byWordWrapping
+            func makeNSView(context: Context) -> NSLabel {
+                let nsView = NSLabel()
                 return nsView
             }
 
-            func updateNSView(_ nsView: NSTextField, context: Context) {
+            func updateNSView(_ nsView: NSLabel, context: Context) {
                 nsView.maximumNumberOfLines = max(context.environment.lineLimit ?? 0, 0)
+                nsView.lineBreakMode = context.environment.truncationMode.toNSLineBreakMode(lineLimit: context.environment.lineLimit)
                 nsView.attributedStringValue = attributedText
+            }
+
+            class NSLabel: NSTextField {
+                override init(frame frameRect: NSRect) {
+                    super.init(frame: frameRect)
+                    isEditable = false
+                    isSelectable = false
+                    isBordered = false
+                    isBezeled = false
+                    drawsBackground = false
+                    focusRingType = .none
+                }
+
+                required init?(coder: NSCoder) {
+                    fatalError("init(coder:) has not been implemented")
+                }
+
+                override var alignmentRectInsets: NSEdgeInsets {
+                    return NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+                }
             }
 
             @available(macOS 13.0, *)
@@ -394,7 +408,6 @@ struct AttributedText_Previews: PreviewProvider {
                 )
                 var sizeThatFits = nsView.sizeThatFits(fittingSize)
                 sizeThatFits.width = min(sizeThatFits.width, fittingSize.width)
-                sizeThatFits.height = ceil(sizeThatFits.height)
                 return sizeThatFits
             }
 
@@ -427,7 +440,13 @@ struct AttributedText_Previews: PreviewProvider {
 
         VStack {
             TextPreview(
-                text: Text("\(Text(Image(systemName: "globe.americas.fill")).font(.system(size: 50)).foregroundColor(.blue).baselineOffset(2)) Hello, \(Text("World").font(.headline.bold()))").font(.caption)
+                text: Text("\(Text(Image(systemName: "globe.americas.fill")).font(.system(size: 50)).foregroundColor(.blue)) Hello, \(Text("World").font(.headline.bold()))").font(.caption)
+            )
+        }
+
+        VStack {
+            TextPreview(
+                text: Text("\(Text(Image(systemName: "globe.americas.fill")).font(.system(size: 50)).foregroundColor(.blue).baselineOffset(20)) Hello, \(Text("World").font(.headline.bold()))").font(.caption)
             )
         }
 
@@ -450,6 +469,14 @@ struct AttributedText_Previews: PreviewProvider {
             )
             .lineLimit(2)
             .truncationMode(.middle)
+        }
+
+        VStack {
+            TextPreview(
+                text: Text("Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.")
+            )
+            .lineLimit(2)
+            .minimumScaleFactor(0.5)
         }
     }
 }

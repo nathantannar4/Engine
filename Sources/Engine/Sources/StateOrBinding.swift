@@ -34,6 +34,11 @@ public struct StateOrBinding<Value>: DynamicProperty {
         self.storage = binding.map({ .binding($0) }) ?? .state(State(wrappedValue: nil))
     }
 
+    @inlinable
+    public init(_ binding: Binding<Value>?, defaultValue: Value) {
+        self.storage = binding.map({ .binding($0) }) ?? .state(State(wrappedValue: defaultValue))
+    }
+
     public var wrappedValue: Value {
         get {
             switch storage {

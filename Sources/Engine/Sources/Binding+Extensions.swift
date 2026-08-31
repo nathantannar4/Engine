@@ -25,9 +25,60 @@ extension Binding {
         self[keyPath: \.isNotNone]
     }
 
+    /// Transforms the value to an optional
     @inlinable
     public func asOptional() -> Binding<Value?> where Value: Equatable {
         self[keyPath: \.optional]
+    }
+
+    /// Creates a non-optional binding
+    @inlinable
+    public init?(unwrapping base: Binding<Value?>) {
+        guard let value = base.wrappedValue else { return nil }
+        self.init(unwrapping: base, defaultValue: value)
+    }
+
+    /// Creates a non-optional binding with a default value when `nil`
+    @inlinable
+    public init(unwrapping base: Binding<Value?>, defaultValue: Value) {
+        self = base[default: defaultValue]
+    }
+
+    /// Transforms a `nil` value to the `defaultValue` when nil
+    @inlinable
+    public func unwrap<Wrapped>(
+        defaultValue: Wrapped
+    ) -> Binding<Wrapped> where Value == Optional<Wrapped> {
+        self[keyPath: \.[Subscript(defaultValue)]]
+    }
+
+    /// Transforms a `nil` value to the `defaultValue` when nil
+    @inlinable
+    public subscript<Wrapped>(
+        default defaultValue: Wrapped
+    ) -> Binding<Wrapped> where Value == Optional<Wrapped> {
+        self[keyPath: \.[Subscript(defaultValue)]]
+    }
+
+    /// Unwraps a `Binding` with an optional wrapped value to an optional `Binding`
+    @available(*, deprecated, message: "Use `Binding(unwrapping:)` instead.")
+    @inlinable
+    @MainActor @preconcurrency
+    public func unwrap<Wrapped>() -> Binding<Wrapped>? where Optional<Wrapped> == Value {
+        Binding<Wrapped>(unwrapping: self)
+    }
+
+    /// Creates a non-optional binding
+    @inlinable
+    public init?(unwrapping base: Binding<Value?>) where Value: Hashable {
+        guard let value = base.wrappedValue else { return nil }
+        self.init(unwrapping: base, defaultValue: value)
+    }
+
+    /// Creates a non-optional binding with a default value when `nil`
+    @inlinable
+    public init(unwrapping base: Binding<Value?>, defaultValue: Value) where Value: Hashable {
+        self = base[default: defaultValue]
     }
 
     /// Transforms a `nil` value to the `defaultValue` when nil
@@ -44,19 +95,6 @@ extension Binding {
         default defaultValue: Wrapped
     ) -> Binding<Wrapped> where Value == Optional<Wrapped> {
         self[keyPath: \.[defaultValue]]
-    }
-
-    /// Unwraps a `Binding` with an optional wrapped value to an optional `Binding`
-    @inlinable
-    @MainActor @preconcurrency
-    public func unwrap<Wrapped>() -> Binding<Wrapped>? where Optional<Wrapped> == Value {
-        guard let value = self.wrappedValue else { return nil }
-        return Binding<Wrapped>(
-            get: { return value },
-            set: { value, transaction in
-                self.transaction(transaction).wrappedValue = value
-            }
-        )
     }
 }
 
@@ -278,6 +316,45 @@ extension Hashable {
     }
 }
 
+extension Binding {
+
+    @_disfavoredOverload
+    @inlinable
+    public subscript<V, Subject>(
+        dynamicMember keyPath: WritableKeyPath<V, Subject>
+    ) -> Binding<Subject?> where Value == V? {
+        guard let binding = SwiftUI.Binding<V>(unwrapping: self) else { return .constant(nil) }
+        return SwiftUI.Binding(binding[dynamicMember: keyPath])
+    }
+
+    @_disfavoredOverload
+    @inlinable
+    public subscript<V, Subject>(
+        dynamicMember keyPath: WritableKeyPath<V, Subject>
+    ) -> Binding<Subject?> where Value == V?, V: Hashable {
+        guard let binding = SwiftUI.Binding<V>(unwrapping: self) else { return .constant(nil) }
+        return SwiftUI.Binding(binding[dynamicMember: keyPath])
+    }
+
+    @_disfavoredOverload
+    @inlinable
+    public subscript<V, Subject>(
+        dynamicMember keyPath: WritableKeyPath<V, Subject?>
+    ) -> Binding<Subject?> where Value == V? {
+        guard let binding = SwiftUI.Binding<V>(unwrapping: self) else { return .constant(nil) }
+        return binding[dynamicMember: keyPath]
+    }
+
+    @_disfavoredOverload
+    @inlinable
+    public subscript<V, Subject>(
+        dynamicMember keyPath: WritableKeyPath<V, Subject?>
+    ) -> Binding<Subject?> where Value == V?, V: Hashable {
+        guard let binding = SwiftUI.Binding<V>(unwrapping: self) else { return .constant(nil) }
+        return binding[dynamicMember: keyPath]
+    }
+}
+
 // MARK: - Previews
 
 struct Binding_Previews: PreviewProvider {
@@ -292,6 +369,12 @@ struct Binding_Previews: PreviewProvider {
             OptionalValuesPreview()
 
             Divider()
+
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                OptionalPublishedPreview()
+
+                Divider()
+            }
 
             InvertedBoolPreview()
 
@@ -353,6 +436,28 @@ struct Binding_Previews: PreviewProvider {
                     Text(url?.absoluteString ?? "nil")
                     TextField("URL", text: $url.value())
                 }
+            }
+        }
+    }
+
+    @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+    struct OptionalPublishedPreview: View {
+        struct Model {
+            var name: String
+            var company: String?
+        }
+        class ViewModel: ObservableObject {
+            @Published var model: Model? = Model(name: "")
+        }
+        @StateObject var viewModel = ViewModel()
+
+        var body: some View {
+            VStack {
+                Text(viewModel.model?.name ?? "nil")
+                TextField("Name", text: $viewModel.model.name.value())
+
+                Text(viewModel.model?.company ?? "nil")
+                TextField("Company", text: $viewModel.model.company.value())
             }
         }
     }

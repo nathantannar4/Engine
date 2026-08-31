@@ -38,7 +38,7 @@ extension Optional {
         _ value: Binding<Value?>,
         @ViewBuilder content: (Binding<Value>) -> Wrapped
     ) where Self == Optional<Wrapped>, Wrapped: View {
-        if let value = value.unwrap() {
+        if let value = Binding(unwrapping: value) {
             self = .some(content(value))
         } else {
             self = .none
@@ -76,8 +76,8 @@ public struct OptionalAdapter<
         @ViewBuilder content: (Binding<Value>) -> Content,
         @ViewBuilder placeholder: () -> Placeholder = { EmptyView() }
     ) {
-        if let unwrapped = value.unwrap() {
-            self.content = .init(content(unwrapped))
+        if let value = Binding(unwrapping: value) {
+            self.content = .init(content(value))
         } else {
             self.content = .init(placeholder())
         }

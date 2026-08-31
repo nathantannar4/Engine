@@ -74,19 +74,22 @@ public struct OptionalObservedObject<
     @frozen
     @dynamicMemberLookup
     public struct Binding {
+        @usableFromInline
         let root: SwiftUI.Binding<ObjectType?>
 
+        @inlinable
         public subscript<Subject>(
             dynamicMember keyPath: ReferenceWritableKeyPath<ObjectType, Subject>
         ) -> SwiftUI.Binding<Subject?> {
-            guard let binding = SwiftUI.Binding<ObjectType>(root) else { return .constant(nil) }
+            guard let binding = SwiftUI.Binding<ObjectType>(unwrapping: root) else { return .constant(nil) }
             return SwiftUI.Binding(binding[dynamicMember: keyPath])
         }
 
+        @inlinable
         public subscript<Subject>(
             dynamicMember keyPath: ReferenceWritableKeyPath<ObjectType, Subject>
         ) -> SwiftUI.Binding<Subject>? {
-            SwiftUI.Binding<ObjectType>(root)?[dynamicMember: keyPath]
+            SwiftUI.Binding<ObjectType>(unwrapping: root)?[dynamicMember: keyPath]
         }
     }
 }

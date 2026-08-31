@@ -40,6 +40,42 @@ extension Optional {
             self = .some(newValue)
         }
     }
+
+    @_disfavoredOverload
+    @usableFromInline
+    subscript(defaultValue: Subscript<Wrapped>) -> Wrapped {
+        get {
+            switch self {
+            case .none:
+                return defaultValue.value
+            case .some(let wrapped):
+                return wrapped
+            }
+        }
+        set {
+            self = .some(newValue)
+        }
+    }
+}
+
+@usableFromInline
+final class Subscript<Value>: Hashable {
+    var value: Value
+
+    @usableFromInline
+    init(_ value: Value) {
+        self.value = value
+    }
+
+    @usableFromInline
+    static func == (lhs: Subscript<Value>, rhs: Subscript<Value>) -> Bool {
+        lhs === rhs
+    }
+
+    @usableFromInline
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(self))
+    }
 }
 
 extension Optional where Wrapped == String {

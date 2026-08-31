@@ -37,6 +37,56 @@ final class CoreRuntimeTests: XCTestCase {
         XCTAssert(swift_getIsClassType(MyClass()))
     }
 
+    func testRuntimeEnum() throws {
+        enum MyEnum {
+            case first
+            case second
+        }
+
+        enum MyEnumWithAssociatedValues {
+            case empty
+            case single(Int)
+            case pair(String, Int)
+        }
+
+        var value: MyEnum = .first
+        try XCTAssertEqual(
+            swift_getEnumCase(value),
+            "first"
+        )
+        XCTAssertThrowsError(try swift_getFieldValue("first", Any.self, value))
+        value = .second
+        try XCTAssertEqual(
+            swift_getEnumCase(value),
+            "second"
+        )
+        XCTAssertThrowsError(try swift_getFieldValue("second", Any.self, value))
+
+        var unionValue: MyEnumWithAssociatedValues = .empty
+        try XCTAssertEqual(
+            swift_getEnumCase(unionValue),
+            "empty"
+        )
+        XCTAssertThrowsError(try swift_getFieldValue("empty", Any.self, unionValue))
+        unionValue = .single(1)
+        try XCTAssertEqual(
+            swift_getEnumCase(unionValue),
+            "single"
+        )
+        try XCTAssertEqual(
+            swift_getFieldValue("single", Int.self, unionValue),
+            1
+        )
+        unionValue = .pair("Hello, World", 2)
+        try XCTAssertEqual(
+            swift_getEnumCase(unionValue),
+            "pair"
+        )
+        let pair = try swift_getFieldValue("pair", (String, Int).self, unionValue)
+        XCTAssertEqual(pair.0, "Hello, World")
+        XCTAssertEqual(pair.1, 2)
+    }
+
     func testRuntimeStruct() throws {
         struct MyStruct {
             var intValue: Int
