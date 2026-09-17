@@ -13,7 +13,7 @@ public struct ViewUpdateDebugView<Content: View>: View {
 
     var content: Content
     #if DEBUG
-    @UpdatePhase var phase
+    @UpdatePhase private  var phase
     #endif
 
     public init(

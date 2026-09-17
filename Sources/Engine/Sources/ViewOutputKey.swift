@@ -117,8 +117,8 @@ public struct ViewOutputSourceModifier<
     @usableFromInline
     var source: Source
 
-    @Namespace var namespace
-    @UpdatePhase var phase
+    @Namespace private var namespace
+    @UpdatePhase private var phase
 
     @inlinable
     public init(

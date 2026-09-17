@@ -318,6 +318,65 @@ extension Hashable {
 
 extension Binding {
 
+    /// Transforms an `Equatable` to a `Bool`
+    @inlinable
+    public func isEqual(to value: Value, defaultValue: Value) -> Binding<Bool> where Value: Equatable {
+        self[keyPath: \.[isEqualTo: Subscript(IsEqualComparison(value: value, defaultValue: defaultValue))]]
+    }
+
+    /// Transforms an optional `Equatable` to a `Bool`
+    @inlinable
+    public func isEqual<V: Equatable>(to value: V) -> Binding<Bool> where Value == V? {
+        self[keyPath: \.[isEqualTo: Subscript(IsEqualComparison(value: value, defaultValue: nil))]]
+    }
+
+    /// Transforms a `Hashable` to a `Bool`
+    @inlinable
+    public func isEqual(to value: Value, defaultValue: Value) -> Binding<Bool> where Value: Hashable {
+        self[keyPath: \.[isEqualTo: IsEqualComparison(value: value, defaultValue: defaultValue)]]
+    }
+
+    /// Transforms an optional `Hashable` to a `Bool`
+    @inlinable
+    public func isEqual<V: Hashable>(to value: V) -> Binding<Bool> where Value == V? {
+        self[keyPath: \.[isEqualTo: IsEqualComparison(value: value, defaultValue: nil)]]
+    }
+}
+
+@usableFromInline
+struct IsEqualComparison<Value: Equatable>: Equatable {
+    let value: Value
+    let defaultValue: Value
+
+    @usableFromInline
+    init(value: Value, defaultValue: Value) {
+        self.value = value
+        self.defaultValue = defaultValue
+    }
+}
+
+extension IsEqualComparison: Hashable where Value: Hashable { }
+
+extension Equatable {
+
+    @usableFromInline
+    subscript(isEqualTo other: Subscript<IsEqualComparison<Self>>) -> Bool {
+        get { self == other.value.value }
+        set { self = newValue ? other.value.value : other.value.defaultValue }
+    }
+}
+
+extension Hashable {
+
+    @usableFromInline
+    subscript(isEqualTo other: IsEqualComparison<Self>) -> Bool {
+        get { self == other.value }
+        set { self = newValue ? other.value : other.defaultValue }
+    }
+}
+
+extension Binding {
+
     @_disfavoredOverload
     @inlinable
     public subscript<V, Subject>(
@@ -363,31 +422,32 @@ struct Binding_Previews: PreviewProvider {
         VStack {
             OptionalBindingPreview(value: nil)
             OptionalBindingPreview(value: .constant(nil))
+        }
 
-            Divider()
-
+        ZStack {
             OptionalValuesPreview()
+        }
 
-            Divider()
-
-            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+        if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+            VStack {
                 OptionalPublishedPreview()
-
-                Divider()
             }
+        }
 
+        VStack {
+            IsEqualPreview()
+        }
+
+        ZStack {
             InvertedBoolPreview()
+        }
 
-            Divider()
-
+        VStack {
             IsNilPreview()
-
-            Divider()
-
             IsNotNilPreview()
+        }
 
-            Divider()
-
+        VStack {
             HashableSetPreview()
 
             EnumSetPreview()
@@ -454,10 +514,27 @@ struct Binding_Previews: PreviewProvider {
         var body: some View {
             VStack {
                 Text(viewModel.model?.name ?? "nil")
-                TextField("Name", text: $viewModel.model.name.value())
+                TextField("Name", text: $viewModel.model.name.value(defaultValue: ""))
 
                 Text(viewModel.model?.company ?? "nil")
                 TextField("Company", text: $viewModel.model.company.value())
+            }
+        }
+    }
+
+    struct IsEqualPreview: View {
+        @State var value = 0
+
+        var body: some View {
+            VStack {
+                Toggle(isOn: $value.isEqual(to: 1, defaultValue: 0)) { }
+                    .labelsHidden()
+
+                Button {
+                    value += 1
+                } label: {
+                    Text(value.description)
+                }
             }
         }
     }

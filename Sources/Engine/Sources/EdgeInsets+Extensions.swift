@@ -33,6 +33,10 @@ extension EdgeInsets {
         EdgeInsets(top: inset, leading: inset, bottom: inset, trailing: inset)
     }
 
+    public func toNSDirectionalEdgeInsets() -> NSDirectionalEdgeInsets {
+        NSDirectionalEdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
+    }
+
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
     /// Transforms SwiftUI `EdgeInsets` to a `UIEdgeInsets`
     @available(iOS 14.0, tvOS 14.0, watchOS 7.0, *)

@@ -33,7 +33,7 @@ public struct FormatTransform<
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public struct OptionalFormatTransform<
     F: ParseableFormatStyle
->: BindingTransform {
+>: BindingTransform where F.FormatOutput: Hashable {
 
     public typealias Input = F.FormatInput?
     public typealias Output = F.FormatOutput
@@ -66,7 +66,7 @@ extension Binding {
         F: ParseableFormatStyle
     >(
         _ format: F
-    ) -> Binding<F.FormatOutput> where Value == F.FormatInput {
+    ) -> Binding<F.FormatOutput> where Value == F.FormatInput, Value: Hashable {
         projecting(
             FormatTransform(
                 format: format
@@ -82,7 +82,7 @@ extension Binding {
     >(
         _ format: F,
         defaultValue: F.FormatOutput
-    ) -> Binding<F.FormatOutput> where F.FormatInput == V, Value == V? {
+    ) -> Binding<F.FormatOutput> where F.FormatInput == V, F.FormatOutput: Hashable, Value == V?, Value: Hashable {
         projecting(
             OptionalFormatTransform(
                 format: format,

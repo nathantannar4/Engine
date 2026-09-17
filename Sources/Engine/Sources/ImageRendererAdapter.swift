@@ -39,9 +39,9 @@ public struct ImageRendererAdapter<
     var source: Source
     var content: (ImageRenderedView?) -> Content
 
-    @UpdatePhase var phase
-    @Environment(\.displayScale) var displayScale
-    @Environment(\.colorScheme) var colorScheme
+    @UpdatePhase private var phase
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
 
     public init(
         proposedSize: ProposedViewSize = .unspecified,

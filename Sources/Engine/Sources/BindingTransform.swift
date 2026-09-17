@@ -6,7 +6,7 @@ import SwiftUI
 import os.log
 
 /// A protocol for defining a transform for a `Binding`
-public protocol BindingTransform {
+public protocol BindingTransform: Hashable {
     associatedtype Input
     associatedtype Output
 
@@ -20,12 +20,21 @@ extension Binding {
     @MainActor
     public func projecting<Transform: BindingTransform>(
         _ transform: Transform
-    ) -> Binding<Transform.Output> where Transform.Input == Value {
-        Binding<Transform.Output> {
-            transform.get(wrappedValue)
-        } set: { newValue, transaction in
+    ) -> Binding<Transform.Output> where Transform.Input == Value, Value: Hashable {
+        self[keyPath: \.[projecting: transform]]
+    }
+}
+
+extension Hashable {
+
+    @usableFromInline
+    subscript<T: BindingTransform>(projecting transform: T) -> T.Output where Self == T.Input {
+        get {
+            transform.get(self)
+        }
+        set {
             do {
-                self.transaction(transaction).wrappedValue = try transform.set(newValue)
+                self = try transform.set(newValue)
             } catch {
                 os_log(.debug, log: .default, "Projection %{public}@ failed with error: %{public}@", String(describing: Self.self), error.localizedDescription)
             }
