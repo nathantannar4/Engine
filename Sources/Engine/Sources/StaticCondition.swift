@@ -12,14 +12,24 @@ public protocol StaticCondition {
     static var value: Bool { get }
 }
 
+/// A `StaticCondition` that is always true
 @frozen
 public enum TrueStaticCondition: StaticCondition {
     public static let value: Bool = true
 }
 
+/// A `StaticCondition` that is always false
 @frozen
 public enum FalseStaticCondition: StaticCondition {
     public static let value: Bool = false
+}
+
+/// A `StaticCondition` that inverts the `Condition`
+@frozen
+public enum InvertedStaticCondition<Condition: StaticCondition>: StaticCondition {
+    public static var value: Bool {
+        return !Condition.value
+    }
 }
 
 /// A `StaticCondition` that compares types

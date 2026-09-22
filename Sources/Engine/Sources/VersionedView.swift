@@ -20,6 +20,12 @@ import EngineCore
 ///
 public protocol VersionedView: View {
 
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    associatedtype V8_1Body: View = V8Body
+
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    @ViewBuilder @MainActor @preconcurrency var v8_1Body: V8_1Body { get }
+
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     associatedtype V8Body: View = V7Body
 
@@ -65,6 +71,11 @@ public protocol VersionedView: View {
     associatedtype V1Body: View = EmptyView
 
     @ViewBuilder @MainActor @preconcurrency var v1Body: V1Body { get }
+}
+
+@available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+extension VersionedView where V8_1Body == V8Body {
+    public var v8_1Body: V8Body { v8Body }
 }
 
 @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
@@ -121,6 +132,11 @@ public struct _VersionedViewBody<Content: VersionedView>: PrimitiveView {
 
 extension _VersionedViewBody {
 
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    private nonisolated var _v8_1Body: VersionedViewV8_1Body<Content> {
+        VersionedViewV8_1Body(content: content)
+    }
+
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     private nonisolated var _v8Body: VersionedViewV8Body<Content> {
         VersionedViewV8Body(content: content)
@@ -171,7 +187,12 @@ extension _VersionedViewBody {
         inputs: _ViewInputs
     ) -> _ViewOutputs {
         #if !DEBUG
-        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+        if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+            return VersionedViewV8_1Body<Content>._makeView(
+                view: view[\._v8_1Body],
+                inputs: inputs
+            )
+        } else if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
             return VersionedViewV8Body<Content>._makeView(
                 view: view[\._v8Body],
                 inputs: inputs
@@ -216,6 +237,13 @@ extension _VersionedViewBody {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
+        case .v8_1:
+            if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+                return VersionedViewV8_1Body<Content>._makeView(
+                    view: view[\._v8_1Body],
+                    inputs: inputs
+                )
+            }
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                 return VersionedViewV8Body<Content>._makeView(
@@ -285,7 +313,12 @@ extension _VersionedViewBody {
         inputs: _ViewListInputs
     ) -> _ViewListOutputs {
         #if !DEBUG
-        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+        if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+            return VersionedViewV8_1Body<Content>._makeViewList(
+                view: view[\._v8_1Body],
+                inputs: inputs
+            )
+        } else if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
             return VersionedViewV8Body<Content>._makeViewList(
                 view: view[\._v8Body],
                 inputs: inputs
@@ -330,6 +363,13 @@ extension _VersionedViewBody {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
+        case .v8_1:
+            if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+                return VersionedViewV8_1Body<Content>._makeViewList(
+                    view: view[\._v8_1Body],
+                    inputs: inputs
+                )
+            }
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                 return VersionedViewV8Body<Content>._makeViewList(
@@ -396,7 +436,11 @@ extension _VersionedViewBody {
         inputs: _ViewListCountInputs
     ) -> Int? {
         #if !DEBUG
-        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+        if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+            return VersionedViewV8_1Body<Content>._viewListCount(
+                inputs: inputs
+            )
+        } else if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
             return VersionedViewV8Body<Content>._viewListCount(
                 inputs: inputs
             )
@@ -429,6 +473,12 @@ extension _VersionedViewBody {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
+        case .v8_1:
+            if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+                return VersionedViewV8_1Body<Content>._viewListCount(
+                    inputs: inputs
+                )
+            }
         case .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                 return VersionedViewV8Body<Content>._viewListCount(
@@ -476,6 +526,15 @@ extension _VersionedViewBody {
             inputs: inputs
         )
         #endif
+    }
+}
+
+@available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+private struct VersionedViewV8_1Body<Content: VersionedView>: View {
+    nonisolated(unsafe) var content: Content
+
+    var body: some View {
+        content.v8_1Body
     }
 }
 

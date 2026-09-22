@@ -132,7 +132,7 @@ private struct ImageProvider {
                 if let symbolRenderingMode = try? swift_getFieldValue("renderingMode", SymbolRenderingModeStorage.self, options) {
                     self.symbolConfiguration.symbolRenderingMode = symbolRenderingMode
                 }
-                #if canImport(FoundationModels) // Xcode 26
+                #if XCODE_26
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                     if let symbolColorRenderingMode = try? swift_getFieldValue("colorMode", SymbolColorRenderingModeStorage.self, options) {
                         self.symbolConfiguration.symbolColorRenderingMode = symbolColorRenderingMode
@@ -355,7 +355,7 @@ extension SymbolConfiguration {
                     }
                 }
             }
-            #if canImport(FoundationModels) // Xcode 26
+            #if XCODE_26
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                 if let symbolVariableValueMode = symbolVariableValueMode ?? environment?.symbolVariableValueMode?.storage {
                     configuration = configuration
@@ -428,7 +428,7 @@ extension EnvironmentValues {
 
 struct SymbolConfiguration {
     var symbolRenderingMode: SymbolRenderingModeStorage?
-    #if canImport(FoundationModels) // Xcode 26
+    #if XCODE_26
     var symbolColorRenderingMode: SymbolColorRenderingModeStorage?
     var symbolVariableValueMode: SymbolVariableValueModeStorage?
     #endif
@@ -449,7 +449,7 @@ extension SymbolRenderingMode {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 enum SymbolColorRenderingModeStorage {
     case flat
     case gradient
@@ -612,7 +612,7 @@ struct Image_Previews: PreviewProvider {
                     )
                 }
 
-                #if canImport(FoundationModels) // Xcode 26
+                #if XCODE_26
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                     ImagePreview(
                         image: Image(systemName: "wifi").symbolVariableValueMode(.color)

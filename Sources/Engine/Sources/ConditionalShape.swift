@@ -86,7 +86,7 @@ extension ConditionalShape: InsettableShape where TrueContent: InsettableShape, 
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension ConditionalShape: RoundedRectangularShape where TrueContent: RoundedRectangularShape, FalseContent: RoundedRectangularShape {
 

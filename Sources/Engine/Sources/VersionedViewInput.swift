@@ -7,50 +7,61 @@ import EngineCore
 
 public struct VersionInput: Equatable, Sendable {
 
-    var rawValue: UInt8
+    var major: UInt8
+    var minor: UInt8
 
-    public static let v1 = VersionInput(rawValue: 1)
+    private init(major: UInt8, minor: UInt8 = 0) {
+        self.major = major
+        self.minor = minor
+    }
+
+    public static let v1 = VersionInput(major: 1)
     public struct V1: _VersionInput {
         public static let value: VersionInput = .v1
     }
 
-    public static let v2 = VersionInput(rawValue: 2)
+    public static let v2 = VersionInput(major: 2)
     public struct V2: _VersionInput {
         public static let value: VersionInput = .v2
     }
 
-    public static let v3 = VersionInput(rawValue: 3)
+    public static let v3 = VersionInput(major: 3)
     public struct V3: _VersionInput {
         public static let value: VersionInput = .v3
     }
 
-    public static let v4 = VersionInput(rawValue: 4)
+    public static let v4 = VersionInput(major: 4)
     public struct V4: _VersionInput {
         public static let value: VersionInput = .v4
     }
 
-    public static let v5 = VersionInput(rawValue: 5)
+    public static let v5 = VersionInput(major: 5)
     public struct V5: _VersionInput {
         public static let value: VersionInput = .v5
     }
 
-    public static let v6 = VersionInput(rawValue: 6)
+    public static let v6 = VersionInput(major: 6)
     public struct V6: _VersionInput {
         public static let value: VersionInput = .v6
     }
 
-    public static let v7 = VersionInput(rawValue: 7)
+    public static let v7 = VersionInput(major: 7)
     public struct V7: _VersionInput {
         public static let value: VersionInput = .v7
     }
 
-    public static let v8 = VersionInput(rawValue: 8)
+    public static let v8 = VersionInput(major: 8)
     public struct V8: _VersionInput {
         public static let value: VersionInput = .v8
     }
+
+    public static let v8_1 = VersionInput(major: 8, minor: 1)
+    public struct V8_1: _VersionInput {
+        public static let value: VersionInput = .v8_1
+    }
 }
 
-public protocol _VersionInput: ViewInput where Key == VersionInputKey { }
+public protocol _VersionInput: ViewInput, ViewInputsCondition where Key == VersionInputKey { }
 extension _VersionInput where Self == VersionInput.V1 {
     public static var v1: VersionInput.V1 { .init() }
 }
@@ -75,11 +86,61 @@ extension _VersionInput where Self == VersionInput.V7 {
 extension _VersionInput where Self == VersionInput.V8 {
     public static var v8: VersionInput.V8 { .init() }
 }
+extension _VersionInput where Self == VersionInput.V8_1 {
+    public static var v8_1: VersionInput.V8_1 { .init() }
+}
 
+extension _VersionInput {
+
+    public static func evaluate(_ inputs: ViewInputs) -> Bool {
+        #if DEBUG
+        let version = inputs[VersionInputKey.self]
+        #else
+        let version = value
+        #endif
+        return version.isAvailable
+    }
+}
+
+public struct IsVersionAvailable<Version: _VersionInput>: StaticCondition {
+    public static var value: Bool {
+        return Version.value.isAvailable
+    }
+}
+
+extension IsVersionAvailable where Version == VersionInput.V1 {
+    public static var v1: IsVersionAvailable<VersionInput.V1>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V2 {
+    public static var v2: IsVersionAvailable<VersionInput.V2>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V3 {
+    public static var v3: IsVersionAvailable<VersionInput.V3>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V4 {
+    public static var v4: IsVersionAvailable<VersionInput.V4>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V5 {
+    public static var v5: IsVersionAvailable<VersionInput.V5>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V6 {
+    public static var v6: IsVersionAvailable<VersionInput.V6>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V7 {
+    public static var v7: IsVersionAvailable<VersionInput.V7>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V8 {
+    public static var v8: IsVersionAvailable<VersionInput.V8>.Type { Self.self }
+}
+extension IsVersionAvailable where Version == VersionInput.V8_1 {
+    public static var v8_1: IsVersionAvailable<VersionInput.V8_1>.Type { Self.self }
+}
 
 public struct VersionInputKey: ViewInputKey {
     public static var defaultValue: VersionInput {
-        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+        if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+            return .v8_1
+        } else if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
             return .v8
         } else if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             return .v7
@@ -96,6 +157,51 @@ public struct VersionInputKey: ViewInputKey {
         } else {
             return .v1
         }
+    }
+}
+
+extension VersionInput {
+
+    var isAvailable: Bool {
+        switch self {
+        case .v8_1:
+            if #available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *) {
+                return true
+            }
+        case .v8:
+            if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+                return true
+            }
+        case .v7:
+            if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+                return true
+            }
+        case .v6:
+            if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                return true
+            }
+        case .v5:
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                return true
+            }
+        case .v4:
+            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
+                return true
+            }
+        case .v3:
+            if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *) {
+                return true
+            }
+        case .v2:
+            if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
+                return true
+            }
+        case .v1:
+            return true
+        default:
+            break
+        }
+        return false
     }
 }
 
@@ -150,6 +256,7 @@ extension View {
 
 struct VersionInput_Previews: PreviewProvider {
     struct PreviewVersionInputView: VersionedView {
+        var v8_1Body: some View { Text("V8_1") }
         var v8Body: some View { Text("V8") }
         var v7Body: some View { Text("V7") }
         var v6Body: some View { Text("V6") }
@@ -161,6 +268,7 @@ struct VersionInput_Previews: PreviewProvider {
     }
 
     struct PreviewVersionInputViewModifier: VersionedViewModifier {
+        func v8_1Body(content: Content) -> some View { Text("V8_1") }
         func v8Body(content: Content) -> some View { Text("V8") }
         func v7Body(content: Content) -> some View { Text("V7") }
         func v6Body(content: Content) -> some View { Text("V6") }
@@ -174,6 +282,9 @@ struct VersionInput_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             VStack {
+                PreviewVersionInputView()
+                    .version(.v8_1)
+
                 PreviewVersionInputView()
                     .version(.v8)
 
@@ -201,6 +312,10 @@ struct VersionInput_Previews: PreviewProvider {
             .previewDisplayName("VersionedView")
 
             VStack {
+                EmptyView()
+                    .modifier(PreviewVersionInputViewModifier())
+                    .version(.v8_1)
+
                 EmptyView()
                     .modifier(PreviewVersionInputViewModifier())
                     .version(.v8)
@@ -234,6 +349,15 @@ struct VersionInput_Previews: PreviewProvider {
                     .version(.v1)
             }
             .previewDisplayName("VersionedViewModifier")
+
+            VStack {
+                StaticConditionalContent(IsVersionAvailable.v8) {
+                    Text("v8 Available")
+                } otherwise: {
+                    Text("v8 Unavailable")
+                }
+            }
+            .previewDisplayName("StaticConditionalContent")
         }
     }
 }

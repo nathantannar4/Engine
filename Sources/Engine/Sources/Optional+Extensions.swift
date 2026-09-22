@@ -2,7 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
-import SwiftUI
+import Foundation
 
 extension Optional {
 
@@ -272,19 +272,6 @@ extension Optional where Wrapped == URL {
         }
         set {
             self = URL(string: newValue)
-        }
-    }
-}
-
-extension Equatable {
-
-    @usableFromInline
-    var optional: Optional<Self> {
-        get { Optional.some(self) }
-        set {
-            if case .some(let wrapped) = newValue {
-                self = wrapped
-            }
         }
     }
 }

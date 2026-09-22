@@ -98,12 +98,13 @@ open class HostingView<
     /// Set to `true` when embedded in a `UIViewRepresentable` to trigger a layout if `Content` size changes outside of a rootView update
     public var invalidatesIntrinsicContentSizeOnIdealSizeChange: Bool = false
 
-    /// When `true`, an animated layout on the parent hosting view will be triggered when the intrinsic content size changes
+    /// When `true`, an animated layout on the parent hosting view will be triggered when the intrinsic content size changes.
+    /// When `false`, the intrinsic content size of the superview will be invalidated instead
     public var automaticallyLayoutIntrinsicContentSizeChange: Bool = true
 
     private var cachedIntrinsicContentSize: CGSize? {
         didSet {
-            guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating else { return }
+            guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating || !automaticallyLayoutIntrinsicContentSizeChange else { return }
             invalidateIntrinsicContentSize()
             layoutIntrinsicContentSizeChange()
         }
@@ -129,7 +130,7 @@ open class HostingView<
     }
     #endif
 
-    private var isUpdating = false
+    public private(set) var isUpdating = false
 
     public init(content: Content) {
         let rootView = HostingRootView(content: content, transaction: Transaction())
@@ -211,28 +212,31 @@ open class HostingView<
     }
 
     open func layoutIntrinsicContentSizeChange() {
-        guard automaticallyLayoutIntrinsicContentSizeChange else { return }
-        let hostingView: AnyHostingView? = {
-            var ancestor = superview
-            while let current = ancestor {
-                if let hostingView = current as? AnyHostingView {
-                    return hostingView
-                }
-                ancestor = current.superview
-            }
-            return nil
-        }()
-        if let hostingView {
-            if shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
-                UIView.animate(with: .default) {
-                    if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
-                        hostingView.enableUIKitAnimationsIfNeeded()
+        if automaticallyLayoutIntrinsicContentSizeChange {
+            let hostingView: AnyHostingView? = {
+                var ancestor = superview
+                while let current = ancestor {
+                    if let hostingView = current as? AnyHostingView {
+                        return hostingView
                     }
+                    ancestor = current.superview
+                }
+                return nil
+            }()
+            if let hostingView {
+                if shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+                    UIView.animate(with: .default) {
+                        if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
+                            hostingView.enableUIKitAnimationsIfNeeded()
+                        }
+                        hostingView.layoutIfNeeded()
+                    }
+                } else {
                     hostingView.layoutIfNeeded()
                 }
-            } else {
-                hostingView.layoutIfNeeded()
             }
+        } else {
+            superview?.invalidateIntrinsicContentSize()
         }
     }
     #endif

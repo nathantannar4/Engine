@@ -862,7 +862,7 @@ private struct ResolvedTextAttributes {
             attributes.swiftUI.tracking = tracking
             attributes.swiftUI.baselineOffset = baselineOffset
         }
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             attributes.swiftUI.lineHeight = environment.lineHeight
             switch environment.multilineTextAlignment {
@@ -1041,7 +1041,7 @@ private struct ResolvedTextAttributes {
             attributes[.baselineOffset] = baselineOffset
         }
         let paragraphStyle = NSMutableParagraphStyle()
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             paragraphStyle.lineSpacing = environment.lineSpacing
             if let lineHeight = environment.lineHeight?.storage {
@@ -1876,7 +1876,7 @@ extension NSTextAttachment: @unchecked Sendable { }
 #endif
 #endif
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension AttributedString.LineHeight {
 

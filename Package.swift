@@ -1,7 +1,24 @@
 // swift-tools-version: 6.0
 
+import Foundation
 import PackageDescription
 import CompilerPluginSupport
+
+func isXcodeVersionAtLeast(_ versionString: String) -> Bool {
+    let env = ProcessInfo.processInfo.environment
+    guard let path = env["PATH"] ?? env["SDKROOT"] ?? env["MANPATH"] ?? env["DEVELOPER_DIR"] else { return false }
+    let pattern = #"(?i)Xcode[_-]?([0-9]+(?:\.[0-9]+)*)"#
+    guard
+        let regex = try? NSRegularExpression(pattern: pattern),
+        let match = regex.firstMatch(in: path, range: NSRange(path.startIndex..., in: path)),
+        let range = Range(match.range(at: 1), in: path)
+    else {
+        return false
+    }
+    let detectedVersion = String(path[range])
+    let isMatch = detectedVersion.compare(versionString, options: .numeric) != .orderedAscending
+    return isMatch
+}
 
 let package = Package(
     name: "Engine",
@@ -43,7 +60,20 @@ let package = Package(
             name: "Engine",
             dependencies: [
                 "EngineCore",
-            ]
+            ],
+            swiftSettings: {
+                var settings = [SwiftSetting]()
+                #if compiler(>=6.2)
+                settings.append(.define("XCODE_26"))
+                #endif
+                #if compiler(>=6.4)
+                settings.append(.define("XCODE_27"))
+                if isXcodeVersionAtLeast("27.1") {
+                    settings.append(.define("XCODE_27_1"))
+                }
+                #endif
+                return settings
+            }()
         ),
         .target(
             name: "EngineExtensions",

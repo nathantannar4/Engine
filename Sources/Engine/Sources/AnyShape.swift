@@ -55,7 +55,7 @@ public struct AnyShape: Shape, InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 extension AnyShape: RoundedRectangularShape {
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
@@ -91,7 +91,7 @@ class AnyShapeStorageBase: @unchecked Sendable {
         fatalError("base")
     }
 
-    #if canImport(FoundationModels) // Xcode 26
+    #if XCODE_26
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
     func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
         fatalError("base")
@@ -148,7 +148,7 @@ final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable 
         return _openExistential(shape, do: project)
     }
 
-    #if canImport(FoundationModels) // Xcode 26
+    #if XCODE_26
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
     override func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
         guard let shape = shape as? (any RoundedRectangularShape) else { return nil }

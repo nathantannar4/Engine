@@ -34,7 +34,7 @@ extension Font {
     func toPlatformValue(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *), let environment = environment() {
             let context = environment.fontResolutionContext
             let resolved = resolve(in: context)
@@ -576,7 +576,7 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .body.monospaced().weight(.bold))
             }
 
-            #if canImport(FoundationModels) // Xcode 26
+            #if XCODE_26
             if #available(iOS 26.0, macOS 26.0,  *) {
                 FontPreview(font: .body)
                     .monospaced()
@@ -608,7 +608,7 @@ struct Font_Previews: PreviewProvider {
                     .fontWidth(.compressed)
             }
 
-            #if canImport(FoundationModels) // Xcode 26
+            #if XCODE_26
             if #available(iOS 26.0, macOS 26.0,  *) {
                 FontPreview(font: .body.scaled(by: 1.1).scaled(by: 1.2))
 
