@@ -34,7 +34,7 @@ extension Font {
     func toPlatformValue(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *), let environment = environment() {
             let context = environment.fontResolutionContext
             let resolved = resolve(in: context)
@@ -59,15 +59,9 @@ private enum FontProvider {
             return nil
         }
 
-        let className = String(describing: type(of: base))
-        if let regex = try? NSRegularExpression(
-            pattern: "ModifierProvider<(.*)>"
-        ), let match = regex.firstMatch(
-            in: className,
-            range: NSRange(className.startIndex..<className.endIndex, in: className)
-        ) {
-            let modifier = className[Range(match.range(at: 1), in: className)!]
-
+        let names = FontProviderTypeNameCache.shared[type(of: base)]
+        let className = names.className
+        if let modifier = names.modifierName {
             guard
                 let sFont = try? swift_getFieldValue("base", Font.self, base),
                 var font = sFont.toPlatformValue(in: environment())
@@ -196,6 +190,50 @@ private enum FontProvider {
             return nil
         }
     }
+}
+
+/// Caches the type names of font providers, since `String(describing:)` demangles
+/// and allocates on every call and font resolution is a hot path during text resolution
+private final class FontProviderTypeNameCache: @unchecked Sendable {
+
+    struct Names {
+        var className: String
+        /// The modifier name of a `ModifierProvider<Modifier>`
+        var modifierName: String?
+
+        init(_ type: Any.Type) {
+            className = String(describing: type)
+            let prefix = "ModifierProvider<"
+            if let start = className.range(of: prefix),
+                let end = className.range(of: ">", options: .backwards, range: start.upperBound..<className.endIndex)
+            {
+                modifierName = String(className[start.upperBound..<end.lowerBound])
+            }
+        }
+    }
+
+    private let lock: os_unfair_lock_t
+    private var storage = [UnsafeRawPointer: Names]()
+
+    static let shared = FontProviderTypeNameCache()
+    private init() {
+        self.lock = .allocate(capacity: 1)
+        self.lock.initialize(to: os_unfair_lock_s())
+    }
+
+    subscript(type: Any.Type) -> Names {
+        os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+        let id = unsafeBitCast(type, to: UnsafeRawPointer.self)
+        if let names = storage[id] {
+            return names
+        }
+        let names = Names(type)
+        storage[id] = names
+        return names
+    }
+}
+
+extension FontProvider {
 
     func resolved(
         in environment: @autoclosure () -> EnvironmentValues? = nil
@@ -507,16 +545,22 @@ fileprivate extension Font.PlatformRepresentable.TextStyle {
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                 self = .extraLargeTitle
+            } else {
+                return nil
             }
-            #endif
+            #else
             return nil
+            #endif
         case .extraLargeTitle2:
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                 self = .extraLargeTitle2
+            } else {
+                return nil
             }
-            #endif
+            #else
             return nil
+            #endif
         case .title:
             self = .title1
         case .headline:
@@ -576,8 +620,8 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .body.monospaced().weight(.bold))
             }
 
-            #if canImport(FoundationModels) // Xcode 26
-            if #available(iOS 26.0, macOS 26.0,  *) {
+            #if XCODE_26
+            if #available(iOS 26.0, macOS 26.0, *) {
                 FontPreview(font: .body)
                     .monospaced()
 
@@ -594,7 +638,7 @@ struct Font_Previews: PreviewProvider {
                     .underline()
             }
 
-            if #available(iOS 16.0, macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 FontPreview(font: .body)
                     .kerning(3)
             }
@@ -603,13 +647,13 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .system(.body, design: .rounded, weight: .semibold))
             }
 
-            if #available(iOS 16.0, macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 FontPreview(font: .body)
                     .fontWidth(.compressed)
             }
 
-            #if canImport(FoundationModels) // Xcode 26
-            if #available(iOS 26.0, macOS 26.0,  *) {
+            #if XCODE_26
+            if #available(iOS 26.0, macOS 26.0, *) {
                 FontPreview(font: .body.scaled(by: 1.1).scaled(by: 1.2))
 
                 FontPreview(font: .body.pointSize(22))

@@ -86,7 +86,7 @@ struct OffsetEffect_Previews: PreviewProvider {
                             .frame(width: 100, height: 100)
                             .modifier(OffsetEffect(offset: offset, anchor: .top).ignoredByLayout())
 
-                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             Rectangle()
                                 .fill(Color.red)
                                 .frame(width: 100, height: 100)
@@ -116,7 +116,7 @@ struct OffsetEffect_Previews: PreviewProvider {
                             .frame(width: 100, height: 100)
                             .modifier(OffsetEffect(offset: offset, anchor: .leading).ignoredByLayout())
 
-                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             Rectangle()
                                 .fill(Color.red)
                                 .frame(width: 100, height: 100)

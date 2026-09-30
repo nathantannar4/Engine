@@ -46,7 +46,7 @@ extension Color {
     #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
     typealias PlatformRepresentable = UIColor
     #endif
-    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS) || os(macOS)
     /// Transforms SwiftUI `Color` to a non-bridged color
     ///
     /// > Important: Using the built in `UIColor(_ color: Color)`/`NSColor(_ color: Color)`

@@ -328,7 +328,16 @@ open class HostingController<
 
     private func hasFirstResponder() -> Bool {
         guard presentedViewController == nil, let firstResponder = UIResponder.current else { return false }
-        return firstResponder.isInResponderChain(of: self)
+        if firstResponder.isInResponderChain(of: self) {
+            return true
+        }
+        if let navigationController,
+            navigationController.topViewController == self,
+            firstResponder.isInResponderChain(of: navigationController)
+        {
+            return true
+        }
+        return false
     }
 
     private func isKeyboardSafeAreaDisabledDidChange() {

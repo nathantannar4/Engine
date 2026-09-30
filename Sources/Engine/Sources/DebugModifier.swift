@@ -33,6 +33,7 @@ public struct DebugOverlayModifier: ViewModifier {
                         Text(verbatim: "\(size.width.rounded(decimalPoints: 1)), \(size.height.rounded(decimalPoints: 1))")
                             .fixedSize()
                             .background(color.opacity(0.3))
+                            .clipped()
                             .alignmentGuide(VerticalAlignment.center) { d in
                                 d[VerticalAlignment.center] + (size.height + d.height) / 2 + lineWidth
                             }
@@ -43,8 +44,9 @@ public struct DebugOverlayModifier: ViewModifier {
 
                         if let label {
                             Text(label)
-                                .background(color.opacity(0.3))
                                 .fixedSize()
+                                .background(color.opacity(0.3))
+                                .clipped()
                                 .alignmentGuide(VerticalAlignment.center) { d in
                                     d[VerticalAlignment.center] - (size.height + d.height) / 2 - lineWidth
                                 }
@@ -104,6 +106,7 @@ struct DebugOverlayModifier_Previews: PreviewProvider {
                     Rectangle()
                         .strokeBorder(Color.blue, lineWidth: 2)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .withDebugOverlay(color: .red)
         }
     }

@@ -34,8 +34,8 @@ public struct ScaleEffect: GeometryEffect, Animatable {
 
     @inlinable
     public init(
-        x: CGFloat = 0,
-        y: CGFloat = 0,
+        x: CGFloat = 1,
+        y: CGFloat = 1,
         anchor: UnitPoint = .center
     ) {
         self.init(scale: CGSize(width: x, height: y), anchor: anchor)

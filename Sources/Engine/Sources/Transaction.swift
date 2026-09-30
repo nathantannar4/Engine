@@ -32,7 +32,7 @@ extension Transaction {
         return copy
     }
 
-    public func disablesAnimations(_ disablesAnimations: Bool) -> Transaction {
+    public func disablesAnimations(_ disablesAnimations: Bool = true) -> Transaction {
         var copy = self
         copy.disablesAnimations = disablesAnimations
         return copy

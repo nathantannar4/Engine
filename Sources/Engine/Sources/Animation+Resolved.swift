@@ -88,28 +88,165 @@ extension Animation {
             case bezier(BezierAnimation)
 
             public struct SpringAnimation: Codable, Equatable, Sendable {
-                public var mass: Double
-                public var stiffness: Double
-                public var damping: Double
-                public var initialVelocity: Double
-
-                public var duration: TimeInterval {
-                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-                        return Spring(mass: mass, stiffness: stiffness, damping: damping).duration
+                enum Payload: Codable, Equatable, Sendable {
+                    struct V8Payload: Codable, Equatable, Sendable {
+                        var mass: Double
+                        var stiffness: Double
+                        var damping: Double
+                        var initialVelocity: Double
+                        var timingCurve: UnitCurveTypeLayout
                     }
+                    case v8(V8Payload)
+
+                    struct V1Payload: Codable, Equatable, Sendable {
+                        var mass: Double
+                        var stiffness: Double
+                        var damping: Double
+                        var initialVelocity: Double
+                    }
+                    case v1(V1Payload)
+
+                    var mass: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.mass
+                            case .v1(let payload):
+                                return payload.mass
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.mass = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.mass = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var stiffness: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.stiffness
+                            case .v1(let payload):
+                                return payload.stiffness
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.stiffness = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.stiffness = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var damping: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.damping
+                            case .v1(let payload):
+                                return payload.damping
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.damping = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.damping = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var initialVelocity: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.initialVelocity
+                            case .v1(let payload):
+                                return payload.initialVelocity
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.initialVelocity = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.initialVelocity = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                    var timingCurve: UnitCurve? {
+                        switch self {
+                        case .v8(let payload):
+                            return UnitCurve(payload.timingCurve)
+                        case .v1:
+                            return nil
+                        }
+                    }
+                }
+
+                var payload: Payload
+
+                public var mass: Double {
+                    get { payload.mass }
+                    set { payload.mass = newValue }
+                }
+
+                public var stiffness: Double {
+                    get { payload.stiffness }
+                    set { payload.stiffness = newValue }
+                }
+
+                public var damping: Double {
+                    get { payload.damping }
+                    set { payload.damping = newValue }
+                }
+
+                public var initialVelocity: Double {
+                    get { payload.initialVelocity }
+                    set { payload.initialVelocity = newValue }
+                }
+
+                @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                public var timingCurve: UnitCurve? {
+                    payload.timingCurve
+                }
+
+                /// The time for the spring to settle, `Spring.duration` is not used as it
+                /// is the perceptual duration which is shorter than the animation runs for
+                public var duration: TimeInterval {
                     guard mass > 0, stiffness > 0, damping > 0 else { return 0 }
                     let naturalFrequency = sqrt(stiffness / mass)
                     let dampingRatio = damping / (2.0 * mass * naturalFrequency)
                     let threshold = 0.00185
-                    if dampingRatio < 1.0 {
-                        let decayRate = dampingRatio * naturalFrequency
-                        return -log(threshold) / decayRate
-                    } else {
-                        let root = dampingRatio - sqrt(max(0, dampingRatio * dampingRatio - 1.0))
-                        let decayRate = naturalFrequency * root
-                        guard decayRate > 0 else { return 0 }
-                        return -log(threshold) / decayRate
-                    }
+                    let duration: TimeInterval = {
+                        if dampingRatio < 1.0 {
+                            let decayRate = dampingRatio * naturalFrequency
+                            return -log(threshold) / decayRate
+                        } else {
+                            let root = dampingRatio - sqrt(max(0, dampingRatio * dampingRatio - 1.0))
+                            let decayRate = naturalFrequency * root
+                            guard decayRate > 0 else { return 0 }
+                            return -log(threshold) / decayRate
+                        }
+                    }()
+                    return (duration * 100).rounded() / 100
                 }
             }
             case spring(SpringAnimation)
@@ -259,11 +396,19 @@ extension Animation {
                         let bezier = unsafeBitCast(animator, to: BezierAnimation.self)
                         return .bezier(bezier)
                     case "SpringAnimation":
-                        guard MemoryLayout<SpringAnimation>.size == MemoryLayout<T>.size else {
-                            return nil
+                        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+                            guard MemoryLayout<SpringAnimation.Payload.V8Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: SpringAnimation.Payload.V8Payload.self)
+                            return .spring(SpringAnimation(payload: .v8(payload)))
+                        } else {
+                            guard MemoryLayout<SpringAnimation.Payload.V1Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: SpringAnimation.Payload.V1Payload.self)
+                            return .spring(SpringAnimation(payload: .v1(payload)))
                         }
-                        let spring = unsafeBitCast(animator, to: SpringAnimation.self)
-                        return .spring(spring)
                     case "FluidSpringAnimation":
                         if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                             guard MemoryLayout<FluidSpringAnimation.Payload.V8Payload>.size == MemoryLayout<T>.size else {
@@ -402,6 +547,25 @@ extension Animation {
     }
 }
 
+struct UnitCurveTypeLayout: Codable, Equatable, Sendable {
+    var p0: Double
+    var p1: Double
+    var p2: Double
+    var p3: Double
+    var tag: UInt8
+}
+
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+extension UnitCurve {
+
+    init?(_ layout: UnitCurveTypeLayout) {
+        guard MemoryLayout<UnitCurveTypeLayout>.size == MemoryLayout<UnitCurve>.size else {
+            return nil
+        }
+        self = unsafeBitCast(layout, to: UnitCurve.self)
+    }
+}
+
 #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
 
 extension Animation.Resolved {
@@ -462,7 +626,7 @@ extension Animation.Resolved.TimingCurve.BezierAnimation.AnimationCurve {
     public func toCoreAnimation() -> CAMediaTimingFunction {
         return CAMediaTimingFunction(
             controlPoints:
-                Float(ax / 3), Float(ay / 3),
+                Float(cx / 3), Float(cy / 3),
                 Float(cx - (cx - bx) / 3), Float(cy - (cy - by) / 3)
         )
     }
@@ -481,12 +645,6 @@ struct AnimationResolved_Previews: PreviewProvider {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading) {
                     Text(label)
-
-//                    Text({
-//                        var str = ""
-//                        dump(animation, to: &str)
-//                        return str
-//                    }())
                 }
 
                 VStack(alignment: .leading) {
@@ -524,7 +682,7 @@ struct AnimationResolved_Previews: PreviewProvider {
 
                 Divider()
 
-                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                     AnimationPreview(label: "PreviewAnimation", animation: .init(PreviewAnimation()).speed(2).delay(1))
                 }
 

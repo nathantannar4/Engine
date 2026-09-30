@@ -16,7 +16,7 @@ extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     public var hostingController: UIViewController? {
-        if #available(iOS 17.0, tvOS 17.0, visionOS 1.0, *) {
+        if #available(iOS 17.0, tvOS 17.0, *) {
             return self["WithCurrentHostingControllerKey"]
         } else if let context = self["ToolbarUpdateContextKey", as: Any.self] {
             return try? swift_getFieldValue("targetController", UIViewController?.self, context)
@@ -118,7 +118,7 @@ extension EnvironmentValues {
     }
 
     /// The value for the ``.textScale(_)`` modifier
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var textScale: Text.Scale {
         self["TextScaleKey", default: Text.Scale.default]
     }
@@ -316,7 +316,7 @@ extension OpenURLAction {
         return .handled
     }
 
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     @_disfavoredOverload
     @MainActor @preconcurrency
     public func callAsFunction(_ url: URL, prefersInApp: Bool) -> OpenResult {
@@ -515,7 +515,7 @@ extension UIReturnKeyType {
         case .search:
             self = .search
         case .return:
-            self = .done
+            self = .default
         case .next:
             self = .next
         case .continue:

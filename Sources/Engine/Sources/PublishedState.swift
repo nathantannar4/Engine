@@ -23,6 +23,14 @@ public struct PublishedState<Value>: DynamicProperty {
     final class PublisherStorage: ObservableObject {
         @Published var value: Value
         private var cancellables = Set<AnyCancellable>()
+        private var isSynchronizing = false
+        // Children are cached weakly so that repeated `$state.member` access returns
+        // the same storage, which keeps a `Binding` equal between view updates
+        private var children = [AnyKeyPath: WeakChild]()
+
+        private struct WeakChild {
+            weak var storage: AnyObject?
+        }
 
         @usableFromInline
         init(value: Value) {
@@ -33,20 +41,34 @@ public struct PublishedState<Value>: DynamicProperty {
         subscript<Subject>(
             dynamicMember keyPath: WritableKeyPath<Value, Subject>
         ) -> PublishedState<Subject>.PublisherStorage where Value: Equatable, Subject: Equatable {
+            if let storage = children[keyPath]?.storage as? PublishedState<Subject>.PublisherStorage {
+                return storage
+            }
             let storage = PublishedState<Subject>.PublisherStorage(value: value[keyPath: keyPath])
+            children[keyPath] = WeakChild(storage: storage)
+            // Both subscriptions are owned by the child storage, so that they are
+            // cancelled when the child is released rather than accumulating in the parent
+            // `@Published` emits during `willSet`, so a flag is used rather than comparing
+            // values to prevent a change from being echoed back to where it came from
             $value
                 .removeDuplicates()
                 .map { $0[keyPath: keyPath] }
                 .sink { [weak storage] newValue in
-                    storage?.value = newValue
+                    guard let storage, !storage.isSynchronizing else { return }
+                    storage.isSynchronizing = true
+                    defer { storage.isSynchronizing = false }
+                    storage.value = newValue
                 }
-                .store(in: &cancellables)
+                .store(in: &storage.cancellables)
 
             storage.$value
                 .dropFirst()
                 .removeDuplicates()
-                .sink { [weak self] newValue in
-                    self?.value[keyPath: keyPath] = newValue
+                .sink { [weak self, weak storage] newValue in
+                    guard let self, let storage, !storage.isSynchronizing else { return }
+                    storage.isSynchronizing = true
+                    defer { storage.isSynchronizing = false }
+                    self.value[keyPath: keyPath] = newValue
                 }
                 .store(in: &storage.cancellables)
             return storage

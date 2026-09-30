@@ -5,7 +5,7 @@
 import SwiftUI
 import EngineCore
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text.Layout.Run {
 
     public func toCoreText() -> CTRun? {
@@ -26,7 +26,7 @@ extension Text.Layout.Run {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text.Layout.RunSlice {
 
     public var string: String? {
@@ -97,7 +97,7 @@ extension CTRun {
 
 // MARK: - Previews
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 struct TextRenderer_Previews: PreviewProvider {
 
     struct PreviewTextRenderer: TextRenderer {

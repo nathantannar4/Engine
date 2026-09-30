@@ -20,6 +20,7 @@ public struct StateOrBinding<Value>: DynamicProperty {
     var storage: Storage
 
     @inlinable
+    @_disfavoredOverload
     public init(_ value: Value) {
         self.storage = .state(State(wrappedValue: value))
     }

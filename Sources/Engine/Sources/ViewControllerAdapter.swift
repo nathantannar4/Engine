@@ -271,7 +271,7 @@ open class ViewControllerAdapter<
                             coordinator: coordinator
                         )
                     )
-                } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *),
+                } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
                     let values = try? swift_getFieldValue("values", RepresentableContextValues.V4.self, bridgedContext)
                 {
                     context = .v4(

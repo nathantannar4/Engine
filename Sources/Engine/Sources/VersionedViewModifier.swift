@@ -19,6 +19,12 @@ import SwiftUI
 ///
 public protocol VersionedViewModifier: ViewModifier {
 
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    associatedtype V8_1Body: View = V8Body
+
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    @ViewBuilder @MainActor @preconcurrency func v8_1Body(content: Content) -> V8_1Body
+
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     associatedtype V8Body: View = V7Body
 
@@ -64,6 +70,13 @@ public protocol VersionedViewModifier: ViewModifier {
     associatedtype V1Body: View = Content
 
     @ViewBuilder @MainActor @preconcurrency func v1Body(content: Content) -> V1Body
+}
+
+@available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+extension VersionedViewModifier where V8_1Body == V8Body {
+    public func v8_1Body(content: Content) -> V8Body {
+        v8Body(content: content)
+    }
 }
 
 @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
@@ -132,6 +145,11 @@ public struct _VersionedViewModifierBody<Modifier: VersionedViewModifier>: Versi
 
     var content: Modifier.Content
     var modifier: Modifier
+
+    @available(iOS 27.1, macOS 27.1, tvOS 27.1, watchOS 27.1, visionOS 27.1, *)
+    public var v8_1Body: Modifier.V8_1Body {
+        modifier.v8_1Body(content: content)
+    }
 
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     public var v8Body: Modifier.V8Body {

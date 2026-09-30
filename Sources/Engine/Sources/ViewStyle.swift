@@ -285,7 +285,7 @@ extension EnvironmentValues {
     }
 }
 
-private struct ViewStylesBox: @unchecked Sendable {
+private struct ViewStylesBox: Equatable, @unchecked Sendable {
     private var storage: [UnsafeRawPointer: [AnyViewStyle]] = [:]
 
     fileprivate subscript<ID: ViewStyledView>(
@@ -524,12 +524,16 @@ private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
     }
 }
 
-struct AnyViewStyle: @unchecked Sendable {
+struct AnyViewStyle: Equatable, @unchecked Sendable {
     private class AnyViewStyleStorageBase {
         func visit<Configuration, Body>(
             as body: Body.Type,
             configuration: Configuration
         ) -> Body {
+            fatalError("base")
+        }
+
+        func isEqual(to other: AnyViewStyleStorageBase) -> Bool {
             fatalError("base")
         }
     }
@@ -538,6 +542,23 @@ struct AnyViewStyle: @unchecked Sendable {
         let style: Style
         init(_ style: Style) {
             self.style = style
+        }
+
+        override func isEqual(to other: AnyViewStyleStorageBase) -> Bool {
+            guard let other = other as? AnyViewStyleStorage<Style> else {
+                return false
+            }
+            if let style = style as? any Equatable {
+                return style.isEqual(to: other.style)
+            }
+            if _isPOD(Style.self) {
+                return withUnsafeBytes(of: style) { lhs in
+                    withUnsafeBytes(of: other.style) { rhs in
+                        lhs.elementsEqual(rhs)
+                    }
+                }
+            }
+            return false
         }
 
         override func visit<Configuration, Body>(
@@ -576,6 +597,17 @@ struct AnyViewStyle: @unchecked Sendable {
         configuration: Configuration
     ) -> Body {
         storage.visit(as: Body.self, configuration: configuration)
+    }
+
+    static func == (lhs: AnyViewStyle, rhs: AnyViewStyle) -> Bool {
+        lhs.storage === rhs.storage || lhs.storage.isEqual(to: rhs.storage)
+    }
+}
+
+extension Equatable {
+    fileprivate func isEqual(to other: Any) -> Bool {
+        guard let other = other as? Self else { return false }
+        return self == other
     }
 }
 

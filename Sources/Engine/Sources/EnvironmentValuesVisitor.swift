@@ -214,7 +214,8 @@ private class EnvironmentKeyLookupCache: @unchecked Sendable {
 
     subscript(_ key: String) -> ProtocolConformance<EnvironmentKeyProtocolDescriptor>? {
         get {
-            storage[key]
+            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+            return storage[key]
         }
         set {
             os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }

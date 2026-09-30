@@ -368,7 +368,8 @@ private class FieldLookupCache: @unchecked Sendable {
 
     subscript(type: Any.Type, key: String) -> Field? {
         get {
-            storage[unsafeBitCast(type, to: UnsafeRawPointer.self)]?[key]
+            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+            return storage[unsafeBitCast(type, to: UnsafeRawPointer.self)]?[key]
         }
         set {
             os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
@@ -408,7 +409,7 @@ private func swift_getFields_slow(
     for i in 0..<count {
         var field = FieldReflectionMetadata()
         let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
-        defer { field.dealloc?(field.name) }
+        defer { field.dealloc?(field.identifier) }
         let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
         fields.append(Field(type: fieldType, name: field.name, offset: offset))
     }
@@ -423,7 +424,7 @@ private func swift_getField_slow(
     for i in 0..<count {
         var field = FieldReflectionMetadata()
         let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
-        defer { field.dealloc?(field.name) }
+        defer { field.dealloc?(field.identifier) }
         guard field.name == key else { continue }
         let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
         return Field(type: fieldType, name: field.name, offset: offset)

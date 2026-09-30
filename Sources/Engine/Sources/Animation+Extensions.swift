@@ -465,7 +465,7 @@ private class AnimationTimingCurveDelegate: NSObject, CALayerDelegate {
 
 // MARK: - Previews
 
-@available(iOS 14.0, tvOS 14.0, macOS 11.0,  *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 struct Animation_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
@@ -493,7 +493,7 @@ struct Animation_Previews: PreviewProvider {
                     Text("Engine")
                 }
 
-                if #available(iOS 18.0, tvOS 18.0, macOS 15.0, visionOS 2.0, *) {
+                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, *) {
                     SwiftUIAnimatedPlatformView(
                         cornerRadius: cornerRadius,
                         backgroundColor: backgroundColor

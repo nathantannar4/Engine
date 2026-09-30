@@ -34,7 +34,7 @@ extension View {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text {
 
     /// Sets a view's foreground elements to use a given style when non-nil.

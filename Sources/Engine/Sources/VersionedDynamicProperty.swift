@@ -243,7 +243,7 @@ extension VersionedDynamicProperty {
                 fieldOffset: fieldOffset,
                 inputs: &inputs
             )
-        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
             V5Property._makeProperty(
                 in: &buffer,
                 container: container,
@@ -283,7 +283,7 @@ extension VersionedDynamicProperty {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
-        case .v8:
+        case .v8_1, .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                 V8Property._makeProperty(
                     in: &buffer,
@@ -291,6 +291,7 @@ extension VersionedDynamicProperty {
                     fieldOffset: fieldOffset,
                     inputs: &inputs
                 )
+                return
             }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
@@ -313,7 +314,7 @@ extension VersionedDynamicProperty {
                 return
             }
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                 V5Property._makeProperty(
                     in: &buffer,
                     container: container,

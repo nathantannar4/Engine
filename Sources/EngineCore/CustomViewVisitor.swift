@@ -36,21 +36,18 @@ private struct CustomViewIterator<
             !content.hasDynamicProperties
         {
             let body = content.getBody()
-            if IsMultiViewVisitor.isMultiView(
-                body, 
-                conformance: conformance
-            ) {
-                var context = context
-                if isOpaqueViewAnyView() {
-                    context.id.append(Content.Body.self)
-                }
-                conformance.visit(
-                    content: body,
-                    visitor: visitor,
-                    context: context,
-                    stop: &stop
-                )
-            } else {
+            var bodyContext = context
+            if isOpaqueViewAnyView() {
+                bodyContext.id.append(Content.Body.self)
+            }
+            var forwardingVisitor = MultiViewForwardingVisitor(base: visitor)
+            conformance.visit(
+                content: body,
+                visitor: &forwardingVisitor,
+                context: bodyContext,
+                stop: &stop
+            )
+            if forwardingVisitor.count == 1 {
                 visitor.value.visit(
                     content: content,
                     context: context,
@@ -73,17 +70,35 @@ extension View {
     }
 
     nonisolated var hasDynamicProperties: Bool {
-        do {
-            let fields = try swift_getFields(self)
-            for field in fields {
-                if field.value is DynamicProperty {
-                    return true
+        switch DynamicPropertyLookupCache.shared[Self.self] {
+        case .always:
+            return true
+        case .never:
+            return false
+        case .valueDependent(let fields):
+            do {
+                for field in fields {
+                    if try swift_getFieldValue(field.key, Any.self, self) is DynamicProperty {
+                        return true
+                    }
                 }
+            } catch {
+                os_log(.debug, log: .default, "Failed to resolve fields of %{public}@ with error: %{public}@. Please file an issue.", String(describing: Self.self), error.localizedDescription)
             }
-        } catch {
-            os_log(.debug, log: .default, "Failed to resolve fields of %{public}@ with error: %{public}@. Please file an issue.", String(describing: Self.self), error.localizedDescription)
+            return false
+        case .unknown:
+            do {
+                let fields = try swift_getFields(self)
+                for field in fields {
+                    if field.value is DynamicProperty {
+                        return true
+                    }
+                }
+            } catch {
+                os_log(.debug, log: .default, "Failed to resolve fields of %{public}@ with error: %{public}@. Please file an issue.", String(describing: Self.self), error.localizedDescription)
+            }
+            return false
         }
-        return false
     }
 
     nonisolated func getBody() -> Body {
@@ -110,8 +125,14 @@ private class SendableStorage<T>: @unchecked Sendable {
     init(value: T? = nil) { self.value = value }
 }
 
-private struct IsMultiViewVisitor: MultiViewVisitor {
+private struct MultiViewForwardingVisitor<Base: MultiViewVisitor>: MultiViewVisitor {
+    var base: UnsafeMutablePointer<Base>
     var count = 0
+    var pending: ((UnsafeMutablePointer<Base>, inout Bool) -> Void)?
+
+    init(base: UnsafeMutablePointer<Base>) {
+        self.base = base
+    }
 
     mutating func visit<Content: View>(
         content: Content,
@@ -119,21 +140,89 @@ private struct IsMultiViewVisitor: MultiViewVisitor {
         stop: inout Bool
     ) {
         count += 1
-        stop = count > 1
+        if count == 1 {
+            pending = { base, stop in
+                base.value.visit(content: content, context: context, stop: &stop)
+            }
+            return
+        }
+        if let pending {
+            self.pending = nil
+            pending(base, &stop)
+            guard !stop else { return }
+        }
+        base.value.visit(content: content, context: context, stop: &stop)
+    }
+}
+
+/// Whether a type has `DynamicProperty` fields, which is cached per type since
+/// reflecting the fields of a view is expensive and views are visited often
+private enum DynamicPropertyLookup {
+    /// A field type is `DynamicProperty`
+    case always
+    /// No field can hold a `DynamicProperty`
+    case never
+    /// No field type is `DynamicProperty`, but these fields can hold one
+    /// depending on their value, such as an existential or optional
+    case valueDependent([MetadataField])
+    /// The type cannot be resolved from its field types, such as an enum
+    case unknown
+
+    init(_ type: Any.Type) {
+        guard swift_getIsStructType(type) else {
+            self = .unknown
+            return
+        }
+        var valueDependentFields = [MetadataField]()
+        for field in swift_getFields(type) {
+            if field.type is DynamicProperty.Type {
+                self = .always
+                return
+            }
+            if Self.isValueDependent(field.type) {
+                valueDependentFields.append(field)
+            }
+        }
+        self = valueDependentFields.isEmpty ? .never : .valueDependent(valueDependentFields)
     }
 
-    static func isMultiView<Content: View>(
-        _ content: Content,
-        conformance: ProtocolConformance<MultiViewProtocolDescriptor>
-    ) -> Bool {
-        var visitor = IsMultiViewVisitor()
-        var stop = false
-        conformance.visit(
-            content: content,
-            visitor: &visitor,
-            context: .init(Content.self),
-            stop: &stop
-        )
-        return visitor.count != 1
+    /// Whether a value of the type could be cast to a `DynamicProperty`
+    /// even though the type does not conform
+    private static func isValueDependent(_ type: Any.Type) -> Bool {
+        let ptr = unsafeBitCast(type, to: UnsafeRawPointer.self)
+        switch MetadataKind(ptr: ptr) {
+        case .struct, .enum, .tuple, .function, .metatype, .existentialMetatype:
+            return false
+        default:
+            // Optionals, existentials and classes (a subclass may conform)
+            return true
+        }
+    }
+}
+
+private final class DynamicPropertyLookupCache: @unchecked Sendable {
+
+    private let lock: os_unfair_lock_t
+    private var storage = [UnsafeRawPointer: DynamicPropertyLookup]()
+
+    static let shared = DynamicPropertyLookupCache()
+    private init() {
+        self.lock = .allocate(capacity: 1)
+        self.lock.initialize(to: os_unfair_lock_s())
+    }
+
+    subscript(type: Any.Type) -> DynamicPropertyLookup {
+        let id = unsafeBitCast(type, to: UnsafeRawPointer.self)
+        os_unfair_lock_lock(lock)
+        if let lookup = storage[id] {
+            os_unfair_lock_unlock(lock)
+            return lookup
+        }
+        os_unfair_lock_unlock(lock)
+        // Resolve outside of the lock, since field lookup takes its own lock
+        let lookup = DynamicPropertyLookup(type)
+        os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+        storage[id] = lookup
+        return lookup
     }
 }

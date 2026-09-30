@@ -82,7 +82,7 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 extension CapsuleRoundedRectangle: RoundedRectangularShape {
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
@@ -133,7 +133,7 @@ struct CapsuleRoundedRectangle_Previews: PreviewProvider {
                 }
                 .frame(height: 50)
 
-                #if canImport(FoundationModels) && !os(visionOS) // Xcode 26
+                #if XCODE_26 && !os(visionOS)
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
                     VStack {
                         Text("Hello, World")

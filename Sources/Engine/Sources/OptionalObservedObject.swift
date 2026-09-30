@@ -23,10 +23,18 @@ public struct OptionalObservedObject<
         private var cancellable: AnyCancellable?
 
         @usableFromInline
-        init(value: ObjectType?) {
-            self.value = value
+        init() { }
+
+        /// Subscribes to the object, if it is not already subscribed to
+        func update(value newValue: ObjectType?) {
+            guard newValue !== value else { return }
             if let value {
-                bind(to: value)
+                DeallocationTracker.shared(for: value).removeObserver(self)
+            }
+            cancellable = nil
+            value = newValue
+            if let newValue {
+                bind(to: newValue)
             }
         }
 
@@ -50,24 +58,34 @@ public struct OptionalObservedObject<
     }
 
     @usableFromInline
-    var storage: ObservedObject<Storage>
+    weak var object: ObjectType?
+
+    // The storage persists for the lifetime of the view, so that a new
+    // subscription is not created each time the view is initialized
+    @usableFromInline
+    var storage: StateObject<Storage>
 
     @inlinable
     public init(wrappedValue: ObjectType?) {
-        storage = ObservedObject<Storage>(wrappedValue: Storage(value: wrappedValue))
+        object = wrappedValue
+        storage = StateObject<Storage>(wrappedValue: Storage())
     }
 
     public var wrappedValue: ObjectType? {
-        get { storage.wrappedValue.value }
+        get { object }
     }
 
     public var projectedValue: Binding {
         Binding(root: storage.projectedValue.value)
     }
 
+    public mutating func update() {
+        storage.wrappedValue.update(value: object)
+    }
+
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public static var _propertyBehaviors: UInt32 {
-        ObservedObject<Storage>._propertyBehaviors
+        StateObject<Storage>._propertyBehaviors
     }
 
     @MainActor @preconcurrency

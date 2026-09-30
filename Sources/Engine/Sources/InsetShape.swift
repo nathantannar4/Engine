@@ -49,7 +49,7 @@ public struct InsetShape<S: Shape>: Shape, Animatable {
         S.role
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var layoutDirectionBehavior: LayoutDirectionBehavior {
         shape.layoutDirectionBehavior
     }
@@ -69,7 +69,7 @@ extension InsetShape: InsettableShape where S: InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
 

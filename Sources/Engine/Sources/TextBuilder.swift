@@ -90,6 +90,19 @@ public struct TextBuilder {
     ) -> [Text] {
         accumulated + next
     }
+
+    public static func buildFinalResult(_ components: [Text]) -> [Text] {
+        return components
+    }
+
+    public static func buildFinalResult(_ components: [Text]) -> Text {
+        Text { components }
+    }
+
+    public static func buildFinalResult(_ components: [Text]) -> Text? {
+        guard !components.isEmpty else { return nil }
+        return Text { components }
+    }
 }
 
 @frozen
@@ -260,6 +273,11 @@ struct TextBuilder_Previews: PreviewProvider {
             }
         }
 
+        @TextBuilder
+        var combinedTexts: Text {
+            texts
+        }
+
         var body: some View {
             VStack {
                 Toggle(isOn: $flag) { Text("Flag") }
@@ -289,6 +307,8 @@ struct TextBuilder_Previews: PreviewProvider {
                 let text = Text {
                     texts
                 }
+
+                combinedTexts
 
                 text
 

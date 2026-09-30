@@ -59,17 +59,22 @@ public struct ShapeBuilder {
     }
 
     @_disfavoredOverload
+    @available(iOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(macOS, deprecated: 13.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(tvOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(watchOS, deprecated: 9.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(visionOS, deprecated: 1.1, message: "Use the builtin SwiftUI.AnyShape")
     public static func buildLimitedAvailability<S: Shape>(
         _ shape: S
     ) -> Engine.AnyShape {
-        .init(shape: shape)
+        Engine.AnyShape(shape: shape)
     }
 
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public static func buildLimitedAvailability<S: Shape>(
         _ shape: S
     ) -> SwiftUI.AnyShape {
-        .init(shape)
+        SwiftUI.AnyShape(shape)
     }
 }
 
