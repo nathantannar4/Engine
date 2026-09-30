@@ -9,6 +9,7 @@ public typealias ConditionalView<TrueContent: View, FalseContent: View> = Condit
 
 extension ConditionalView: View where TrueContent: View, FalseContent: View {
 
+    /// Creates a view that shows `then` when `condition` is `true`, and `otherwise` when `false`.
     @inlinable
     public init(
         if condition: Bool,

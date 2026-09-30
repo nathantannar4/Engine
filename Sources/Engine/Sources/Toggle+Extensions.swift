@@ -6,6 +6,11 @@ import SwiftUI
 
 extension Toggle {
 
+    /// Creates a toggle from a toggle style configuration, with a label built from
+    /// the configuration's label.
+    ///
+    /// Use this within a `ToggleStyle` to wrap or decorate the configuration's
+    /// label while preserving the toggle's binding.
     public init(
         _ configuration: ToggleStyleConfiguration,
         @ViewBuilder label: (ToggleStyleConfiguration.Label) -> Label

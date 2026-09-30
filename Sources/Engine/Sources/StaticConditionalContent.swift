@@ -15,6 +15,9 @@ public struct StaticConditionalContent<
     @usableFromInline
     nonisolated(unsafe) var content: ConditionalContent<TrueContent, FalseContent>
 
+    /// Creates a view that statically resolves to `then` when `Condition.value` is
+    /// `true`, otherwise to `otherwise`.
+    @_disfavoredOverload
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
@@ -24,6 +27,8 @@ public struct StaticConditionalContent<
         self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
+    /// Creates a view that statically resolves to `then` when `Condition.value` is
+    /// `true`, otherwise to `otherwise`.
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,

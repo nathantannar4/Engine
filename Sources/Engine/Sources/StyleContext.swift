@@ -17,7 +17,7 @@ import os.log
 ///  - ``ToolbarStyleContext``
 ///  - ``SidebarStyleContext``/``NavigationViewStyleContext``
 ///
-/// Use the ``View/styleContext(_:)`` on an view to apply a context.
+/// Use the ``View/styleContext(_:)`` modifier on a view to apply a context.
 ///
 /// See Also:
 ///  - ``StyleContextConditionalModifier``
@@ -33,7 +33,7 @@ public protocol StyleContext {
 
 extension View {
 
-    /// A modifier that statically applies the `StyleContext`to the view hierarchy.
+    /// A modifier that statically applies the `StyleContext` to the view hierarchy.
     ///
     /// > Info: For more on how to create custom style context, see ``StyleContext``.
     @inlinable
@@ -42,11 +42,13 @@ extension View {
     }
 }
 
-/// An opaque ``StyleContext`` wrapper for custom contexts and built-in SwiftUI contexts
+/// An opaque wrapper of the current style context, which may be a custom
+/// ``StyleContext`` or a built-in SwiftUI context.
 public struct StyleContextInputs {
+    /// The type of the current style context.
     public var type: Any.Type
 
-    /// Returns `true` when the inputs match the style `S`
+    /// Returns `true` when the current style context matches `Context` or one of its aliases.
     public func contains<Context: StyleContext>(_: Context.Type) -> Bool {
         let typeName = _typeName(type, qualified: false)
         return Context.contains(typeName: typeName)
@@ -58,6 +60,7 @@ public struct StyleContextInputs {
 /// The default style context
 public struct NoStyleContext: StyleContext { }
 extension StyleContext where Self == NoStyleContext {
+    /// The default style context.
     public static var none: NoStyleContext { .init() }
 }
 
@@ -66,6 +69,7 @@ extension StyleContext where Self == NoStyleContext {
 /// The style context of a `ScrollView`
 public struct ScrollViewStyleContext: StyleContext { }
 extension StyleContext where Self == ScrollViewStyleContext {
+    /// The style context of a `ScrollView`.
     public static var scrollView: ScrollViewStyleContext { .init() }
 }
 
@@ -73,6 +77,7 @@ extension StyleContext where Self == ScrollViewStyleContext {
 
 /// The style context of a `List`
 public struct ListStyleContext: StyleContext {
+    /// Style contexts that are also considered a match for this style context.
     public static var aliases: [any StyleContext.Type] {
         [
             InsetGroupedListStyleContext.self,
@@ -81,17 +86,20 @@ public struct ListStyleContext: StyleContext {
     }
 }
 extension StyleContext where Self == ListStyleContext {
+    /// The style context of a `List`.
     public static var list: ListStyleContext { .init() }
 }
 
 /// The style context of a `List` with the `InsetGroupedListStyle`
 public struct InsetGroupedListStyleContext: StyleContext { }
 extension StyleContext where Self == InsetGroupedListStyleContext {
+    /// The style context of a `List` with the `InsetGroupedListStyle`.
     public static var insetGroupedList: InsetGroupedListStyleContext { .init() }
 }
 
 /// The style context of a `Form`
 public struct FormStyleContext: StyleContext {
+    /// Style contexts that are also considered a match for this style context.
     public static var aliases: [any StyleContext.Type] {
         [
             GroupedFormStyleContext.self,
@@ -100,38 +108,46 @@ public struct FormStyleContext: StyleContext {
     }
 }
 extension StyleContext where Self == FormStyleContext {
+    /// The style context of a `Form`.
     public static var form: FormStyleContext { .init() }
 }
 
+/// The style context of a `Form` with the `GroupedFormStyle`
 public struct GroupedFormStyleContext: StyleContext { }
 extension StyleContext where Self == GroupedFormStyleContext {
+    /// The style context of a `Form` with the `GroupedFormStyle`.
     public static var groupedForm: GroupedFormStyleContext { .init() }
 }
 
+/// The style context of a `Form` with the `ColumnsFormStyle`
 public struct ColumnsFormStyleContext: StyleContext { }
 extension StyleContext where Self == ColumnsFormStyleContext {
+    /// The style context of a `Form` with the `ColumnsFormStyle`.
     public static var columnsForm: ColumnsFormStyleContext { .init() }
 }
 
 
 // MARK: - ToolbarStyleContext
 
-/// The style context of a `Toolbar`
+/// The style context of a toolbar
 public struct ToolbarStyleContext: StyleContext { }
 extension StyleContext where Self == ToolbarStyleContext {
+    /// The style context of a toolbar.
     public static var toolbar: ToolbarStyleContext { .init() }
 }
 
 // MARK: - SidebarStyleContext
 
-/// The style context of a `NavigationView`/`NavigationSplitView`
+/// The style context of a sidebar
 public struct SidebarStyleContext: StyleContext { }
 extension StyleContext where Self == SidebarStyleContext {
+    /// The style context of a sidebar.
     public static var sidebar: SidebarStyleContext { .init() }
 }
 
 /// The style context of a `NavigationView`/`NavigationSplitView`
 public struct NavigationViewStyleContext: StyleContext {
+    /// Style contexts that are also considered a match for this style context.
     public static var aliases: [any StyleContext.Type] {
         [
             SidebarStyleContext.self,
@@ -139,12 +155,15 @@ public struct NavigationViewStyleContext: StyleContext {
     }
 }
 extension StyleContext where Self == NavigationViewStyleContext {
+    /// The style context of a `NavigationView`/`NavigationSplitView`.
     public static var navigationView: NavigationViewStyleContext { .init() }
 }
 
 extension StyleContext {
+    /// By default, a style context has no aliases.
     public static var aliases: [StyleContext.Type] { [] }
 
+    /// By default, returns `true` when the input contains this style context or one of its aliases.
     public static func evaluate(_ input: StyleContextInputs) -> Bool {
         input.contains(self)
     }
@@ -173,7 +192,7 @@ extension StyleContext {
     }
 }
 
-/// A modifier that applies the `Modifier` only when the`StyleContext` matches
+/// A modifier that applies the `Modifier` only when the `StyleContext` matches
 /// the current style context of the view.
 @frozen
 public struct StyleContextConditionalModifier<
@@ -184,6 +203,8 @@ public struct StyleContextConditionalModifier<
     @usableFromInline
     var modifier: Modifier
 
+    /// Creates a modifier that applies `modifier` only when the current style
+    /// context matches `predicate`.
     @inlinable
     public init(predicate: Context, @ViewModifierBuilder modifier: () -> Modifier) {
         self.modifier = modifier()
@@ -199,7 +220,7 @@ public struct StyleContextConditionalModifier<
     }
 }
 
-/// A modifier that statically applies the `StyleContext`to the view hierarchy.
+/// A modifier that statically applies the `StyleContext` to the view hierarchy.
 ///
 /// See Also:
 ///  - ``StyleContext``
@@ -208,6 +229,7 @@ public struct StyleContextModifier<
     Context: StyleContext
 >: ViewModifier {
 
+    /// Creates a modifier that applies `Context` to the view hierarchy.
     @inlinable
     public init() { }
 
@@ -246,6 +268,8 @@ private struct StyleContextInputValue<Context: StyleContext>: ViewInput {
     }
 }
 
+/// A ``ViewInputsCondition`` that is `true` when the current style context
+/// of the view matches `Context`.
 @frozen
 public struct StyleContextCondition<
     Context: StyleContext

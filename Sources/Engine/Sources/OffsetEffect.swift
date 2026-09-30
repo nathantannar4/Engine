@@ -4,11 +4,18 @@
 
 import SwiftUI
 
-/// A ``GeometryEffect`` that can offset the view by a size relative to an anchor
+/// A `GeometryEffect` that can offset the view by a size relative to an anchor.
+///
+/// In addition to `offset`, the view is translated by its own size in the
+/// direction of `anchor` relative to the center. For example, an anchor of
+/// `.top` moves the view up by its height, while `.center` applies only the
+/// offset.
 @frozen
 public struct OffsetEffect: GeometryEffect, Animatable {
 
+    /// The amount to offset the view by.
     public var offset: CGSize
+    /// The anchor that determines the additional translation relative to the view's size.
     public var anchor: UnitPoint
 
     public var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>> {
@@ -24,6 +31,7 @@ public struct OffsetEffect: GeometryEffect, Animatable {
         }
     }
 
+    /// Creates an offset effect from horizontal and vertical distances and an anchor.
     @inlinable
     public init(
         x: CGFloat = 0,
@@ -33,6 +41,7 @@ public struct OffsetEffect: GeometryEffect, Animatable {
         self.init(offset: CGSize(width: x, height: y), anchor: anchor)
     }
 
+    /// Creates an offset effect from a size and an anchor.
     @inlinable
     public init(
         offset: CGSize,
@@ -54,11 +63,19 @@ public struct OffsetEffect: GeometryEffect, Animatable {
 
 extension View {
 
+    /// Offsets this view by the specified horizontal and vertical distances,
+    /// relative to an anchor, without affecting layout.
+    ///
+    /// See ``OffsetEffect`` for how the anchor is applied.
     @inlinable
     public func offset(x: CGFloat = 0, y: CGFloat = 0, anchor: UnitPoint) -> some View {
         modifier(OffsetEffect(x: x, y: y, anchor: anchor).ignoredByLayout())
     }
 
+    /// Offsets this view by the specified size, relative to an anchor,
+    /// without affecting layout.
+    ///
+    /// See ``OffsetEffect`` for how the anchor is applied.
     @inlinable
     public func offset(_ offset: CGSize, anchor: UnitPoint) -> some View {
         modifier(OffsetEffect(offset: offset, anchor: anchor).ignoredByLayout())
@@ -86,7 +103,7 @@ struct OffsetEffect_Previews: PreviewProvider {
                             .frame(width: 100, height: 100)
                             .modifier(OffsetEffect(offset: offset, anchor: .top).ignoredByLayout())
 
-                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             Rectangle()
                                 .fill(Color.red)
                                 .frame(width: 100, height: 100)
@@ -116,7 +133,7 @@ struct OffsetEffect_Previews: PreviewProvider {
                             .frame(width: 100, height: 100)
                             .modifier(OffsetEffect(offset: offset, anchor: .leading).ignoredByLayout())
 
-                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                             Rectangle()
                                 .fill(Color.red)
                                 .frame(width: 100, height: 100)

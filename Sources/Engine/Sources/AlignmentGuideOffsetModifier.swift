@@ -4,14 +4,23 @@
 
 import SwiftUI
 
-/// A modifier that scales the edge alignment guides by an offset
+/// A modifier that adjusts the alignment guides of a view for an alignment.
+///
+/// The `anchor` moves each guide from its alignment edge towards the opposite
+/// edge, where `0` keeps the guide at the alignment edge, `0.5` moves it to the
+/// center and `1` moves it to the opposite edge. The `offset` is then added to
+/// the guide.
 @frozen
 public struct AlignmentGuideOffsetModifier: ViewModifier {
 
+    /// The alignment whose horizontal and vertical guides are adjusted.
     public var alignment: Alignment
+    /// The unit position, relative to the alignment edge, to move the guides to.
     public var anchor: UnitPoint
+    /// The additional offset, in points, added to the guides.
     public var offset: CGPoint
 
+    /// Creates a modifier that adjusts the alignment guides of `alignment`.
     @inlinable
     public init(
         alignment: Alignment,
@@ -38,7 +47,10 @@ public struct AlignmentGuideOffsetModifier: ViewModifier {
 
 extension View {
     
-    /// A modifier that scales the edge alignment guides by an offset
+    /// Adjusts the alignment guides of `alignment` by moving them towards the
+    /// opposite edge by `anchor` and then offsetting them by `x` and `y`.
+    ///
+    /// See ``AlignmentGuideOffsetModifier``.
     @inlinable
     public func alignmentGuideOffset(
         alignment: Alignment,
@@ -53,7 +65,10 @@ extension View {
         )
     }
 
-    /// A modifier that scales the edge alignment guides by an offset
+    /// Adjusts the alignment guides of `alignment` by moving them towards the
+    /// opposite edge by `anchor` and then offsetting them by `offset`.
+    ///
+    /// See ``AlignmentGuideOffsetModifier``.
     @inlinable
     public func alignmentGuideOffset(
         alignment: Alignment,

@@ -36,6 +36,7 @@ public struct LayoutAdapter<L: Layout, Content: View>: View {
     @usableFromInline
     var content: Content
 
+    /// Creates a view that arranges its content with the layout built by `layout`.
     @inlinable
     public init(
         @LayoutBuilder layout: () -> L,

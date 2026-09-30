@@ -4,6 +4,7 @@
 
 import SwiftUI
 
+/// A modifier that inverts the color scheme of the environment.
 @frozen
 public struct InvertedColorSchemeModifier: ViewModifier {
 
@@ -11,6 +12,7 @@ public struct InvertedColorSchemeModifier: ViewModifier {
 
     @Environment(\.colorScheme) var colorScheme
 
+    /// Creates a modifier that inverts the color scheme when `isEnabled` is `true`.
     public init(isEnabled: Bool = true) {
         self.isEnabled = isEnabled
     }
@@ -23,6 +25,8 @@ public struct InvertedColorSchemeModifier: ViewModifier {
 
 extension View {
 
+    /// Inverts the color scheme of the view when `isEnabled` is `true`, such that
+    /// a light color scheme becomes dark and a dark color scheme becomes light.
     public func invertColorScheme(isEnabled: Bool = true) -> some View {
         modifier(InvertedColorSchemeModifier(isEnabled: isEnabled))
     }
@@ -30,7 +34,8 @@ extension View {
 
 extension ColorScheme {
 
-    var inverted: ColorScheme {
+    /// The opposite color scheme, `.dark` for `.light` and `.light` for `.dark`.
+    public var inverted: ColorScheme {
         switch self {
         case .light:
             return .dark

@@ -8,6 +8,11 @@ import SwiftUI
 @available(tvOS, unavailable)
 extension DatePicker {
 
+    /// Creates a date picker based on a date picker style configuration.
+    ///
+    /// You can use this initializer within the `makeBody(configuration:)` method of a
+    /// `DatePickerStyle` to create an instance of the styled date picker. The selection,
+    /// date range and displayed components of the configuration are preserved.
     public init(
         _ configuration: DatePickerStyleConfiguration
     ) where Label == DatePickerStyleConfiguration.Label {
@@ -16,6 +21,9 @@ extension DatePicker {
         }
     }
 
+    /// Creates a date picker with a custom label based on a date picker style configuration.
+    ///
+    /// The selection, date range and displayed components of the configuration are preserved.
     public init(
         _ configuration: DatePickerStyleConfiguration,
         @ViewBuilder label: (DatePickerStyleConfiguration.Label) -> Label

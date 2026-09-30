@@ -11,18 +11,18 @@ import SwiftUI
 /// # Creating Custom Styles
 ///
 /// Start by defining a new protocol that inherits from ``ViewStyle`` and a new
-/// view that conforms to ``ViewStyledView``. This style will be define the
+/// view that conforms to ``ViewStyledView``. This style will define the
 /// configuration parameters for the styled view. Lastly, create an extension on `View`
 /// that uses the ``View/styledViewStyle(_:style:)`` to apply custom styles to the view hierarchy.
 ///
 /// If your configuration requires parameters that are views, use the ``ViewAlias``
 /// for performant type-erased view parameters.
 ///
-/// > Important: When using a configuration that has an ``ViewAlias``'s you cannot use
-/// your ``ViewStyledView``. You will need to create  a new view that uses the ``ViewStyledView``
-/// in its `Body` in addition to defining the type-erased view parameters with ``View/viewAlias(_:source:)``
+/// > Important: When using a configuration that has ``ViewAlias`` parameters you cannot use
+/// your ``ViewStyledView`` directly. You will need to create a new view that uses the ``ViewStyledView``
+/// in its `Body` in addition to defining the type-erased view parameters with ``View/viewAlias(_:source:)``.
 ///
-/// > Tip: You can use the ``@StyledView`` macro to automate the creation of a styled view for any `View`
+/// > Tip: You can use the ``@StyledView`` macro to automate the creation of a styled view for any `View`.
 ///
 /// ```
 /// protocol LabeledViewStyle: ViewStyle where Configuration == LabeledViewStyleConfiguration {
@@ -40,7 +40,7 @@ import SwiftUI
 /// struct LabeledViewBody: ViewStyledView {
 ///     var configuration: LabeledViewStyleConfiguration
 ///
-///     static var defaultStyle: DefaultLabeledViewStyle { .automatic }
+///     static var defaultStyle: DefaultLabeledViewStyle { DefaultLabeledViewStyle() }
 /// }
 ///
 /// struct DefaultLabeledViewStyle: LabeledViewStyle {
@@ -63,8 +63,8 @@ import SwiftUI
 ///     var content: Content
 ///
 ///     init(
-///         @ViewBuilder content: () -> Content,
-///         @ViewBuilder label: () -> Label
+///         @ViewBuilder label: () -> Label,
+///         @ViewBuilder content: () -> Content
 ///     ) {
 ///         self.label = label()
 ///         self.content = content()
@@ -106,9 +106,9 @@ import SwiftUI
 ///     }
 ///
 /// Now imagine you need a "bordered" style that uses the existing or default style but also adds
-/// a border. You can achieve this by returning related ``ViewStyledView`` in the custom style body.
+/// a border. You can achieve this by returning the related ``ViewStyledView`` in the custom style body.
 /// This showcases the major benefit with the view style approach as it allows for multiple styles
-/// to be composed and reused together. The ``ViewStyledView`` used within custom style body
+/// to be composed and reused together. The ``ViewStyledView`` used within a custom style body
 /// will use the next ``ViewStyle`` if one exists, or the default style.
 ///
 ///     struct BorderedLabeledViewStyle: LabeledViewStyle {
@@ -128,23 +128,23 @@ import SwiftUI
 ///             } content: {
 ///                 Text("Content")
 ///             }
-///             .labelStyle(VerticalLabeledViewStyle())
+///             .labeledViewStyle(VerticalLabeledViewStyle())
 ///
 ///             LabeledView {
 ///                 Text("Label")
 ///             } content: {
 ///                 Text("Content")
 ///             }
-///             .labelStyle(VerticalLabeledViewStyle()) // Applied 1st
-///             .labelStyle(BorderedLabeledViewStyle()) // Ignored
+///             .labeledViewStyle(VerticalLabeledViewStyle()) // Applied 1st
+///             .labeledViewStyle(BorderedLabeledViewStyle()) // Ignored
 ///
 ///             LabeledView {
 ///                 Text("Label")
 ///             } content: {
 ///                 Text("Content")
 ///             }
-///             .labelStyle(BorderedLabeledViewStyle()) // Applied 1st
-///             .labelStyle(VerticalLabeledViewStyle()) // Applied 2nd
+///             .labeledViewStyle(BorderedLabeledViewStyle()) // Applied 1st
+///             .labeledViewStyle(VerticalLabeledViewStyle()) // Applied 2nd
 ///         }
 ///     }
 ///
@@ -160,9 +160,14 @@ import SwiftUI
 /// does matter.
 ///
 public protocol ViewStyle: DynamicProperty {
+    /// The properties of a styled view.
     associatedtype Configuration
+    /// A view that represents the body of a styled view.
     associatedtype Body: View
 
+    /// Creates a view that represents the body of a styled view.
+    ///
+    /// - Parameter configuration: The properties of the styled view.
     @ViewBuilder @MainActor @preconcurrency func makeBody(configuration: Configuration) -> Body
 }
 
@@ -171,14 +176,18 @@ public protocol ViewStyle: DynamicProperty {
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
 ///
 public protocol ViewStyledView: PrimitiveView {
+    /// The properties of the view, passed to the style.
     associatedtype Configuration
+    /// The properties of the view, passed to the style.
     var configuration: Configuration { get }
 
+    /// The type of style used when no other style has been applied.
     associatedtype DefaultStyle: ViewStyle where DefaultStyle.Configuration == Configuration
+    /// The style used when no other style has been applied.
     @MainActor @preconcurrency static var defaultStyle: DefaultStyle { get }
 }
 
-/// A modifier that statically applies the `Style` the all descendent `StyledView`
+/// A modifier that statically applies the `Style` to all descendant `StyledView`
 /// views in the view hierarchy.
 ///
 /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
@@ -203,6 +212,7 @@ public struct ViewStyleModifier<
     @usableFromInline
     var storage: Storage
 
+    /// Creates a modifier that applies `style` to all descendant `StyledView` views.
     @inlinable
     public init(_ : StyledView.Type = StyledView.self, style: Style) {
         self.storage = Storage(style: style)
@@ -235,7 +245,7 @@ public struct ViewStyleModifier<
 }
 
 extension View {
-    /// Statically applies the `Style` the all descendent `StyledView`
+    /// Statically applies the `Style` to all descendant `StyledView`
     /// views in the view hierarchy.
     ///
     /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
@@ -250,8 +260,8 @@ extension View {
         modifier(ViewStyleModifier(StyledView.self, style: style))
     }
 
-    /// Statically applies the `Style` the all descendent `StyledView`
-    /// views in the view hierarchy when the`StyleContext` matches
+    /// Statically applies the `Style` to all descendant `StyledView`
+    /// views in the view hierarchy when the `StyleContext` matches
     /// the current style context of the view.
     ///
     /// > Info: For more on how to create custom view styles, see ``ViewStyle`` and ``@StyledView``.
@@ -285,7 +295,7 @@ extension EnvironmentValues {
     }
 }
 
-private struct ViewStylesBox: @unchecked Sendable {
+private struct ViewStylesBox: Equatable, @unchecked Sendable {
     private var storage: [UnsafeRawPointer: [AnyViewStyle]] = [:]
 
     fileprivate subscript<ID: ViewStyledView>(
@@ -524,12 +534,16 @@ private struct AnyViewStyledViewBody<Style: ViewStyle>: View {
     }
 }
 
-struct AnyViewStyle: @unchecked Sendable {
+struct AnyViewStyle: Equatable, @unchecked Sendable {
     private class AnyViewStyleStorageBase {
         func visit<Configuration, Body>(
             as body: Body.Type,
             configuration: Configuration
         ) -> Body {
+            fatalError("base")
+        }
+
+        func isEqual(to other: AnyViewStyleStorageBase) -> Bool {
             fatalError("base")
         }
     }
@@ -538,6 +552,23 @@ struct AnyViewStyle: @unchecked Sendable {
         let style: Style
         init(_ style: Style) {
             self.style = style
+        }
+
+        override func isEqual(to other: AnyViewStyleStorageBase) -> Bool {
+            guard let other = other as? AnyViewStyleStorage<Style> else {
+                return false
+            }
+            if let style = style as? any Equatable {
+                return style.isEqual(to: other.style)
+            }
+            if _isPOD(Style.self) {
+                return withUnsafeBytes(of: style) { lhs in
+                    withUnsafeBytes(of: other.style) { rhs in
+                        lhs.elementsEqual(rhs)
+                    }
+                }
+            }
+            return false
         }
 
         override func visit<Configuration, Body>(
@@ -576,6 +607,17 @@ struct AnyViewStyle: @unchecked Sendable {
         configuration: Configuration
     ) -> Body {
         storage.visit(as: Body.self, configuration: configuration)
+    }
+
+    static func == (lhs: AnyViewStyle, rhs: AnyViewStyle) -> Bool {
+        lhs.storage === rhs.storage || lhs.storage.isEqual(to: rhs.storage)
+    }
+}
+
+extension Equatable {
+    fileprivate func isEqual(to other: Any) -> Bool {
+        guard let other = other as? Self else { return false }
+        return self == other
     }
 }
 

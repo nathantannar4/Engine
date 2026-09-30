@@ -4,18 +4,18 @@
 
 import SwiftUI
 
-/// A view that transforms a `Source` view to `Content`
+/// A view that transforms the subviews of a `Source` view into `Content`.
 ///
 /// Most views such as `ZStack`, `VStack` and `HStack` are
 /// unary views. This means they would produce a single subview
 /// if transformed by a ``VariadicViewAdapter``. This is contrary
 /// to `ForEach`, `TupleView`, `Section` and `Group` which
-/// would produce multiple subviews. This different in behaviour can be
+/// would produce multiple subviews. This difference in behaviour can be
 /// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
 /// and performance.
 ///
 /// With ``VariadicViewAdapter`` an alias to the individual views can
-/// be accessed along with any `_ViewTraitKey`,  the `.tag(...)`
+/// be accessed along with any `_ViewTraitKey`, the `.tag(...)`
 /// value and `.id(...)`. This can be particularly useful when building
 /// a custom picker, mapping a `Hashable` selection, or bridging to
 /// UIKit/AppKit components.
@@ -29,6 +29,11 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     @usableFromInline
     var content: (VariadicView) -> Content
 
+    /// Creates an adapter that transforms the subviews of `source` into `content`.
+    ///
+    /// - Parameters:
+    ///   - source: The view whose subviews are to be transformed.
+    ///   - content: A closure that builds the content from the subviews of `source`.
     @inlinable
     public init(
         source: Source,
@@ -39,6 +44,11 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     }
 
 
+    /// Creates an adapter that transforms the subviews of `source` into `content`.
+    ///
+    /// - Parameters:
+    ///   - source: A view builder for the view whose subviews are to be transformed.
+    ///   - content: A closure that builds the content from the subviews of `source`.
     @inlinable
     public init(
         @ViewBuilder source: () -> Source,
@@ -55,6 +65,12 @@ public struct VariadicViewAdapter<Source: View, Content: View>: View {
     }
 }
 
+/// A view that transforms the subviews of a `Source` view with a ``VariadicViewLayout``.
+///
+/// This is the underlying primitive of ``VariadicViewAdapter``, which can be
+/// used directly to provide a custom `Layout` type that has its own dynamic
+/// properties.
+///
 @frozen
 public struct VariadicViewVisitor<
     Source: View,
@@ -67,6 +83,7 @@ public struct VariadicViewVisitor<
     @usableFromInline
     var layout: Layout
 
+    /// Creates a visitor that transforms the subviews of `source` with `layout`.
     @inlinable
     public init(
         source: Source,
@@ -76,6 +93,7 @@ public struct VariadicViewVisitor<
         self.layout = layout
     }
 
+    /// Creates a visitor that transforms the subviews of `source` with `layout`.
     @inlinable
     public init(
         layout: Layout,
@@ -99,20 +117,30 @@ public struct VariadicViewVisitor<
     }
 }
 
+/// A type that builds a view from the subviews of a ``VariadicViewVisitor``.
+///
+/// Since a ``VariadicViewLayout`` is a `DynamicProperty`, it can contain
+/// property wrappers such as `@State` and `@Environment`.
+///
 public protocol VariadicViewLayout: DynamicProperty {
 
+    /// The type of view representing the body.
     associatedtype Body: View
 
+    /// Builds the view from the subviews of the source view.
     @ViewBuilder @MainActor @preconcurrency func body(children: VariadicView) -> Body
 }
 
+/// A ``VariadicViewLayout`` that builds its body using a closure.
 @frozen
 public struct AnyVariadicViewLayout<
     Content: View
 >: VariadicViewLayout {
 
+    /// The closure that builds the view from the subviews.
     public var content: (VariadicView) -> Content
 
+    /// Creates a layout that builds its body using `content`.
     public init(
         content: @escaping (VariadicView) -> Content
     ) {
@@ -126,6 +154,16 @@ public struct AnyVariadicViewLayout<
 
 extension KeyPath where Root == VariadicView.Subview {
 
+    /// A key path that resolves the selection value of a subview.
+    ///
+    /// The selection value is the tag of the subview, if it has one of type `ID`,
+    /// otherwise the `.id(...)` of the subview. Accessing the key path on a
+    /// subview that has no selection value of type `ID` is a fatal error.
+    ///
+    ///     ForEachSubview(source, id: .selection(String.self)) { index, subview in
+    ///         subview
+    ///     }
+    ///
     @MainActor
     public static func selection<ID: Hashable>(
         _ id: ID.Type
@@ -155,22 +193,31 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             var explicitID: AnyHashable?
         }
 
+        /// A token used to look up the selection value of a subview with type `T`.
+        ///
+        /// See ``VariadicView/Subview/subscript(selection:)``.
         @frozen
         public struct Selection<T: Hashable>: Hashable {
 
+            /// Creates a selection token.
             @inlinable
             public init() { }
         }
 
+        /// A type-erased identifier of a subview.
         @frozen
         public struct ID: Hashable, @unchecked Sendable {
             var value: AnyHashable
         }
 
+        /// The identity of the subview.
         public nonisolated var id: ID {
             ID(value: element.id)
         }
 
+        /// The selection value of the subview, from either its tag or its `.id(...)`.
+        ///
+        /// - Precondition: The subview has a tag or id of type `T`.
         public subscript<T: Hashable>(selection _: Selection<T>) -> T {
             if let id = selection(as: T.self) {
                 return id
@@ -178,6 +225,10 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             fatalError("Selection type \(T.self) was nil, set one via the `tag` or `id` modifiers")
         }
 
+        /// Returns a Boolean value indicating whether the subview has an explicit
+        /// tag or id of the key path's value type.
+        ///
+        /// The ``id`` key path is always considered available.
         public func hasID<T: Hashable>(keyPath: KeyPath<Self, T>) -> Bool {
             if keyPath == \.id {
                 return true
@@ -185,6 +236,10 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return selection(as: T.self, allowsImplicitID: false) != nil
         }
 
+        /// The `.id(...)` of the subview, if it has one of type `T`.
+        ///
+        /// When `T` is `Int` and the subview has no explicit id, its implicit
+        /// index based identity is returned.
         public func id<T: Hashable>(as _: T.Type = T.self) -> T? {
             return id(as: T.self, allowsImplicitID: true)
         }
@@ -210,6 +265,7 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return nil
         }
 
+        /// Returns the index of the subview's id within `collection`, if found.
         public func index<T: Hashable, C: Collection>(in collection: C) -> C.Index? where C.Element == T {
             guard let selection = id(as: T.self) else { return nil }
             for index in collection.indices {
@@ -220,6 +276,8 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return nil
         }
 
+        /// The selection value of the subview, from its tag if it has one
+        /// of type `T`, otherwise its `.id(...)`.
         public func selection<T: Hashable>(as _: T.Type = T.self) -> T? {
             return selection(as: T.self, allowsImplicitID: true)
         }
@@ -235,17 +293,20 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return nil
         }
 
+        /// Accesses the value of a trait for the subview.
         public subscript<K: _ViewTraitKey>(key: K.Type) -> K.Value {
             get { element[K.self] }
             set { element[K.self] = newValue }
         }
 
+        /// Returns the value of a trait for the subview.
         public func trait<K: _ViewTraitKey>(
             _ key: K.Type
         ) -> K.Value? {
             self[K.self]
         }
 
+        /// Accesses the value of a trait for the subview, or `defaultValue` when the trait is unavailable.
         public subscript<K: ViewTraitKey>(
             key: K.Type,
             default defaultValue: @autoclosure () -> K.Value
@@ -253,12 +314,17 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             self[K.self] ?? defaultValue()
         }
 
+        /// Returns the value of a trait for the subview, if available.
         public func trait<K: ViewTraitKey>(
             _ key: K.Type
         ) -> K.Value? {
             self[K.self]
         }
 
+        /// Accesses the value of a trait for the subview, where `key` is the
+        /// mangled type name of the `_ViewTraitKey`.
+        ///
+        /// Returns `nil` if the key could not be resolved or the value is not of type `T`.
         public subscript<T>(key: String, as _: T.Type) -> T? {
             if let conformance = ViewTraitKeyProtocolDescriptor.conformance(of: key) {
                 var visitor = AnyTraitVisitor<T>(element: element)
@@ -268,6 +334,8 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
             return nil
         }
 
+        /// Returns the value of a trait for the subview, where `key` is the
+        /// mangled type name of the `_ViewTraitKey`.
         public func trait<T>(
             key: String,
             as _: T.Type
@@ -332,6 +400,11 @@ public struct VariadicView: View, RandomAccessCollection, Sequence {
 
     // MARK: Sections
 
+    /// The subviews grouped into sections.
+    ///
+    /// Subviews are split into sections by `Section` headers and footers. Subviews
+    /// that are not contained in a `Section` are grouped together into a section
+    /// without a header or footer.
     public var sections: [VariadicSectionView] {
         var sections: [VariadicSectionView] = [
             VariadicSectionView(id: 0)
@@ -424,12 +497,18 @@ extension Slice: View where Element == VariadicView.Subview, Index: SignedIntege
 }
 #endif
 
+/// A section of subviews in a ``VariadicView``.
+///
+/// See ``VariadicView/sections``.
 @frozen
 public struct VariadicSectionView: View, Identifiable {
 
+    /// The header of the section.
     public typealias Header = Subview
+    /// The footer of the section.
     public typealias Footer = Subview
 
+    /// A view that renders an optional subview of a section, such as its header or footer.
     @frozen
     public struct Subview: View {
         var child: VariadicView.Subview?
@@ -439,8 +518,10 @@ public struct VariadicSectionView: View, Identifiable {
         }
     }
 
+    /// A collection of the content subviews of a section.
     @frozen
     public struct Content: View, RandomAccessCollection, Sequence {
+        /// A subview of the section.
         public typealias Subview = VariadicView.Subview
         var children: [Subview]
 
@@ -484,9 +565,16 @@ public struct VariadicSectionView: View, Identifiable {
         }
     }
 
+    /// The identity of the section.
+    ///
+    /// This is the id of the header or first content subview, or the section's
+    /// index if neither is available.
     public internal(set) nonisolated(unsafe) var id: AnyHashable
+    /// The header of the section, if any.
     public var header: Header
+    /// The content subviews of the section.
     public var content: Content
+    /// The footer of the section, if any.
     public var footer: Footer
 
     init(

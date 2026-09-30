@@ -5,14 +5,17 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `PrimitiveButtonStyle`.
 public struct AnyButtonStyle: PrimitiveButtonStyle {
 
     var style: any PrimitiveButtonStyle
 
+    /// Creates a type-erased style that wraps the `ButtonStyle`.
     public init<S: ButtonStyle>(_ style: S) {
         self.style = _PrimitiveButtonStyle(style)
     }
 
+    /// Creates a type-erased style that wraps the `PrimitiveButtonStyle`.
     public init<S: PrimitiveButtonStyle>(_ style: S) {
         self.style = style
     }

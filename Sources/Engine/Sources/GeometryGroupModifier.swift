@@ -8,6 +8,7 @@ import SwiftUI
 @frozen
 public struct GeometryGroupModifier: VersionedViewModifier {
 
+    /// Creates a geometry group modifier.
     public init() { }
 
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)

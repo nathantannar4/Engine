@@ -29,34 +29,42 @@ public struct UpdatePhase: @preconcurrency DynamicProperty {
     @usableFromInline
     var storage: StateObject<Storage>
 
+    /// Creates an update phase with zero updates.
     @inlinable
     public init() {
         self.storage = StateObject(wrappedValue: Storage(value: Value()))
     }
 
+    /// Increments the update count of the phase. Called by SwiftUI each time the
+    /// view updates, before it renders its body.
     @MainActor
     public func update() {
         storage.wrappedValue.value.update()
     }
 
+    /// The current phase of the view.
     public var wrappedValue: Value {
         storage.wrappedValue.value
     }
 
+    /// A value that identifies an update phase of a view.
     @frozen
     public struct Value: Hashable, Sendable {
         @usableFromInline
         var phase: UInt32
 
+        /// Creates a phase with zero updates.
         @inlinable
         public init() {
             self.phase = 0
         }
 
+        /// The number of updates, which wraps around on overflow.
         public var updates: UInt32 {
             phase
         }
 
+        /// Increments the number of updates.
         public mutating func update() {
             phase &+= 1
         }

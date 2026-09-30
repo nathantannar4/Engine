@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-/// A modifier that writes a `PreferenceKey`
+/// A modifier that writes a value for a `PreferenceKey`.
 @frozen
 public struct PreferenceKeyWritingModifier<
     Key: PreferenceKey
@@ -13,6 +13,7 @@ public struct PreferenceKeyWritingModifier<
     @usableFromInline
     var value: Key.Value
 
+    /// Creates a modifier that sets the value for the given preference key.
     @inlinable
     public init(
         _ key: Key.Type = Key.self,

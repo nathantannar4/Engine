@@ -5,11 +5,13 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `LabeledContentStyle`.
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct AnyLabeledContentStyle: LabeledContentStyle {
 
     var style: any LabeledContentStyle
 
+    /// Creates a type-erased style that wraps the given style.
     public init<S: LabeledContentStyle>(_ style: S) {
         self.style = style
     }

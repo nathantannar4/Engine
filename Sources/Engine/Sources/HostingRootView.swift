@@ -5,12 +5,16 @@
 import SwiftUI
 import EngineCore
 
+/// The root view of a ``HostingView``, which applies a transaction to its content when updated.
 @frozen
 public struct HostingRootView<Content: View>: View {
 
+    /// The hosted content.
     public var content: Content
+    /// The transaction applied to the content when it is updated.
     public var transaction: Transaction
 
+    /// Creates a root view for the content that applies the transaction when updated.
     @inlinable
     public init(
         content: Content,

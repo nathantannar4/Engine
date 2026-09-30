@@ -7,16 +7,24 @@ import os.log
 
 /// A protocol for defining a transform for a `Binding`
 public protocol BindingTransform: Hashable {
+    /// The type of the source value.
     associatedtype Input
+    /// The type of the projected value.
     associatedtype Output
 
+    /// Transforms the source value to the projected value.
     func get(_ value: Input) -> Output
+    /// Transforms a new projected value back to the source value.
+    ///
+    /// Throw an error to leave the source value unchanged.
     func set(_ newValue: Output) throws -> Input
 }
 
 extension Binding {
 
     /// Projects a `Binding` with the ``BindingTransform``
+    ///
+    /// If the transform throws when setting a new value, the value is left unchanged.
     @MainActor
     public func projecting<Transform: BindingTransform>(
         _ transform: Transform

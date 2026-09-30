@@ -6,14 +6,17 @@ import SwiftUI
 
 extension Section: MultiView where Parent: View, Content: View, Footer: View {
 
+    /// The header of the section, read via reflection.
     public var parent: Parent {
         try! swift_getFieldValue("header", Parent.self, self)
     }
 
+    /// The content of the section, read via reflection.
     public var content: Content {
         try! swift_getFieldValue("content", Content.self, self)
     }
 
+    /// The footer of the section, read via reflection.
     public var footer: Footer {
         try! swift_getFieldValue("footer", Footer.self, self)
     }

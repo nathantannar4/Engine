@@ -6,6 +6,22 @@ import SwiftUI
 
 extension Button {
 
+    /// Creates a button with a custom label that performs the action, and has the role,
+    /// of a primitive button style configuration.
+    ///
+    /// This is useful within a `PrimitiveButtonStyle` to restyle the label while
+    /// preserving the button's behavior.
+    ///
+    ///     struct BorderedButtonStyle: PrimitiveButtonStyle {
+    ///         func makeBody(configuration: Configuration) -> some View {
+    ///             Button(configuration) { label in
+    ///                 label
+    ///                     .padding(8)
+    ///                     .border(Color.accentColor)
+    ///             }
+    ///         }
+    ///     }
+    ///
     public init(
         _ configuration: PrimitiveButtonStyleConfiguration,
         @ViewBuilder label: (PrimitiveButtonStyleConfiguration.Label) -> Label

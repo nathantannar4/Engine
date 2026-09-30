@@ -624,6 +624,90 @@ final class MultiViewVisitorTests: XCTestCase {
         }
     }
 
+    func testNestedCustomViews() {
+        struct Leaf: View {
+            var index: Int
+            var body: some View {
+                Text(index.description)
+            }
+        }
+        struct Pair: View {
+            var index: Int
+            var body: some View {
+                Leaf(index: index)
+                Leaf(index: index + 1)
+            }
+        }
+        struct Quad: View {
+            var index: Int
+            var body: some View {
+                Pair(index: index)
+                Pair(index: index + 2)
+            }
+        }
+        struct SingleQuad: View {
+            var body: some View {
+                Group {
+                    Quad(index: 0)
+                }
+            }
+        }
+        final class Collector: MultiViewVisitor {
+            var indices: [Int] = []
+            var max: Int = .max
+            func visit<Content: View>(content: Content, context: Context, stop: inout Bool) {
+                if let leaf = content as? Leaf {
+                    indices.append(leaf.index)
+                }
+                stop = indices.count >= max
+            }
+        }
+        func visit<Content: View>(_ content: Content, max: Int = .max) -> [Int] {
+            var visitor = Collector()
+            visitor.max = max
+            content.visit(visitor: &visitor)
+            return visitor.indices
+        }
+        // Elements are visited in order through each level of nesting
+        XCTAssertEqual(visit(Quad(index: 0)), [0, 1, 2, 3])
+        XCTAssertEqual(visit(SingleQuad()), [0, 1, 2, 3])
+        XCTAssertEqual(visit(ForEach(0..<3, id: \.self) { Pair(index: $0 * 2) }), [0, 1, 2, 3, 4, 5])
+        // Stopping part way through a nested body stops visiting
+        XCTAssertEqual(visit(Quad(index: 0), max: 1), [0])
+        XCTAssertEqual(visit(Quad(index: 0), max: 3), [0, 1, 2])
+    }
+
+    func testCustomViewValueDependentDynamicProperties() {
+        struct ExistentialMultiView: View {
+            var property: Any
+            var body: some View {
+                Text("Hello")
+                Text("World")
+            }
+        }
+        struct OptionalMultiView: View {
+            var property: State<Bool>?
+            var body: some View {
+                Text("Hello")
+                Text("World")
+            }
+        }
+        // A field that holds a dynamic property is not expanded, as its body cannot be evaluated
+        expectation(ExistentialMultiView.self) {
+            ExistentialMultiView(property: State(initialValue: false))
+        }
+        expectation(OptionalMultiView.self) {
+            OptionalMultiView(property: State(initialValue: false))
+        }
+        // The same types are expanded when the field does not hold a dynamic property
+        expectation(Text.self, count: 2) {
+            ExistentialMultiView(property: 0)
+        }
+        expectation(Text.self, count: 2) {
+            OptionalMultiView(property: nil)
+        }
+    }
+
     #if os(iOS) || os(macOS)
     func testRepresentable() {
         #if os(macOS)

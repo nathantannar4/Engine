@@ -4,12 +4,14 @@
 
 import SwiftUI
 
-/// A wrapper for `@ViewBuilder`
+/// A view that wraps the result of a `@ViewBuilder`.
 @frozen
 public struct ViewAdapter<Content: View>: PrimitiveView {
 
+    /// The content of the view.
     public var content: Content
 
+    /// Creates a view from the result of `content`.
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()

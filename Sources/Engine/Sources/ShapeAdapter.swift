@@ -4,9 +4,22 @@
 
 import SwiftUI
 
+/// A shape that wraps a shape built with a ``ShapeBuilder``, which allows
+/// shapes to be conditionally chosen.
+///
+///     ShapeAdapter {
+///         if isCircle {
+///             Circle()
+///         } else {
+///             Rectangle()
+///         }
+///     }
+///     .fill(Color.red)
+///
 @frozen
 public struct ShapeAdapter<S: Shape>: Shape {
 
+    /// The wrapped shape.
     public var shape: S
 
     public var animatableData: S.AnimatableData {
@@ -14,6 +27,7 @@ public struct ShapeAdapter<S: Shape>: Shape {
         set { shape.animatableData = newValue }
     }
 
+    /// Creates a shape adapter from a shape builder.
     @inlinable
     public init(@ShapeBuilder shape: () -> S) {
         self.shape = shape()
@@ -28,7 +42,7 @@ public struct ShapeAdapter<S: Shape>: Shape {
         S.role
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var layoutDirectionBehavior: LayoutDirectionBehavior {
         shape.layoutDirectionBehavior
     }
@@ -48,7 +62,7 @@ extension ShapeAdapter: InsettableShape where S: InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension ShapeAdapter: RoundedRectangularShape where S: RoundedRectangularShape {
 

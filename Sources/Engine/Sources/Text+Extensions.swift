@@ -6,90 +6,174 @@ import os.log
 import SwiftUI
 import EngineCore
 
+/// A `TextAttribute` that is also an `AttributedStringKey`, whose value is the attribute itself.
+///
+/// Custom attributes applied with `customAttribute(_:)` that conform to this protocol
+/// are preserved when resolving a `Text` to an `AttributedString`.
 @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 public protocol TextAttributeKey: Sendable, TextAttribute, AttributedStringKey where Value == Self { }
 
 extension Text {
 
+    /// A text containing a single space character.
     @inlinable
     @inline(__always)
     public static var space: Text {
-        Text(" ")
+        Text(LocalizedStringKey(.space))
     }
 
+    /// A text containing a blank Braille pattern character (U+2800) that renders as
+    /// empty space but is not treated as whitespace by text layout.
+    @inlinable
+    @inline(__always)
+    public static var lineWrappingSpace: Text {
+        Text(LocalizedStringKey(.lineWrappingSpace))
+    }
+
+    /// Returns a text containing `count` repeated `String.lineWrappingSpace` characters.
+    @inlinable
+    @inline(__always)
+    public static func lineWrappingSpaces(_ count: Int) -> Text {
+        return Text(LocalizedStringKey(.lineWrappingSpaces(count)))
+    }
+
+    /// A text containing a middle dot separator surrounded by spaces.
     @inlinable
     @inline(__always)
     public static var dotSeparator: Text {
-        Text(" · ")
+        Text(LocalizedStringKey(.dotSeparator))
     }
 
+    /// A text containing an em dash separator surrounded by spaces.
     @inlinable
     @inline(__always)
     public static var dashSeparator: Text {
-        Text(" — ")
+        Text(LocalizedStringKey(.dashSeparator))
     }
 
+    /// A text containing a newline character.
     @inlinable
     @inline(__always)
     public static var newline: Text {
-        Text("\n")
+        Text(LocalizedStringKey(.newline))
     }
 
+    /// A text containing a bullet point followed by a space.
     @inlinable
     @inline(__always)
     public static var bulletPointSeparator: Text {
-        Text("• ")
+        Text(LocalizedStringKey(.bulletPointSeparator))
     }
 
+    /// A text containing a forward slash separator surrounded by spaces.
     @inlinable
     @inline(__always)
     public static var backSlashSeparator: Text {
-        Text(" / ")
+        Text(LocalizedStringKey(.backSlashSeparator))
     }
 
+    /// A text containing a horizontal ellipsis character.
     @inlinable
     @inline(__always)
     public static var ellipsis: Text {
-        Text("…")
+        Text(LocalizedStringKey(.ellipsis))
     }
 
+    /// Creates a text by concatenating `prefix` with a string displayed verbatim.
+    @inlinable
+    @inline(__always)
+    @_disfavoredOverload
+    public init<S: StringProtocol>(prefix: Text, _ text: S) {
+        self.init(prefix: prefix, Text(text))
+    }
+
+    /// Creates a text by concatenating `prefix` with a localized string.
     @inlinable
     @inline(__always)
     public init(prefix: Text, _ key: LocalizedStringKey) {
         self = prefix + Text(key)
     }
 
+    /// Creates a text by concatenating `prefix` with `text`.
     @inlinable
     @inline(__always)
     public init(prefix: Text, _ text: Text) {
         self = prefix + text
     }
 
+    /// Creates a text by concatenating `prefix` with `text`, or `nil` if `text` is `nil`.
+    @inlinable
+    @inline(__always)
+    public init?(prefix: Text, _ text: Text?) {
+        guard let text else { return nil }
+        self.init(prefix: prefix, text)
+    }
+
+    /// Creates a text by concatenating a string displayed verbatim with `suffix`.
+    @inlinable
+    @inline(__always)
+    @_disfavoredOverload
+    public init<S: StringProtocol>(_ text: S, suffix: Text) {
+        self.init(Text(text), suffix: suffix)
+    }
+
+    /// Creates a text by concatenating a localized string with `suffix`.
     @inlinable
     @inline(__always)
     public init(_ key: LocalizedStringKey, suffix: Text) {
         self = Text(key) + suffix
     }
 
+    /// Creates a text by concatenating `text` with `suffix`.
     @inlinable
     @inline(__always)
     public init(_ text: Text, suffix: Text) {
         self = text + suffix
     }
 
+    /// Creates a text by concatenating `text` with `suffix`, or `nil` if `text` is `nil`.
     @inlinable
     @inline(__always)
-    public init(spaces count: Int) {
-        // Unicode character for a space that line wraps
-        self = Text(String(repeating: "\u{2800}", count: count))
+    public init?(_ text: Text?, suffix: Text) {
+        guard let text else { return nil }
+        self.init(text, suffix: suffix)
     }
 
+    /// Returns a text containing `count` repeated `String.redactedPlaceholder` characters,
+    /// for use as placeholder content when redacted.
+    @inlinable
+    @inline(__always)
+    public static func redactedPlaceholders(_ count: Int) -> Text {
+        return Text(LocalizedStringKey(.redactedPlaceholders(count)))
+    }
+
+    /// Creates a text that displays a string verbatim, or `nil` if the string is `nil` or empty.
     @_disfavoredOverload
     public init?<S: StringProtocol>(_ content: S?) {
         guard let content, !content.isEmpty else { return nil }
         self = Text(content)
     }
 
+    /// Creates a text that displays a string verbatim, or the localized `label` if the string is `nil`.
+    public init<S: StringProtocol>(_ content: S?, label: LocalizedStringKey) {
+        if let content {
+            self = Text(content)
+        } else {
+            self = Text(label)
+        }
+    }
+
+    /// Creates a text that displays a string verbatim, or `label` if the string is `nil`.
+    public init<S: StringProtocol>(_ content: S?, label: Text) {
+        if let content {
+            self = Text(content)
+        } else {
+            self = label
+        }
+    }
+
+    /// Creates a text that displays localized content identified by a key,
+    /// or `nil` if the key is `nil`.
     @_disfavoredOverload
     public init?(
         _ key: LocalizedStringKey?,
@@ -101,6 +185,7 @@ extension Text {
         self = Text(key, tableName: tableName, bundle: bundle, comment: comment)
     }
 
+    /// Returns `true` if the text stores a verbatim `String`.
     public var isVerbatim: Bool {
         verbatim != nil
     }
@@ -116,6 +201,7 @@ extension Text {
         return verbatim
     }
 
+    /// Returns the image if the text was created from an `Image`.
     public var attachment: Image? {
         guard
             MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size,
@@ -146,11 +232,14 @@ extension Text {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Text {
 
+    /// Creates a text containing `image`, or `nil` if the image is `nil`.
     public init?(_ image: Image?) {
         guard let image else { return nil }
         self = Text(image)
     }
 
+    /// Creates a text that displays the formatted representation of a reference-convertible
+    /// value, or `nil` if the value is `nil`.
     public init?<Subject>(
         _ subject: Subject?,
         formatter: Formatter
@@ -159,16 +248,20 @@ extension Text {
         self = Text(subject, formatter: formatter)
     }
 
+    /// Creates a text that displays a date using the given style, or `nil` if the date is `nil`.
     public init?(_ date: Date?, style: Text.DateStyle) {
         guard let date else { return nil }
         self = Text(date, style: style)
     }
 
+    /// Creates a text that displays a localized range between two dates,
+    /// or `nil` if the range is `nil`.
     public init?(_ dates: ClosedRange<Date>?) {
         guard let dates else { return nil }
         self = Text(dates)
     }
 
+    /// Creates a text that displays a localized time interval, or `nil` if the interval is `nil`.
     public init?(_ interval: DateInterval?) {
         guard let interval else { return nil }
         self = Text(interval)
@@ -178,12 +271,15 @@ extension Text {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension Text {
 
+    /// Creates a text that displays styled attributed content, or `nil` if the content is `nil` or empty.
     @_disfavoredOverload
     public init?(_ content: AttributedString?) {
         guard let content, !content.characters.isEmpty else { return nil }
         self = Text(content)
     }
 
+    /// Creates a text that displays the formatted representation of a value,
+    /// or `nil` if the value is `nil`.
     public init?<F>(
         _ input: F.FormatInput?,
         format: F
@@ -192,6 +288,8 @@ extension Text {
         self.init(input, format: format)
     }
 
+    /// Creates a text that displays a formatted measurement, optionally applying
+    /// `unitsFont` to the unit portion of the formatted string.
     public init<UnitType: Dimension>(
         _ input: Measurement<UnitType>,
         format: Measurement<UnitType>.FormatStyle,
@@ -212,6 +310,9 @@ extension Text {
         }
     }
 
+    /// Creates a text that displays a formatted measurement, optionally applying
+    /// `unitsFont` to the unit portion of the formatted string.
+    /// Returns `nil` if the measurement is `nil`.
     public init?<UnitType: Dimension>(
         _ input: Measurement<UnitType>?,
         format: Measurement<UnitType>.FormatStyle,
@@ -221,6 +322,9 @@ extension Text {
         self.init(input, format: format, unitsFont: unitsFont)
     }
 
+    /// Creates a text that displays a formatted currency value, optionally applying
+    /// `currencyFont` to the currency symbol and `decimalFont` to the decimal
+    /// separator and fractional digits.
     public init<Value: BinaryFloatingPoint>(
         _ input: Value,
         format: FloatingPointFormatStyle<Value>.Currency,
@@ -245,6 +349,9 @@ extension Text {
         }
     }
 
+    /// Creates a text that displays a formatted currency value, optionally applying
+    /// `currencyFont` to the currency symbol and `decimalFont` to the decimal
+    /// separator and fractional digits. Returns `nil` if the value is `nil`.
     public init?<Value: BinaryFloatingPoint>(
         _ input: Value?,
         format: FloatingPointFormatStyle<Value>.Currency,
@@ -255,6 +362,9 @@ extension Text {
         self.init(input, format: format, currencyFont: currencyFont, decimalFont: decimalFont)
     }
 
+    /// Creates a text that displays a formatted percent value, optionally applying
+    /// `percentFont` to the percent symbol and `decimalFont` to the decimal
+    /// separator and fractional digits.
     public init<Value: BinaryFloatingPoint>(
         _ input: Value,
         format: FloatingPointFormatStyle<Value>.Percent,
@@ -279,9 +389,12 @@ extension Text {
         }
     }
 
+    /// Creates a text that displays a formatted percent value, optionally applying
+    /// `percentFont` to the percent symbol and `decimalFont` to the decimal
+    /// separator and fractional digits. Returns `nil` if the value is `nil`.
     public init?<Value: BinaryFloatingPoint>(
         _ input: Value?,
-        format: FloatingPointFormatStyle<Value>.Currency,
+        format: FloatingPointFormatStyle<Value>.Percent,
         percentFont: Font?,
         decimalFont: Font?
     ) {
@@ -293,6 +406,8 @@ extension Text {
 @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
 extension Text {
 
+    /// Creates a text that displays the attributed formatted representation of a value,
+    /// or `nil` if the value is `nil`.
     public init?<F>(
         _ input: F.FormatInput?,
         format: F
@@ -309,27 +424,26 @@ extension Text {
     /// string keys if necessary.
     @inlinable
     public func resolve(in environment: EnvironmentValues) -> String {
-        if let verbatim {
-            return verbatim
-        }
-        return _resolveText(in: environment)
+        let text = _resolveText(in: environment)
+        let resolved = text.redacted(!environment.redactionReasons.isEmpty)
+        return resolved
     }
 
-    /// Transforms the `Text` to a `AttributedString`, using the environment to resolve localized
+    /// Transforms the `Text` to an `AttributedString`, using the environment to resolve localized
     /// string keys if necessary.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public func resolveAttributed(in environment: EnvironmentValues) -> AttributedString {
         return resolveAttributedString(in: environment)
     }
 
-    /// Transforms the `Text` to a `NSAttributedString`, using the environment to resolve localized
+    /// Transforms the `Text` to an `NSAttributedString`, using the environment to resolve localized
     /// string keys if necessary.
     @_disfavoredOverload
     public func resolveAttributed(in environment: EnvironmentValues) -> NSAttributedString {
         return resolveNSAttributedString(in: environment)
     }
 
-    /// Transforms the `Text` to a `AttributedString`, using the environment to resolve localized
+    /// Transforms the `Text` to an `AttributedString`, using the environment to resolve localized
     /// string keys if necessary.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public func resolveAttributedString(in environment: EnvironmentValues) -> AttributedString {
@@ -339,7 +453,7 @@ extension Text {
         return _resolveAttributed(in: environment).resolveAttributedString(in: environment)
     }
 
-    /// Transforms the `Text` to a `NSAttributedString`, using the environment to resolve localized
+    /// Transforms the `Text` to an `NSAttributedString`, using the environment to resolve localized
     /// string keys if necessary.
     public func resolveNSAttributedString(in environment: EnvironmentValues) -> NSAttributedString {
         guard MemoryLayout<Text>.size == MemoryLayout<Text.TypeLayout>.size else {
@@ -348,6 +462,10 @@ extension Text {
         return _resolveAttributed(in: environment).resolveNSAttributedString(in: environment)
     }
 
+    /// Returns the size of the text that fits the proposal, measured using the
+    /// line limit, truncation mode, minimum scale factor and display scale of the environment.
+    ///
+    /// Unspecified dimensions of the proposal are treated as infinite.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public func sizeThatFits(
         _ proposal: ProposedSize,
@@ -363,6 +481,8 @@ extension Text {
         return sizeThatFits(fittingSize, environment: environment)
     }
 
+    /// Returns the size of the text that fits `size`, measured using the
+    /// line limit, truncation mode, minimum scale factor and display scale of the environment.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     public func sizeThatFits(
         _ size: CGSize,
@@ -648,6 +768,31 @@ private struct ResolvedText {
             with: attributes.merging(attributes: additionalAttributes)
         )
     }
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func appendAttributedString(
+        to result: inout AttributedString,
+        in environment: EnvironmentValues,
+        with additionalAttributes: ResolvedTextAttributes? = nil
+    ) {
+        storage.appendAttributedString(
+            to: &result,
+            in: environment,
+            with: attributes.merging(attributes: additionalAttributes)
+        )
+    }
+
+    func appendNSAttributedString(
+        to result: NSMutableAttributedString,
+        in environment: EnvironmentValues,
+        with additionalAttributes: ResolvedTextAttributes? = nil
+    ) {
+        storage.appendNSAttributedString(
+            to: result,
+            in: environment,
+            with: attributes.merging(attributes: additionalAttributes)
+        )
+    }
 }
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -862,7 +1007,7 @@ private struct ResolvedTextAttributes {
             attributes.swiftUI.tracking = tracking
             attributes.swiftUI.baselineOffset = baselineOffset
         }
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             attributes.swiftUI.lineHeight = environment.lineHeight
             switch environment.multilineTextAlignment {
@@ -1041,7 +1186,7 @@ private struct ResolvedTextAttributes {
             attributes[.baselineOffset] = baselineOffset
         }
         let paragraphStyle = NSMutableParagraphStyle()
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
             paragraphStyle.lineSpacing = environment.lineSpacing
             if let lineHeight = environment.lineHeight?.storage {
@@ -1102,6 +1247,40 @@ private protocol ResolvedTextStorage {
         in environment: EnvironmentValues,
         with attributes: ResolvedTextAttributes
     ) -> NSAttributedString
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func appendAttributedString(
+        to result: inout AttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    )
+
+    func appendNSAttributedString(
+        to result: NSMutableAttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    )
+}
+
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
+extension ResolvedTextStorage {
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func appendAttributedString(
+        to result: inout AttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    ) {
+        result.append(resolveAttributedString(in: environment, with: attributes))
+    }
+
+    func appendNSAttributedString(
+        to result: NSMutableAttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    ) {
+        result.append(resolveNSAttributedString(in: environment, with: attributes))
+    }
 }
 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -1125,8 +1304,9 @@ private class VerbatimStringStorage: ResolvedTextStorage {
         in environment: EnvironmentValues,
         with attributes: ResolvedTextAttributes
     ) -> AttributedString {
+        let resolved = string.redacted(!environment.redactionReasons.isEmpty)
         return AttributedString(
-            string,
+            resolved,
             attributes: attributes.attributeContainer(in: environment)
         )
     }
@@ -1135,8 +1315,9 @@ private class VerbatimStringStorage: ResolvedTextStorage {
         in environment: EnvironmentValues,
         with attributes: ResolvedTextAttributes
     ) -> NSAttributedString {
+        let resolved = string.redacted(!environment.redactionReasons.isEmpty)
         return NSAttributedString(
-            string: string,
+            string: resolved,
             attributes: attributes.attributes(in: environment)
         )
     }
@@ -1153,7 +1334,7 @@ private class ConcatenatedTextStorage: ResolvedTextStorage {
     }
 
     func resolveIsEmpty() -> Bool {
-        return first.isEmpty || second.isEmpty
+        return first.isEmpty && second.isEmpty
     }
 
     func resolveHasAttributes() -> Bool {
@@ -1165,11 +1346,8 @@ private class ConcatenatedTextStorage: ResolvedTextStorage {
         in environment: EnvironmentValues,
         with attributes: ResolvedTextAttributes
     ) -> AttributedString {
-        let first = first._resolveAttributed(in: environment)
-            .resolveAttributedString(in: environment, with: attributes)
-        let second = second._resolveAttributed(in: environment)
-            .resolveAttributedString(in: environment, with: attributes)
-        let attributedString = first + second
+        var attributedString = AttributedString()
+        appendAttributedString(to: &attributedString, in: environment, with: attributes)
         return attributedString
     }
 
@@ -1177,14 +1355,32 @@ private class ConcatenatedTextStorage: ResolvedTextStorage {
         in environment: EnvironmentValues,
         with attributes: ResolvedTextAttributes
     ) -> NSAttributedString {
-        let first = first._resolveAttributed(in: environment)
-            .resolveNSAttributedString(in: environment, with: attributes)
-        let second = second._resolveAttributed(in: environment)
-            .resolveNSAttributedString(in: environment, with: attributes)
         let attributedString = NSMutableAttributedString()
-        attributedString.append(first)
-        attributedString.append(second)
+        appendNSAttributedString(to: attributedString, in: environment, with: attributes)
         return attributedString
+    }
+
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    func appendAttributedString(
+        to result: inout AttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    ) {
+        first._resolveAttributed(in: environment)
+            .appendAttributedString(to: &result, in: environment, with: attributes)
+        second._resolveAttributed(in: environment)
+            .appendAttributedString(to: &result, in: environment, with: attributes)
+    }
+
+    func appendNSAttributedString(
+        to result: NSMutableAttributedString,
+        in environment: EnvironmentValues,
+        with attributes: ResolvedTextAttributes
+    ) {
+        first._resolveAttributed(in: environment)
+            .appendNSAttributedString(to: result, in: environment, with: attributes)
+        second._resolveAttributed(in: environment)
+            .appendNSAttributedString(to: result, in: environment, with: attributes)
     }
 }
 
@@ -1269,21 +1465,28 @@ private class FormatArgument: LocalizedTextArgument {
         format: String,
         in environment: EnvironmentValues
     ) -> AttributedString {
-        return AttributedString(resolvedString(format: format))
+        return AttributedString(resolvedString(format: format, in: environment))
     }
 
     func resolveNSAttributedString(
         format: String,
         in environment: EnvironmentValues
     ) -> NSAttributedString {
-        return NSAttributedString(string: resolvedString(format: format))
+        return NSAttributedString(string: resolvedString(format: format, in: environment))
     }
 
-    private func resolvedString(format: String) -> String {
-        if let formatted = formatter?.string(for: value) {
-            return formatted
-        }
-        return String(format: format, value)
+    private func resolvedString(
+        format: String,
+        in environment: EnvironmentValues
+    ) -> String {
+        let formatted: String = {
+            if let formatted = formatter?.string(for: value) {
+                return formatted
+            }
+            return String(format: format, value)
+        }()
+        let resolved = formatted.redacted(!environment.redactionReasons.isEmpty)
+        return resolved
     }
 }
 
@@ -1332,7 +1535,7 @@ private class AttributedStringArgument: LocalizedTextArgument {
     }
 
     func resolveHasAttributes() -> Bool {
-        return attributedString.runs.allSatisfy { $0.attributes == AttributeContainer() }
+        return attributedString.runs.contains { $0.attributes != AttributeContainer() }
     }
 
     func resolveAttributedString(
@@ -1370,14 +1573,18 @@ private class LocalizedStringResourceArgument: LocalizedTextArgument {
         format: String,
         in environment: EnvironmentValues
     ) -> AttributedString {
-        return AttributedString(localized: localizedStringResource)
+        let localized = AttributedString(localized: localizedStringResource)
+        let resolved = localized.redacted(!environment.redactionReasons.isEmpty)
+        return resolved
     }
 
     func resolveNSAttributedString(
         format: String,
         in environment: EnvironmentValues
     ) -> NSAttributedString {
-        return NSAttributedString(string: String(localized: localizedStringResource))
+        let localized = String(localized: localizedStringResource)
+        let resolved = localized.redacted(!environment.redactionReasons.isEmpty)
+        return NSAttributedString(string: resolved)
     }
 }
 
@@ -1387,6 +1594,16 @@ private class LocalizedTextStorage: ResolvedTextStorage {
     let table: String?
     let bundle: Bundle?
     let arguments: [LocalizedTextArgument]
+
+    private lazy var localizedString: String = NSLocalizedString(
+        key.localizationKey,
+        tableName: table,
+        bundle: bundle ?? .main,
+        value: "",
+        comment: ""
+    )
+
+    private lazy var hasLocalizedMarkdown: Bool = hasMarkdown(localized: localizedString)
 
     init(
         key: LocalizedStringKey,
@@ -1446,21 +1663,14 @@ private class LocalizedTextStorage: ResolvedTextStorage {
     }
 
     func resolveHasAttributes() -> Bool {
-        if hasMarkdown(localized: resolveString()) {
+        if hasLocalizedMarkdown {
             return true
         }
         return arguments.contains(where: { $0.resolveHasAttributes() })
     }
 
-    func resolveString() -> String {
-        let localized = NSLocalizedString(
-            key.localizationKey,
-            tableName: table,
-            bundle: bundle ?? .main,
-            value: "",
-            comment: ""
-        )
-        return localized
+    private func resolveString() -> String {
+        localizedString
     }
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
@@ -1470,7 +1680,7 @@ private class LocalizedTextStorage: ResolvedTextStorage {
     ) -> AttributedString {
         let localized = resolveString()
         var attributedString: AttributedString
-        if hasMarkdown(localized: localized) {
+        if hasLocalizedMarkdown {
             do {
                 attributedString = try AttributedString(
                     markdown: localized,
@@ -1493,7 +1703,8 @@ private class LocalizedTextStorage: ResolvedTextStorage {
             resolveArguments(in: &attributedString, with: arguments, environment: environment)
         }
         attributedString.mergeAttributes(attributes.attributeContainer(in: environment), mergePolicy: .keepCurrent)
-        return attributedString
+        let resolved = attributedString.redacted(!environment.redactionReasons.isEmpty)
+        return resolved
     }
 
     func resolveNSAttributedString(
@@ -1501,10 +1712,11 @@ private class LocalizedTextStorage: ResolvedTextStorage {
         with attributes: ResolvedTextAttributes
     ) -> NSAttributedString {
         let localized = resolveString()
+        let resolvedAttributes = attributes.attributes(in: environment)
         var attributedString: NSAttributedString
-        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), hasMarkdown(localized: localized) {
+        if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), hasLocalizedMarkdown {
             do {
-                let attrString = try AttributedString(
+                var attrString = try AttributedString(
                     markdown: localized,
                     including: \.swiftUI,
                     options: .init(
@@ -1514,15 +1726,24 @@ private class LocalizedTextStorage: ResolvedTextStorage {
                         languageCode: environment.locale.languageCode
                     )
                 )
+                // Set the base font before conversion so the markdown inline presentation
+                // intents (bold, italic, code) can be applied to it
+                if let font = resolvedAttributes[.font] as? Font.PlatformRepresentable {
+                    #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+                    attrString.uiKit.font = font
+                    #elseif os(macOS)
+                    attrString.appKit.font = font
+                    #endif
+                }
                 let mutableAttributedString = NSMutableAttributedString(attributedString: attrString.toNSAttributedString(in: environment))
-                mutableAttributedString.mergeAttributes(attributes.attributes(in: environment), keepCurrent: true)
+                mutableAttributedString.mergeAttributes(resolvedAttributes, keepCurrent: true)
                 attributedString = mutableAttributedString
             } catch {
                 os_log(.debug, log: .default, "Failed to resolve markdown for key %{public}@. Please file an issue.", localized)
-                attributedString = NSAttributedString(string: localized, attributes: attributes.attributes(in: environment))
+                attributedString = NSAttributedString(string: localized, attributes: resolvedAttributes)
             }
         } else {
-            attributedString = NSAttributedString(string: localized, attributes: attributes.attributes(in: environment))
+            attributedString = NSAttributedString(string: localized, attributes: resolvedAttributes)
         }
         if !arguments.isEmpty {
             if let mutableAttributedString = attributedString as? NSMutableAttributedString {
@@ -1533,28 +1754,37 @@ private class LocalizedTextStorage: ResolvedTextStorage {
                 attributedString = mutableAttributedString
             }
         }
-        return attributedString
+        let resolved = attributedString.redacted(!environment.redactionReasons.isEmpty)
+        return resolved
     }
 
     private func hasMarkdown(localized: String) -> Bool {
-        let patterns = [
-            #"\*\*.+?\*\*"#,                         // **bold**
-            #"__.+?__"#,                             // __bold__
-            #"(?<!\*)\*[^*\s][^*]*?\*(?!\*)"#,       // *italic*
-            #"(?<!_)_[^_\s][^_]*?_(?!_)"#,           // _italic_ (word-boundary guarded)
-            #"`.+?`"#,                               // `code`
-            #"~~.+?~~"#,                             // ~~strikethrough~~
-            #"\[.+?\]\(.+?\)"#,                      // [text](url) — inline link
-            #"\^\[.+?\]\(.+?\)"#,                    // ^[text](key: value, ...) — extended attributes
-            #"\[.+?\]\[.*?\]"#,                      // [text][ref] — reference-style link
-        ]
-        let hasAttributes = patterns.contains { pattern in
-            localized.range(of: pattern, options: .regularExpression) != nil
+        // Every markdown pattern requires at least one of these characters,
+        // which is much cheaper to check than evaluating the patterns
+        guard localized.utf8.contains(where: { Self.markdownCharacters.contains($0) }) else {
+            return false
         }
-        return hasAttributes
+        let range = NSRange(localized.startIndex..., in: localized)
+        return Self.markdownRegexes.contains { regex in
+            regex.firstMatch(in: localized, options: [], range: range) != nil
+        }
     }
 
-    private func formatArgumentRegex() -> NSRegularExpression {
+    private static let markdownCharacters: Set<UInt8> = Set("*_`~[".utf8)
+
+    private static let markdownRegexes: [NSRegularExpression] = [
+        #"\*\*.+?\*\*"#,                         // **bold**
+        #"__.+?__"#,                             // __bold__
+        #"(?<!\*)\*[^*\s][^*]*?\*(?!\*)"#,       // *italic*
+        #"(?<!_)_[^_\s][^_]*?_(?!_)"#,           // _italic_ (word-boundary guarded)
+        #"`.+?`"#,                               // `code`
+        #"~~.+?~~"#,                             // ~~strikethrough~~
+        #"\[.+?\]\(.+?\)"#,                      // [text](url) — inline link
+        #"\^\[.+?\]\(.+?\)"#,                    // ^[text](key: value, ...) — extended attributes
+        #"\[.+?\]\[.*?\]"#,                      // [text][ref] — reference-style link
+    ].map { try! NSRegularExpression(pattern: $0, options: []) }
+
+    private static let formatArgumentRegex: NSRegularExpression = {
         // Pattern breakdown:
         // 1. %                        - Start of specifier
         // 2. (?:(\d+)\$)?             - Optional positional argument: "1$" in %1$@
@@ -1564,9 +1794,8 @@ private class LocalizedTextStorage: ResolvedTextStorage {
         // 6. (?:hh|h|ll|l|q|j|z|t|L)? - Length modifiers (multi-character matched FIRST)
         // 7. [@dduxXoefeEgGaAcCsSp%]  - Specifier type character
         let pattern = #"%(?:(\d+)\$)?[-+#0 ']*\d*(?:\.\d+)?(?:hh|h|ll|l|q|j|z|t|L)?[@dduxXoefeEgGaAcCsSp%]"#
-        let regex = try! NSRegularExpression(pattern: pattern, options: [])
-        return regex
-    }
+        return try! NSRegularExpression(pattern: pattern, options: [])
+    }()
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     private func resolveArguments(
@@ -1575,7 +1804,7 @@ private class LocalizedTextStorage: ResolvedTextStorage {
         environment: EnvironmentValues
     ) {
         let rawString = String(attributedString.characters)
-        let regex = formatArgumentRegex()
+        let regex = Self.formatArgumentRegex
         let matches = regex.matches(in: rawString, options: [], range: NSRange(rawString.startIndex..., in: rawString))
 
         guard !matches.isEmpty else { return }
@@ -1642,7 +1871,7 @@ private class LocalizedTextStorage: ResolvedTextStorage {
         with arguments: [LocalizedTextArgument],
         environment: EnvironmentValues
     ) {
-        let regex = formatArgumentRegex()
+        let regex = Self.formatArgumentRegex
         let fullString = attributedString.string
         let fullRange = NSRange(location: 0, length: attributedString.length)
         let matches = regex.matches(in: fullString, options: [], range: fullRange)
@@ -1730,6 +1959,9 @@ private class AttachmentTextStorage: ResolvedTextStorage {
     ) -> AttributedString {
         let baselineOffset = attributes.baselineOffset
         let attributes = attributes.attributeContainer(in: environment)
+        guard environment.redactionReasons.isEmpty else {
+            return AttributedString(.redactedPlaceholder, attributes: attributes)
+        }
         var attributedString = AttributedString(.attachment, attributes: attributes)
         var environment = environment
         if let font = attributes.swiftUI.font {
@@ -1750,6 +1982,9 @@ private class AttachmentTextStorage: ResolvedTextStorage {
     ) -> NSAttributedString {
         let baselineOffset = attributes.baselineOffset
         let attributes = attributes.attributes(in: environment)
+        guard environment.redactionReasons.isEmpty else {
+            return NSAttributedString(string: .redactedPlaceholder, attributes: attributes)
+        }
         var environment = environment
         if let font = attributes[.font] as? Font.PlatformRepresentable {
             environment.font = Font(font)
@@ -1812,7 +2047,7 @@ private class AttributedStringTextStorage: ResolvedTextStorage {
     }
 
     func resolveHasAttributes() -> Bool {
-        return attributedString.runs.allSatisfy { $0.attributes == AttributeContainer() }
+        return attributedString.runs.contains { $0.attributes != AttributeContainer() }
     }
 
     func resolveAttributedString(
@@ -1840,24 +2075,42 @@ private class AttributedStringTextStorage: ResolvedTextStorage {
 
 extension LocalizedStringKey {
 
-    var localizationKey: String {
+    /// The key used to look up the localized string.
+    public var localizationKey: String {
         try! swift_getFieldValue("key", String.self, self)
     }
 }
 
 extension NSMutableAttributedString {
 
-    func mergeAttributes(_ attributes: [NSAttributedString.Key: Any], keepCurrent: Bool) {
+    /// Merges `attributes` into the entire string.
+    ///
+    /// - Parameters:
+    ///   - attributes: The attributes to merge.
+    ///   - keepCurrent: When `true`, attributes that are already set are left
+    ///     unchanged and only missing attributes are added. When `false`, the
+    ///     merged attributes replace any existing values.
+    public func mergeAttributes(_ attributes: [NSAttributedString.Key: Any], keepCurrent: Bool) {
         let range = NSRange(location: 0, length: length)
         mergeAttributes(attributes, range: range, keepCurrent: keepCurrent)
     }
 
-    func mergeAttributes(_ attributes: [NSAttributedString.Key: Any], range: NSRange, keepCurrent: Bool) {
-        let range = NSRange(location: 0, length: length)
+    /// Merges `attributes` into the characters in `range`.
+    ///
+    /// Attributes not in `attributes` are left unchanged.
+    ///
+    /// - Parameters:
+    ///   - attributes: The attributes to merge.
+    ///   - range: The range of characters to merge the attributes into. It
+    ///     must lie within the bounds of the string.
+    ///   - keepCurrent: When `true`, attributes that are already set are left
+    ///     unchanged and only missing attributes are added. When `false`, the
+    ///     merged attributes replace any existing values.
+    public func mergeAttributes(_ attributes: [NSAttributedString.Key: Any], range: NSRange, keepCurrent: Bool) {
         enumerateAttributes(in: range) { currentAttributes, range, _ in
             var newAttributes: [NSAttributedString.Key: Any] = [:]
             for (key, value) in attributes {
-                if currentAttributes[key] == nil {
+                if currentAttributes[key] == nil || !keepCurrent {
                     newAttributes[key] = value
                 }
             }
@@ -1876,7 +2129,7 @@ extension NSTextAttachment: @unchecked Sendable { }
 #endif
 #endif
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension AttributedString.LineHeight {
 
@@ -1894,6 +2147,9 @@ extension AttributedString.LineHeight {
 
 extension Text.TruncationMode {
 
+    /// Returns the `NSLineBreakMode` equivalent of the truncation mode.
+    ///
+    /// Returns `.byWordWrapping` when `lineLimit` is `nil` or not positive.
     public func toNSLineBreakMode(lineLimit: Int?) -> NSLineBreakMode {
         if lineLimit ?? -1 <= 0 {
             return .byWordWrapping
@@ -1913,7 +2169,12 @@ extension Text.TruncationMode {
 
 extension NSAttributedString {
 
-    func sizeThatFits(
+    /// Returns the size of the attributed string that fits `size` when laid out with
+    /// the given line limit and line break mode.
+    ///
+    /// When `minimumScaleFactor` is less than 1 and the text does not fit, the fonts are
+    /// scaled down by up to that factor. The result is rounded to `displayScale`.
+    public func sizeThatFits(
         size: CGSize,
         lineLimit: Int? = nil,
         lineBreakMode: NSLineBreakMode,
@@ -2017,6 +2278,8 @@ struct Text_Previews: PreviewProvider {
                 Text(verbatim: "Nil")
             }
 
+            Text(Optional<String>.none, label: "Fallback")
+
             Text("Search", suffix: .ellipsis)
 
             Text(prefix: .bulletPointSeparator, "Line 1")
@@ -2027,7 +2290,7 @@ struct Text_Previews: PreviewProvider {
             }
 
             if #available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *) {
-                Text(spaces: 100)
+                Text.lineWrappingSpaces(100)
                     .redacted(reason: .placeholder)
             }
 
@@ -2119,7 +2382,7 @@ struct Text_Previews: PreviewProvider {
                 }
             }
 
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                 AttributedStringReader(
                     Text("Hello, World")
                         .customAttribute(PreviewAttribute(value: 1))

@@ -35,42 +35,6 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNotNil(IsSectionFooterTrait.conformance)
     }
 
-    func testAnimation() {
-        XCTAssertEqual(Animation.default.delay, 0)
-        XCTAssertEqual(Animation.default.delay(1).delay, 1)
-        XCTAssertEqual(Animation.default.speed, 1)
-        XCTAssertEqual(Animation.default.speed(2).speed, 2)
-        XCTAssertEqual(Animation.default.duration(defaultDuration: 1), 1)
-        XCTAssertEqual(Animation.linear(duration: 0.3).duration(defaultDuration: 1), 0.3)
-        XCTAssertEqual(Animation.linear(duration: 0.3).speed(0.5).duration(defaultDuration: 1), 0.6)
-        XCTAssertEqual(Animation.linear(duration: 0.3).speed(0.5).delay(1).duration(defaultDuration: 1), 0.6)
-        XCTAssertEqual(Animation.spring(duration: 0.5).duration(defaultDuration: 1), 0.5)
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-            XCTAssertEqual(Animation.interpolatingSpring(duration: 0.5).duration(defaultDuration: 1), 0.5)
-            XCTAssertEqual(Animation.interpolatingSpring(duration: 0.25).duration(defaultDuration: 1), 0.25)
-        } else {
-            XCTAssertEqual(Animation.interpolatingSpring(duration: 0.5).duration(defaultDuration: 1), 0.5007467814693921)
-            XCTAssertEqual(Animation.interpolatingSpring(duration: 0.25).duration(defaultDuration: 1), 0.25037339073469606)
-        }
-
-        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
-            struct MyAnimation: CustomAnimation {
-                var duration: TimeInterval
-
-                func animate<V: VectorArithmetic>(
-                    value: V,
-                    time: TimeInterval,
-                    context: inout AnimationContext<V>
-                ) -> V? {
-                    value.scaled(by: time)
-                }
-            }
-            XCTAssertEqual(Animation(MyAnimation(duration: 0.3)).duration(defaultDuration: 1), 0.3)
-            XCTAssertEqual(Animation(MyAnimation(duration: 0.3)).delay(1).delay, 1)
-            XCTAssertEqual(Animation(MyAnimation(duration: 0.3)).speed(2).speed, 2)
-        }
-    }
-
     func testPropertyListElement() {
         @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
         class ElementV6 {

@@ -5,7 +5,12 @@
 import SwiftUI
 import EngineCore
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+/// A modifier that replaces the default text renderer with `Renderer`.
+///
+/// On iOS 18 and later this applies `textRenderer(_:)`. On earlier versions the
+/// renderer is applied through SwiftUI's private implementation when available,
+/// otherwise the content is left unmodified.
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 @frozen
 public struct TextRendererViewModifier<
     Renderer: TextRenderer
@@ -14,6 +19,7 @@ public struct TextRendererViewModifier<
     @usableFromInline
     var renderer: Renderer
 
+    /// Creates a modifier that renders text with `renderer`.
     @inlinable
     public init(renderer: Renderer) {
         self.renderer = renderer
@@ -27,7 +33,7 @@ public struct TextRendererViewModifier<
 
     private enum IsTextRendererAvailable: StaticCondition {
         static var value: Bool {
-            MemoryLayout<Self>.size == MemoryLayout<_TextRendererViewModifier<Renderer>>.size
+            MemoryLayout<TextRendererViewModifier<Renderer>>.size == MemoryLayout<_TextRendererViewModifier<Renderer>>.size
         }
     }
 
@@ -43,10 +49,10 @@ public struct TextRendererViewModifier<
 
 // MARK: - Previews
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 struct TextRendererViewModifier_Previews: PreviewProvider {
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     struct HiddenSeparatorOnLineBreakTextRenderer: TextRenderer {
 
         struct SeparatorAttribute: TextAttribute { }

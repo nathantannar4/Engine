@@ -4,24 +4,42 @@
 
 import SwiftUI
 
-/// A proxy to a `PreferenceKey.Value` that must be read by ``PreferenceKeyValueReader``
+/// A proxy to a `PreferenceKey.Value` that must be read by ``PreferenceKeyValueReader``.
 @frozen
 public struct PreferenceKeyValueProxy<Key: PreferenceKey> {
     var value: _PreferenceValue<Key>
 }
 
-/// A container view that resolves it's content from a `PreferenceKey`
+/// A container view that resolves its content from a `PreferenceKey`.
+///
+/// The proxy passed to `content` provides deferred access to the preference
+/// value produced by `content`, and must be read with a
+/// ``PreferenceKeyValueReader``.
+///
+///     PreferenceKeyReader(MyPreferenceKey.self) { proxy in
+///         VStack {
+///             Text("Label")
+///                 .preference(key: MyPreferenceKey.self, value: "Hello, World")
+///
+///             PreferenceKeyValueReader(proxy) { value in
+///                 Text(value) // "Hello, World"
+///             }
+///         }
+///     }
+///
 @frozen
 public struct PreferenceKeyReader<
     Key: PreferenceKey,
     Content: View
 >: View {
 
+    /// The proxy type provided to the content.
     public typealias Value = PreferenceKeyValueProxy<Key>
 
     @usableFromInline
     var content: (Value) -> Content
 
+    /// Creates a reader for the given preference key.
     @inlinable
     public init(
         _ key: Key.Type = Key.self,
@@ -37,9 +55,9 @@ public struct PreferenceKeyReader<
     }
 }
 
-/// A container view that resolves it's content from a `PreferenceKey` value
+/// A container view that resolves its content from a `PreferenceKey` value.
 ///
-/// > Important: The `PreferenceKey` value of `Content` is ignored
+/// > Important: The `PreferenceKey` value of `Content` is ignored.
 @frozen
 public struct PreferenceKeyValueReader<
     Key: PreferenceKey,
@@ -52,6 +70,7 @@ public struct PreferenceKeyValueReader<
     @usableFromInline
     var content: (Key.Value) -> Content
 
+    /// Creates a reader that resolves the value of the given proxy.
     @inlinable
     public init(
         _ value: PreferenceKeyValueProxy<Key>,

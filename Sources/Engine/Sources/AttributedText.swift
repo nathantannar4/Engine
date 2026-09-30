@@ -6,6 +6,11 @@ import SwiftUI
 
 #if !os(watchOS)
 
+/// A view that draws attributed text using TextKit, rather than SwiftUI's `Text` renderer.
+///
+/// The view respects the `lineLimit` and `truncationMode` of the environment. When
+/// created from a `Text`, the text is resolved to an attributed string with the
+/// current environment.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 public struct AttributedText: View {
@@ -18,6 +23,7 @@ public struct AttributedText: View {
     @usableFromInline
     var storage: Storage
 
+    /// Creates a view that draws `text`, resolved with the current environment.
     @inlinable
     public init(
         _ text: Text
@@ -25,6 +31,7 @@ public struct AttributedText: View {
         self.storage = .text(text)
     }
 
+    /// Creates a view that draws an `NSAttributedString`.
     @inlinable
     public init(
         _ attributedString: NSAttributedString

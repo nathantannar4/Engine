@@ -4,14 +4,20 @@
 
 import SwiftUI
 
-/// Applies the transaction when enabled and the value changes
+/// Applies the transaction when enabled and the value changes.
+///
+/// The transaction is also applied when `isEnabled` changes.
 @frozen
 public struct TransactionModifier<Value: Equatable>: VersionedViewModifier {
 
+    /// The transaction to apply.
     public var transaction: Transaction
+    /// The value to monitor for changes.
     public var value: Value
+    /// Whether the transaction is applied when `value` changes.
     public var isEnabled: Bool
 
+    /// Creates a modifier that applies `transaction` when `value` changes, if `isEnabled` is `true`.
     @inlinable
     public init(
         transaction: Transaction,
@@ -88,6 +94,9 @@ public struct TransactionModifier<Value: Equatable>: VersionedViewModifier {
 
 extension View {
 
+    /// Applies the given transaction to the view when `value` changes, if `isEnabled` is `true`.
+    ///
+    /// The transaction is also applied when `isEnabled` changes.
     @inlinable
     public func transaction<Value: Equatable>(
         _ transaction: Transaction,

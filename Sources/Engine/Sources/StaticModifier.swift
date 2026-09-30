@@ -18,6 +18,11 @@ public struct StaticModifier<
     @usableFromInline
     nonisolated(unsafe) var modifier: Any
 
+    /// Creates a modifier from a modifier whose type matches `Descriptor`.
+    ///
+    /// - Parameters:
+    ///   - descriptor: The descriptor of the type returned by `modifier`.
+    ///   - modifier: A closure that returns a `ViewModifier` of the type described by `Descriptor`.
     @inlinable
     public init(
         _ descriptor: Descriptor.Type = Descriptor.self,

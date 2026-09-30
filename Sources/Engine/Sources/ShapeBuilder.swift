@@ -8,30 +8,36 @@ import SwiftUI
 @resultBuilder
 public struct ShapeBuilder {
 
+    /// Builds an empty shape from a block containing no statements.
     public static func buildBlock() -> EmptyShape {
         EmptyShape()
     }
 
+    /// Builds an empty shape from a block containing only `Void` statements.
     public static func buildPartialBlock(
         first: Void
     ) -> EmptyShape { EmptyShape() }
 
+    /// Builds an empty shape from a block containing a `Never` statement.
     public static func buildPartialBlock(
         first: Never
     ) -> EmptyShape { }
 
+    /// Passes a single shape written as a child shape through unmodified.
     public static func buildBlock<S: Shape>(
         _ shape: S
     ) -> S {
         shape
     }
 
+    /// Builds an empty shape from a block containing a single optional shape.
     public static func buildBlock<S: Shape>(
         _ shape: S?
     ) -> EmptyShape {
         EmptyShape()
     }
 
+    /// Produces content for a conditional statement when the condition is true.
     public static func buildEither<
         TrueShape,
         FalseShape
@@ -41,6 +47,7 @@ public struct ShapeBuilder {
         .init(first)
     }
 
+    /// Produces content for a conditional statement when the condition is false.
     public static func buildEither<
         TrueShape,
         FalseShape
@@ -50,6 +57,7 @@ public struct ShapeBuilder {
         .init(second)
     }
 
+    /// Produces an optional shape for conditional statements that don't have an `else` branch.
     public static func buildOptional<
         S: Shape
     >(
@@ -58,18 +66,25 @@ public struct ShapeBuilder {
         OptionalShape(shape)
     }
 
+    /// Wraps a shape in a type-erased `AnyShape` for use within an `if #available` block.
     @_disfavoredOverload
+    @available(iOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(macOS, deprecated: 13.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(tvOS, deprecated: 16.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(watchOS, deprecated: 9.0, message: "Use the builtin SwiftUI.AnyShape")
+    @available(visionOS, deprecated: 1.1, message: "Use the builtin SwiftUI.AnyShape")
     public static func buildLimitedAvailability<S: Shape>(
         _ shape: S
     ) -> Engine.AnyShape {
-        .init(shape: shape)
+        Engine.AnyShape(shape: shape)
     }
 
+    /// Wraps a shape in a type-erased `AnyShape` for use within an `if #available` block.
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public static func buildLimitedAvailability<S: Shape>(
         _ shape: S
     ) -> SwiftUI.AnyShape {
-        .init(shape)
+        SwiftUI.AnyShape(shape)
     }
 }
 
@@ -116,6 +131,7 @@ extension View {
         contentShape(kind, shape(), eoFill: eoFill)
     }
 
+    /// Sets the container shape to use for any container-relative shape within this view.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     @inlinable
     public func containerShape<S: InsettableShape>(

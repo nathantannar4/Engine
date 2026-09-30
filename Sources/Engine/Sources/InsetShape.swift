@@ -4,10 +4,13 @@
 
 import SwiftUI
 
+/// A shape that insets the frame of another shape by edge insets.
 @frozen
 public struct InsetShape<S: Shape>: Shape, Animatable {
 
+    /// The shape that is inset.
     public var shape: S
+    /// The insets applied to the frame of the shape.
     public var insets: EdgeInsets
 
     public var animatableData: AnimatablePair<S.AnimatableData, EdgeInsets.AnimatableData> {
@@ -23,12 +26,14 @@ public struct InsetShape<S: Shape>: Shape, Animatable {
         }
     }
 
+    /// Creates a shape that insets the frame of `shape` by `insets`.
     @inlinable
     public init(shape: S, insets: EdgeInsets) {
         self.insets = insets
         self.shape = shape
     }
 
+    /// Creates a shape that insets the frame of `shape` by `amount` on all edges.
     @inlinable
     public init(shape: S, by amount: CGFloat) {
         self.init(shape: shape, insets: EdgeInsets(top: amount, leading: amount, bottom: amount, trailing: amount))
@@ -49,7 +54,7 @@ public struct InsetShape<S: Shape>: Shape, Animatable {
         S.role
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var layoutDirectionBehavior: LayoutDirectionBehavior {
         shape.layoutDirectionBehavior
     }
@@ -69,7 +74,7 @@ extension InsetShape: InsettableShape where S: InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
 
@@ -86,11 +91,13 @@ extension InsetShape: RoundedRectangularShape where S: RoundedRectangularShape {
 
 extension Shape {
 
+    /// Returns a shape whose frame is inset by the given edge insets.
     @inlinable
     public func inset(by insets: EdgeInsets) -> InsetShape<Self> {
         InsetShape(shape: self, insets: insets)
     }
 
+    /// Returns a shape whose frame is inset by `dx` horizontally and `dy` vertically.
     @inlinable
     public func inset(dx: CGFloat, dy: CGFloat) -> InsetShape<Self> {
         inset(by: EdgeInsets(top: dy, leading: dx, bottom: dy, trailing: dx))

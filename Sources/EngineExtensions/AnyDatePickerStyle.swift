@@ -5,6 +5,7 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `DatePickerStyle`.
 @available(iOS 16.0, macOS 13.0, *)
 @available(tvOS, unavailable)
 @available(watchOS, unavailable)
@@ -12,6 +13,7 @@ public struct AnyDatePickerStyle: DatePickerStyle {
 
     var style: any DatePickerStyle
 
+    /// Creates a type-erased style that wraps the given style.
     public init<S: DatePickerStyle>(_ style: S) {
         self.style = style
     }

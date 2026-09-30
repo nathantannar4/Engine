@@ -31,7 +31,8 @@ extension AttributedString {
     }
     #endif
 
-    func toPlatformValue(
+    /// Transforms SwiftUI `AttributedString` attributes to their UIKit or AppKit equivalent
+    public func toPlatformValue(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> AttributedString {
         #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
@@ -41,6 +42,8 @@ extension AttributedString {
         #endif
     }
 
+    /// Converts the attributed string to an `NSAttributedString`, first transforming
+    /// SwiftUI attributes to their UIKit or AppKit equivalent.
     public func toNSAttributedString(
         in environment: EnvironmentValues = EnvironmentValues()
     ) -> NSAttributedString {
@@ -60,7 +63,11 @@ extension AttributedString {
 @available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, watchOS 8.0, *)
 extension AttributedString {
 
-    #if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
+    #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
+    /// Creates an attributed string containing a text attachment that hosts a SwiftUI view.
+    ///
+    /// The attachment is rendered with a view provider, so it is only displayed by
+    /// TextKit 2 based text views.
     public init<Content: View>(
         attachment: Content
     ) {
@@ -70,18 +77,7 @@ extension AttributedString {
     #endif
 }
 
-extension String {
-
-    static let attachment: String = {
-        #if os(macOS)
-        return "\u{FFFC}"
-        #else
-        return "\(Character(UnicodeScalar(NSTextAttachment.character)!))"
-        #endif
-    }()
-}
-
-#if os(macOS) || os(iOS) || os(visionOS) || os(tvOS)
+#if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
 @available(iOS 15.0, macOS 12.0, macCatalyst 15.0, tvOS 15.0, *)
 private class HostingTextAttachment<Content: View>: NSTextAttachment, @unchecked Sendable {
 
@@ -213,6 +209,12 @@ extension AttributeContainer {
         if let baselineOffset = attributes.swiftUI.baselineOffset {
             attributes.uiKit.baselineOffset = baselineOffset
         }
+        if let inlinePresentationIntent = attributes.inlinePresentationIntent {
+            attributes.uiKit.font = attributes.uiKit.font?.applying(inlinePresentationIntent)
+            if inlinePresentationIntent.contains(.strikethrough), attributes.uiKit.strikethroughStyle == nil {
+                attributes.uiKit.strikethroughStyle = .single
+            }
+        }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = environment.lineSpacing
         attributes.uiKit.paragraphStyle = paragraphStyle
@@ -254,12 +256,37 @@ extension AttributeContainer {
         if let baselineOffset = attributes.swiftUI.baselineOffset {
             attributes.appKit.baselineOffset = baselineOffset
         }
+        if let inlinePresentationIntent = attributes.inlinePresentationIntent {
+            attributes.appKit.font = attributes.appKit.font?.applying(inlinePresentationIntent)
+            if inlinePresentationIntent.contains(.strikethrough), attributes.appKit.strikethroughStyle == nil {
+                attributes.appKit.strikethroughStyle = .single
+            }
+        }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = environment.lineSpacing
         attributes.appKit.paragraphStyle = paragraphStyle
         return attributes
     }
     #endif
+}
+
+@available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+extension Font.PlatformRepresentable {
+
+    /// Applies the font traits of a markdown `InlinePresentationIntent`
+    public func applying(_ inlinePresentationIntent: InlinePresentationIntent) -> Font.PlatformRepresentable {
+        var font = self
+        if inlinePresentationIntent.contains(.code) {
+            font = font.monospaced ?? font
+        }
+        if inlinePresentationIntent.contains(.stronglyEmphasized) {
+            font = font.bold ?? font
+        }
+        if inlinePresentationIntent.contains(.emphasized) {
+            font = font.italic ?? font
+        }
+        return font
+    }
 }
 
 #if hasAttribute(retroactive)

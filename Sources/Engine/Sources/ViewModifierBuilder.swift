@@ -8,11 +8,13 @@ import SwiftUI
 @resultBuilder
 public struct ViewModifierBuilder {
 
+    /// Builds an empty modifier from a block containing no statements.
     @_alwaysEmitIntoClient
     public static func buildBlock() -> EmptyModifier {
         EmptyModifier()
     }
 
+    /// Passes a single modifier written as a child modifier through unmodified.
     @_alwaysEmitIntoClient
     public static func buildBlock<Modifier: ViewModifier>(
         _ modifier: Modifier
@@ -20,6 +22,7 @@ public struct ViewModifierBuilder {
         modifier
     }
 
+    /// Builds a modifier that concatenates 2 child modifiers, applied in order.
     @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
@@ -31,6 +34,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1)
     }
 
+    /// Builds a modifier that concatenates 3 child modifiers, applied in order.
     @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
@@ -44,6 +48,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1).concat(m2)
     }
 
+    /// Builds a modifier that concatenates 4 child modifiers, applied in order.
     @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
@@ -59,6 +64,7 @@ public struct ViewModifierBuilder {
         m0.concat(m1).concat(m2).concat(m3)
     }
 
+    /// Builds a modifier that concatenates 5 child modifiers, applied in order.
     @_alwaysEmitIntoClient
     public static func buildBlock<
         M0: ViewModifier,
@@ -78,6 +84,14 @@ public struct ViewModifierBuilder {
 }
 
 extension View {
+    /// Applies the modifier built by `modifier` to a view.
+    ///
+    ///     content
+    ///         .modifier {
+    ///             BorderModifier()
+    ///             PaddingModifier()
+    ///         }
+    ///
     public func modifier<Modifier: ViewModifier>(
         @ViewModifierBuilder modifier: () -> Modifier
     ) -> ModifiedContent<Self, Modifier> {

@@ -4,12 +4,15 @@
 
 import SwiftUI
 
+/// A modifier that writes a value to the environment, or leaves the
+/// environment value unchanged when no value is provided.
 @frozen
 public struct EnvironmentKeyWritingModifier<V>: ViewModifier {
 
     var keyPath: WritableKeyPath<EnvironmentValues, V>
     @EnvironmentOrValue var value:V
 
+    /// Creates a modifier that sets the environment value at `keyPath` to `value`.
     public init(
         keyPath: WritableKeyPath<EnvironmentValues, V>,
         value: V
@@ -18,6 +21,8 @@ public struct EnvironmentKeyWritingModifier<V>: ViewModifier {
         self._value = .init(value)
     }
 
+    /// Creates a modifier that sets the environment value at `keyPath` to `value`
+    /// when `isEnabled` is `true`, otherwise the inherited value is preserved.
     public init(
         keyPath: WritableKeyPath<EnvironmentValues, V>,
         value: V,
@@ -27,6 +32,8 @@ public struct EnvironmentKeyWritingModifier<V>: ViewModifier {
         self._value = isEnabled ? .init(value) : .init(keyPath)
     }
 
+    /// Creates a modifier that sets the environment value at `keyPath` to `value`
+    /// when it is non-nil, otherwise the inherited value is preserved.
     public init(
         keyPath: WritableKeyPath<EnvironmentValues, V>,
         value: V?
@@ -43,6 +50,8 @@ public struct EnvironmentKeyWritingModifier<V>: ViewModifier {
 
 extension View {
 
+    /// Sets the environment value of the specified key path to the given value
+    /// when `isEnabled` is `true`, otherwise the inherited value is preserved.
     public func environment<V>(
         _ keyPath: WritableKeyPath<EnvironmentValues, V>,
         _ value: V,
@@ -57,6 +66,8 @@ extension View {
         )
     }
 
+    /// Sets the environment value of the specified key path to the given value
+    /// when it is non-nil, otherwise the inherited value is preserved.
     @_disfavoredOverload
     public func environment<V>(
         _ keyPath: WritableKeyPath<EnvironmentValues, V>,

@@ -4,7 +4,8 @@
 
 import SwiftUI
 
-/// A view modifier to help debugging
+/// A view modifier to help debugging, that draws a border around the frame of the view
+/// along with its size and an optional label
 ///
 /// > Note: DEBUG builds only
 @frozen
@@ -13,6 +14,7 @@ public struct DebugOverlayModifier: ViewModifier {
     var label: String?
     var color: Color
 
+    /// Creates a debug overlay with an optional label, drawn in `color`.
     public init(label: String? = nil, color: Color) {
         self.label = label
         self.color = color
@@ -33,6 +35,7 @@ public struct DebugOverlayModifier: ViewModifier {
                         Text(verbatim: "\(size.width.rounded(decimalPoints: 1)), \(size.height.rounded(decimalPoints: 1))")
                             .fixedSize()
                             .background(color.opacity(0.3))
+                            .clipped()
                             .alignmentGuide(VerticalAlignment.center) { d in
                                 d[VerticalAlignment.center] + (size.height + d.height) / 2 + lineWidth
                             }
@@ -43,8 +46,9 @@ public struct DebugOverlayModifier: ViewModifier {
 
                         if let label {
                             Text(label)
-                                .background(color.opacity(0.3))
                                 .fixedSize()
+                                .background(color.opacity(0.3))
+                                .clipped()
                                 .alignmentGuide(VerticalAlignment.center) { d in
                                     d[VerticalAlignment.center] - (size.height + d.height) / 2 - lineWidth
                                 }
@@ -64,7 +68,7 @@ public struct DebugOverlayModifier: ViewModifier {
 
 extension View {
 
-    /// A modifier that draws a border around the frame with a label
+    /// A modifier that draws a border around the frame, along with its size and an optional label
     ///
     /// > Note: DEBUG builds only
     public func withDebugOverlay(label: String? = nil, color: Color) -> some View {
@@ -104,6 +108,7 @@ struct DebugOverlayModifier_Previews: PreviewProvider {
                     Rectangle()
                         .strokeBorder(Color.blue, lineWidth: 2)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .withDebugOverlay(color: .red)
         }
     }

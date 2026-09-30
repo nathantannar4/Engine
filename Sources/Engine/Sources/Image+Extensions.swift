@@ -9,12 +9,16 @@ import os.log
 extension Image {
 
     #if os(macOS)
-    typealias PlatformRepresentable = NSImage
+    /// The platform image type, `NSImage`
+    public typealias PlatformRepresentable = NSImage
     #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
-    typealias PlatformRepresentable = UIImage
+    /// The platform image type, `UIImage`
+    public typealias PlatformRepresentable = UIImage
     #endif
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Resolves the image to a `UIImage`, using the environment to resolve
+    /// traits such as the font, color scheme and symbol rendering mode when provided.
     public func toUIImage(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> UIImage? {
@@ -23,6 +27,8 @@ extension Image {
     #endif
 
     #if os(macOS)
+    /// Resolves the image to an `NSImage`, using the environment to resolve
+    /// traits such as the font, color scheme and symbol rendering mode when provided.
     public func toNSImage(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> NSImage? {
@@ -30,7 +36,9 @@ extension Image {
     }
     #endif
 
-    func toPlatformValue(
+    /// Resolves the image to the platform image type, using the environment to resolve
+    /// traits such as the font, color scheme and symbol rendering mode when provided.
+    public func toPlatformValue(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
         ImageProvider(for: self)?.resolved(in: environment())
@@ -85,13 +93,13 @@ private struct ImageProvider {
 
         case "CGImageProvider":
             guard
-                let image = try? swift_getFieldValue("name", String.self, base),
+                let image = try? swift_getFieldValue("image", CGImage.self, base),
                 let scale = try? swift_getFieldValue("scale", CGFloat.self, base),
                 let orientation = try? swift_getFieldValue("orientation", Image.Orientation.self, base)
             else {
                 fallthrough
             }
-            self.storage = .cg(image as! CGImage, scale, orientation)
+            self.storage = .cg(image, scale, orientation)
 
         case "ResizableProvider":
             guard
@@ -132,7 +140,7 @@ private struct ImageProvider {
                 if let symbolRenderingMode = try? swift_getFieldValue("renderingMode", SymbolRenderingModeStorage.self, options) {
                     self.symbolConfiguration.symbolRenderingMode = symbolRenderingMode
                 }
-                #if canImport(FoundationModels) // Xcode 26
+                #if XCODE_26
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                     if let symbolColorRenderingMode = try? swift_getFieldValue("colorMode", SymbolColorRenderingModeStorage.self, options) {
                         self.symbolConfiguration.symbolColorRenderingMode = symbolColorRenderingMode
@@ -308,8 +316,8 @@ extension SymbolConfiguration {
         let pointSize = font?.pointSize
 
         var configuration: NSImage.SymbolConfiguration = {
-            if let pointSize, let weight, let scale {
-                return NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight, scale: scale)
+            if let pointSize {
+                return NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight ?? .regular, scale: scale ?? .medium)
             } else if let scale {
                 return NSImage.SymbolConfiguration(scale: scale)
             }
@@ -355,7 +363,7 @@ extension SymbolConfiguration {
                     }
                 }
             }
-            #if canImport(FoundationModels) // Xcode 26
+            #if XCODE_26
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                 if let symbolVariableValueMode = symbolVariableValueMode ?? environment?.symbolVariableValueMode?.storage {
                     configuration = configuration
@@ -377,6 +385,8 @@ extension SymbolConfiguration {
 extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// A trait collection containing the display scale, contrast and color scheme
+    /// of the environment, for resolving platform images.
     public func traitCollectionForImageResolution() -> UITraitCollection {
         let contrast: UIAccessibilityContrast? = {
             if #available(iOS 14.0, tvOS 14.0, *) {
@@ -428,7 +438,7 @@ extension EnvironmentValues {
 
 struct SymbolConfiguration {
     var symbolRenderingMode: SymbolRenderingModeStorage?
-    #if canImport(FoundationModels) // Xcode 26
+    #if XCODE_26
     var symbolColorRenderingMode: SymbolColorRenderingModeStorage?
     var symbolVariableValueMode: SymbolVariableValueModeStorage?
     #endif
@@ -449,7 +459,7 @@ extension SymbolRenderingMode {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 enum SymbolColorRenderingModeStorage {
     case flat
     case gradient
@@ -612,7 +622,7 @@ struct Image_Previews: PreviewProvider {
                     )
                 }
 
-                #if canImport(FoundationModels) // Xcode 26
+                #if XCODE_26
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
                     ImagePreview(
                         image: Image(systemName: "wifi").symbolVariableValueMode(.color)

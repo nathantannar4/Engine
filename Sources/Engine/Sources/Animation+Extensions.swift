@@ -10,6 +10,13 @@ import UIKit
 
 extension UIViewPropertyAnimator {
 
+    /// Creates a property animator whose duration and timing curve match a SwiftUI `Animation`.
+    ///
+    /// Bezier and spring animations are converted to equivalent UIKit timing parameters.
+    /// Animations that cannot be converted, or a `nil` animation, fall back to
+    /// `defaultDuration` and `defaultCompletionCurve`.
+    ///
+    /// - Note: The animation's delay is not applied, pass it to `startAnimation(afterDelay:)`.
     public convenience init(
         animation: Animation?,
         defaultDuration: TimeInterval = 0.35,
@@ -50,6 +57,9 @@ extension UIViewPropertyAnimator {
 
 extension UIView {
 
+    /// Animates changes to one or more views using a SwiftUI `Animation`.
+    ///
+    /// See the static `animate(with:animations:completion:)` for details.
     public func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
@@ -58,6 +68,16 @@ extension UIView {
         UIView.animate(with: animation, animations: animations, completion: completion)
     }
 
+    /// Animates changes to one or more views using a SwiftUI `Animation`.
+    ///
+    /// The animation's duration, timing curve and delay are applied with a
+    /// `UIViewPropertyAnimator`. When `animation` is `nil`, the changes are
+    /// applied immediately and the completion is called with `true`.
+    ///
+    /// - Parameters:
+    ///   - animation: The animation to use, or `nil` to apply the changes without animation.
+    ///   - animations: The changes to animate.
+    ///   - completion: Called when the animation ends, with `true` if it finished at its end position.
     public static func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
@@ -82,6 +102,8 @@ extension UIView {
 
 extension Animation {
 
+    /// The UIKit timing curve parameters equivalent to the animation's timing curve,
+    /// or `nil` if the animation cannot be resolved.
     public var timingParameters: UITimingCurveProvider? {
         guard let timingCurve else { return nil }
         return AnimationTimingCurveProvider(
@@ -183,6 +205,9 @@ import AppKit
 
 extension NSView {
 
+    /// Animates changes to the view using a SwiftUI `Animation`.
+    ///
+    /// See the static `animate(_:with:animations:completion:)` for details.
     public func animate(
         with animation: Animation?,
         animations: @escaping () -> Void,
@@ -191,6 +216,18 @@ extension NSView {
         NSView.animate(self, with: animation, animations: animations, completion: completion)
     }
 
+    /// Animates changes to a view using a SwiftUI `Animation`.
+    ///
+    /// When the view is layer backed, the changes are animated with an equivalent
+    /// Core Animation animation, otherwise with `NSAnimationContext`. Any pending
+    /// delayed animations for the view are cancelled. When `animation` is `nil`,
+    /// the changes are applied immediately and the completion is called with `true`.
+    ///
+    /// - Parameters:
+    ///   - view: The view being animated.
+    ///   - animation: The animation to use, or `nil` to apply the changes without animation.
+    ///   - animations: The changes to animate.
+    ///   - completion: Called when the animation ends.
     public static func animate(
         _ view: NSView,
         with animation: Animation?,
@@ -349,6 +386,9 @@ extension NSView {
 
 extension CALayer {
 
+    /// Animates changes to the layer's animatable properties using `animation` as a template.
+    ///
+    /// See the static `animate(_:duration:animation:animations:completion:)` for details.
     public func animate(
         duration: TimeInterval,
         animation: CABasicAnimation,
@@ -364,6 +404,18 @@ extension CALayer {
         )
     }
 
+    /// Animates changes to a layer's animatable properties using `animation` as a template.
+    ///
+    /// While the changes are applied, the layer's delegate is temporarily replaced so that
+    /// actions for common animatable keys (such as `position`, `bounds`, `opacity` and
+    /// `backgroundColor`) are a copy of `animation`, starting from the presentation value.
+    ///
+    /// - Parameters:
+    ///   - layer: The layer being animated.
+    ///   - duration: The duration of the animation context, used on macOS.
+    ///   - animation: The animation to copy for each changed property.
+    ///   - animations: The changes to animate.
+    ///   - completion: Called when the transaction completes.
     public static func animate(
         _ layer: CALayer,
         duration: TimeInterval,
@@ -465,7 +517,7 @@ private class AnimationTimingCurveDelegate: NSObject, CALayerDelegate {
 
 // MARK: - Previews
 
-@available(iOS 14.0, tvOS 14.0, macOS 11.0,  *)
+@available(iOS 14.0, macOS 11.0, tvOS 14.0, *)
 struct Animation_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
@@ -493,7 +545,7 @@ struct Animation_Previews: PreviewProvider {
                     Text("Engine")
                 }
 
-                if #available(iOS 18.0, tvOS 18.0, macOS 15.0, visionOS 2.0, *) {
+                if #available(iOS 18.0, macOS 15.0, tvOS 18.0, visionOS 2.0, *) {
                     SwiftUIAnimatedPlatformView(
                         cornerRadius: cornerRadius,
                         backgroundColor: backgroundColor

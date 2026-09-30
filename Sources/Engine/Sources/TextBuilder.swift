@@ -9,12 +9,16 @@ import SwiftUI
 @resultBuilder
 public struct TextBuilder {
 
+    /// Builds an empty array from a block containing no statements.
     public static func buildBlock() -> [Text] { [] }
 
+    /// Builds an empty array from a block containing only `Void` statements.
     public static func buildPartialBlock(first: Void) -> [Text] { [] }
 
+    /// Builds an empty array from a block containing a `Never` statement.
     public static func buildPartialBlock(first: Never) -> [Text] {}
 
+    /// Builds an array containing `component`, or an empty array if it is `nil`.
     public static func buildExpression(
         _ component: Text?
     ) -> [Text] {
@@ -22,18 +26,21 @@ public struct TextBuilder {
         return [component]
     }
 
+    /// Builds an array containing `component`.
     public static func buildExpression(
         _ component: Text
     ) -> [Text] {
         return [component]
     }
 
+    /// Passes an array of texts through unmodified.
     public static func buildExpression(
         _ components: [Text]
     ) -> [Text] {
         components
     }
 
+    /// Builds an array of the texts produced by each element of a `ForEach`.
     public static func buildExpression<
         Data: RandomAccessCollection,
         ID
@@ -43,40 +50,48 @@ public struct TextBuilder {
         components.data.map { components.content($0) }
     }
 
+    /// Produces the texts for an `if` statement without an `else` branch,
+    /// or an empty array when the condition is false.
     public static func buildIf(
         _ components: [Text]?
     ) -> [Text] {
         components ?? []
     }
 
+    /// Produces content for a conditional statement when the condition is true.
     public static func buildEither(
         first: [Text]
     ) -> [Text] { first }
 
+    /// Produces content for a conditional statement when the condition is false.
     public static func buildEither(
         second: [Text]
     ) -> [Text] {
         second
     }
 
+    /// Flattens the texts produced by a `for` loop.
     public static func buildArray(
         _ components: [[Text]]
     ) -> [Text] {
         components.flatMap { $0 }
     }
 
+    /// Builds an array containing the first text of a block.
     public static func buildPartialBlock(
         first: Text
     ) -> [Text] {
         [first]
     }
 
+    /// Passes the first array of texts of a block through unmodified.
     public static func buildPartialBlock(
         first: [Text]
     ) -> [Text] {
         first
     }
 
+    /// Appends the next text of a block to the accumulated texts.
     public static func buildPartialBlock(
         accumulated: [Text],
         next: Text
@@ -84,21 +99,46 @@ public struct TextBuilder {
         accumulated + [next]
     }
 
+    /// Appends the next texts of a block to the accumulated texts.
     public static func buildPartialBlock(
         accumulated: [Text],
         next: [Text]
     ) -> [Text] {
         accumulated + next
     }
+
+    /// Returns the built texts as an array.
+    public static func buildFinalResult(_ components: [Text]) -> [Text] {
+        return components
+    }
+
+    /// Returns the built texts joined by a space into a single text.
+    public static func buildFinalResult(_ components: [Text]) -> Text {
+        Text { components }
+    }
+
+    /// Returns the built texts joined by a space into a single text,
+    /// or `nil` if there are no texts.
+    public static func buildFinalResult(_ components: [Text]) -> Text? {
+        guard !components.isEmpty else { return nil }
+        return Text { components }
+    }
 }
 
+/// A view that displays a list of texts joined by a separator.
+///
+/// Empty texts are omitted, and nothing is displayed when every text is empty.
+/// When the view is redacted, the joined text is resolved and redacted as a whole.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct MultiText: View {
 
+    /// The text inserted between each of the blocks.
     public var separator: Text
+    /// The texts to join.
     public var blocks: [Text]
 
+    /// Creates a view that joins the texts built by `blocks` with `separator`.
     @inlinable
     public init(
         separator: Text = .space,
@@ -108,6 +148,8 @@ public struct MultiText: View {
         self.blocks = blocks()
     }
 
+    /// Creates a view that joins the texts built by `blocks` with a separator
+    /// string displayed verbatim.
     @_disfavoredOverload
     @inlinable
     public init<S: StringProtocol>(
@@ -117,6 +159,7 @@ public struct MultiText: View {
         self.init(separator: Text(separator), blocks: blocks)
     }
 
+    /// Creates a view that joins the texts built by `blocks` with a localized separator.
     @inlinable
     public init(
         separator: LocalizedStringKey,
@@ -160,6 +203,8 @@ private struct MultiTextBody: View, Equatable {
 
 extension Text {
 
+    /// Creates a text that joins the texts built by `blocks` with a separator
+    /// string displayed verbatim. Empty texts are omitted.
     @_disfavoredOverload
     @inlinable
     public init<S: StringProtocol>(
@@ -169,6 +214,8 @@ extension Text {
         self.init(separator: Text(separator), blocks: blocks)
     }
 
+    /// Creates a text that joins the texts built by `blocks` with a localized
+    /// separator. Empty texts are omitted.
     @inlinable
     public init(
         separator: LocalizedStringKey,
@@ -177,6 +224,8 @@ extension Text {
         self.init(separator: Text(separator), blocks: blocks)
     }
 
+    /// Creates a text that joins the texts built by `blocks` with `separator`.
+    /// Empty texts are omitted, and the result is empty if there are no texts.
     @inlinable
     public init(
         separator: Text = .space,
@@ -185,6 +234,8 @@ extension Text {
         self = Text(joinedBy: separator, blocks: blocks) ?? Text(verbatim: "")
     }
 
+    /// Creates a text that joins the texts built by `blocks` with `separator`,
+    /// or `nil` if there are no non-empty texts.
     @inlinable
     public init?(
         joinedBy separator: Text,
@@ -197,6 +248,8 @@ extension Text {
 
 extension RandomAccessCollection where Element == Text {
 
+    /// Returns the concatenation of the non-empty texts, inserting `separator`
+    /// between each, or `nil` if there are no non-empty texts.
     public func joined(separator: Text) -> Text? {
         let elements = filter { !$0.isEmpty }
         switch elements.count {
@@ -260,6 +313,11 @@ struct TextBuilder_Previews: PreviewProvider {
             }
         }
 
+        @TextBuilder
+        var combinedTexts: Text {
+            texts
+        }
+
         var body: some View {
             VStack {
                 Toggle(isOn: $flag) { Text("Flag") }
@@ -289,6 +347,8 @@ struct TextBuilder_Previews: PreviewProvider {
                 let text = Text {
                     texts
                 }
+
+                combinedTexts
 
                 text
 

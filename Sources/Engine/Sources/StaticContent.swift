@@ -16,6 +16,11 @@ public struct StaticContent<Descriptor: TypeDescriptor>: PrimitiveView {
     @usableFromInline
     nonisolated(unsafe) var content: Any
 
+    /// Creates a view from content whose type matches `Descriptor`.
+    ///
+    /// - Parameters:
+    ///   - descriptor: The descriptor of the type returned by `content`.
+    ///   - content: A closure that returns a `View` of the type described by `Descriptor`.
     @inlinable
     public init(
         _ descriptor: Descriptor.Type = Descriptor.self,

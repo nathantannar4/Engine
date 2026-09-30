@@ -4,14 +4,23 @@
 
 import SwiftUI
 
+/// A type that renders the `AttributedString` resolved by an ``AttributedStringReader``.
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public protocol AttributedStringReaderRenderer: DynamicProperty {
 
+    /// The type of view representing the body.
     associatedtype Body: View
+    /// Creates a view from the resolved attributed string.
     @ViewBuilder @MainActor @preconcurrency func makeBody(attributedString: AttributedString) -> Body
 }
 
-/// A view that resolves `Text` with the current environment
+/// A view that resolves `Text` to an `AttributedString` with the current environment
+/// and passes it to a renderer
+///
+///     AttributedStringReader(Text("Hello, World").bold()) { attributedString in
+///         CustomTextView(attributedString: attributedString)
+///     }
+///
 @frozen
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public struct AttributedStringReader<
@@ -24,6 +33,7 @@ public struct AttributedStringReader<
     @usableFromInline
     var renderer: Renderer
 
+    /// Creates a reader that resolves `text` and renders it with `renderer`.
     @inlinable
     public init(
         _ text: Text,
@@ -33,6 +43,7 @@ public struct AttributedStringReader<
         self.renderer = renderer
     }
 
+    /// Creates a reader that resolves a localized string and renders it with `renderer`.
     @inlinable
     public init(
         _ text: LocalizedStringKey,
@@ -41,6 +52,7 @@ public struct AttributedStringReader<
         self.init(Text(text), renderer: renderer)
     }
 
+    /// Creates a reader that resolves `text` and passes it to `content`.
     @inlinable
     public init<Content: View>(
         _ text: Text,
@@ -49,6 +61,7 @@ public struct AttributedStringReader<
         self.init(text, renderer: AttributedStringReaderDefaultRenderer(content: content))
     }
 
+    /// Creates a reader that resolves a localized string and passes it to `content`.
     @inlinable
     public init<Content: View>(
         _ text: LocalizedStringKey,
@@ -65,14 +78,17 @@ public struct AttributedStringReader<
     }
 }
 
+/// An ``AttributedStringReaderRenderer`` that renders the attributed string with a closure.
 @frozen
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public struct AttributedStringReaderDefaultRenderer<
     Content: View
 >: AttributedStringReaderRenderer {
 
+    /// The closure that creates a view from the resolved attributed string.
     public var content: (AttributedString) -> Content
 
+    /// Creates a renderer from a closure.
     public init(
         content: @escaping (AttributedString) -> Content
     ) {
@@ -262,7 +278,7 @@ struct AttributedStringReader_Previews: PreviewProvider {
                     }
                 )
 
-                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                     TextPreview(
                         text: Text("Hello, World")
                             .textScale(.secondary)

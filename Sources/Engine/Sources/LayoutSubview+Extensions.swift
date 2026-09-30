@@ -23,7 +23,9 @@ extension LayoutSubview {
         }
     }
 
+    /// A type that identifies a subview within a layout.
     public typealias ID = Int
+    /// An identifier for the subview, derived from its underlying layout proxy.
     public var id: ID {
         let proxy = try! swift_getFieldValue("proxy", LayoutSubview.ProxyLayout.self, self)
         return proxy.id

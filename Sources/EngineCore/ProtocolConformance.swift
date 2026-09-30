@@ -9,9 +9,12 @@
 ///  - `https://github.com/apple/swift/blob/main/stdlib/toolchain/Compatibility50/ProtocolConformance.cpp`
 @frozen
 public struct ProtocolConformance<P: TypeDescriptor>: @unchecked Sendable {
+    /// The type metadata of the conforming type.
     public var metadata: UnsafeRawPointer
+    /// The protocol witness table of the conformance.
     public var conformance: UnsafeRawPointer
 
+    /// Looks up the conformance of the type to protocol `P`, or returns `nil` if the type does not conform.
     public init?(_ type: Any.Type) {
         let metadata = unsafeBitCast(type, to: UnsafeRawPointer.self)
         let desc = P.descriptor

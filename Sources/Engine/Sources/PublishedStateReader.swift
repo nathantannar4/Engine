@@ -4,12 +4,24 @@
 
 import SwiftUI
 
+/// A view that reads a ``PublishedState/Binding`` so that only this view,
+/// rather than its parent, is invalidated when the value changes.
+///
+///     @PublishedState var value = 0
+///
+///     var body: some View {
+///         PublishedStateReader($value) { $value in
+///             Text(value.description)
+///         }
+///     }
+///
 @frozen
 public struct PublishedStateReader<Value, Content: View>: View {
 
     @PublishedState.Binding var value: Value
     var content: (Binding<Value>) -> Content
 
+    /// Creates a reader that provides a binding to the published value to `content`.
     public init(
         _ value: PublishedState<Value>.Binding,
         @ViewBuilder content: @escaping (Binding<Value>) -> Content

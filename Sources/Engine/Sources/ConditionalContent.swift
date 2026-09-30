@@ -14,19 +14,23 @@ public struct ConditionalContent<
     FalseContent
 > {
 
+    /// The underlying content, which is either `TrueContent` or `FalseContent`.
     @frozen
     public enum Storage: @unchecked Sendable {
         case trueContent(TrueContent)
         case falseContent(FalseContent)
     }
 
+    /// The underlying content.
     public var storage: Storage
 
+    /// Creates an instance with the `TrueContent`.
     @inlinable
     public init(_ trueContent: TrueContent) {
         self.storage = .trueContent(trueContent)
     }
 
+    /// Creates an instance with the `FalseContent`.
     @inlinable
     public init(_ falseContent: FalseContent) {
         self.storage = .falseContent(falseContent)
@@ -34,6 +38,9 @@ public struct ConditionalContent<
 }
 
 extension ConditionalContent: Animatable where TrueContent: Animatable, FalseContent: Animatable {
+    /// The animatable data of the current content.
+    ///
+    /// Setting a value whose underlying type does not match the current content has no effect.
     public var animatableData: AnyAnimatableData {
         get {
             switch storage {

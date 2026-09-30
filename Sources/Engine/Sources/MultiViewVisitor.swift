@@ -9,15 +9,19 @@ import EngineCore
 /// to visit the concrete `View` type for each subview.
 public typealias MultiViewVisitor = EngineCore.MultiViewVisitor
 
-/// The ``TypeDescriptor`` for the ``MultiView`` protocol
+/// The ``TypeDescriptor`` for the ``MultiView`` protocol.
 public typealias MultiViewProtocolDescriptor = EngineCore.MultiViewProtocolDescriptor
 
+/// A ``MultiViewVisitor`` that collects each visited subview.
 @frozen
 public struct MultiViewSubviewVisitor: MultiViewVisitor {
 
+    /// A type-erased subview collected by a ``MultiViewSubviewVisitor``.
     @frozen
     public struct Subview: View, Identifiable {
+        /// The identifier of the subview.
         public nonisolated(unsafe) var id: Context.ID
+        /// The type-erased content of the subview.
         public nonisolated(unsafe) var content: AnyView
 
         nonisolated init<Content: View>(
@@ -33,8 +37,10 @@ public struct MultiViewSubviewVisitor: MultiViewVisitor {
         }
     }
 
+    /// The subviews that have been visited, in order.
     public private(set) var subviews: [Subview] = []
 
+    /// Creates a visitor with no collected subviews.
     @inlinable
     public init() { }
 
@@ -49,6 +55,18 @@ public struct MultiViewSubviewVisitor: MultiViewVisitor {
 
 extension MultiViewAdapter where Visitor == MultiViewSubviewVisitor {
 
+    /// Creates an adapter that provides each subview of `source` to `content`.
+    ///
+    ///     MultiViewAdapter {
+    ///         Text("Hello")
+    ///         Text("World")
+    ///     } content: { subviews in
+    ///         ForEachSubview(subviews) { index, subview in
+    ///             subview
+    ///                 .border(Color.red)
+    ///         }
+    ///     }
+    ///
     @inlinable
     public init(
         @ViewBuilder source: () -> Source,
@@ -62,11 +80,14 @@ extension MultiViewAdapter where Visitor == MultiViewSubviewVisitor {
     }
 }
 
+/// A ``MultiViewVisitor`` that determines if a view has no subviews.
 @frozen
 public struct MultiViewIsEmptyVisitor: MultiViewVisitor {
 
+    /// Whether no subviews have been visited.
     public private(set) var isEmpty: Bool = true
 
+    /// Creates a visitor that is initially empty.
     @inlinable
     public init() { }
 
@@ -82,6 +103,7 @@ public struct MultiViewIsEmptyVisitor: MultiViewVisitor {
 
 extension MultiViewAdapter where Visitor == MultiViewIsEmptyVisitor {
 
+    /// Creates an adapter that provides whether `source` has no subviews to `content`.
     @inlinable
     public static func isEmptyVisitor(
         @ViewBuilder source: () -> Source,
@@ -97,6 +119,8 @@ extension MultiViewAdapter where Visitor == MultiViewIsEmptyVisitor {
 
 extension View {
 
+    /// A Boolean value indicating whether the view resolves to no subviews,
+    /// such as `EmptyView` or a false conditional.
     public var isEmptyView: Bool {
         var visitor = MultiViewIsEmptyVisitor()
         visit(visitor: &visitor)

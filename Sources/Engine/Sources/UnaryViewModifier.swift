@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-/// A view modifier that wraps `Content` in unary view.
+/// A view modifier that wraps `Content` in a unary view.
 ///
 /// See Also:
 ///  - ``UnaryViewAdaptor``
@@ -12,6 +12,7 @@ import SwiftUI
 @frozen
 public struct UnaryViewModifier: ViewModifier {
 
+    /// Creates a modifier that wraps the content in a unary view.
     @inlinable
     public init() { }
 

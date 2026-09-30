@@ -42,11 +42,13 @@ extension Color {
     #endif
 
     #if os(macOS)
-    typealias PlatformRepresentable = NSColor
+    /// The platform color type, `NSColor`.
+    public typealias PlatformRepresentable = NSColor
     #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
-    typealias PlatformRepresentable = UIColor
+    /// The platform color type, `UIColor`.
+    public typealias PlatformRepresentable = UIColor
     #endif
-    #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS) || os(macOS)
     /// Transforms SwiftUI `Color` to a non-bridged color
     ///
     /// > Important: Using the built in `UIColor(_ color: Color)`/`NSColor(_ color: Color)`
@@ -54,7 +56,7 @@ extension Color {
     /// light/dark appearance.
     ///
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    func toPlatformValue(
+    public func toPlatformValue(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable {
         func resolve(provider: Any) -> PlatformRepresentable {
@@ -69,7 +71,7 @@ extension Color {
                     let opacity = try? swift_getFieldValue("opacity", Double.self, provider),
                     let base = try? swift_getFieldValue("base", Any.self, provider)
                 else {
-                    return .resolved(self, in: environment())
+                    return self.resolved(in: environment())
                 }
                 let color = resolve(provider: base)
                 return color.withAlphaComponent(opacity)
@@ -78,7 +80,7 @@ extension Color {
                 guard
                     let name = try? swift_getFieldValue("name", String.self, provider)
                 else {
-                    return .resolved(self, in: environment())
+                    return self.resolved(in: environment())
                 }
                 let bundle = try? swift_getFieldValue("bundle", Bundle.self, provider)
                 #if os(iOS) || os(tvOS) || os(visionOS)
@@ -86,9 +88,9 @@ extension Color {
                     UIColor(named: name, in: bundle, compatibleWith: traits) ?? UIColor(self)
                 }
                 #elseif os(watchOS)
-                return UIColor(named: name) ?? .resolved(self, in: environment())
+                return UIColor(named: name) ?? self.resolved(in: environment())
                 #else
-                return NSColor(named: name, bundle: bundle) ?? .resolved(self, in: environment())
+                return NSColor(named: name, bundle: bundle) ?? self.resolved(in: environment())
                 #endif
 
             case "Color", "SystemColorType", "ResolvedColorProvider":
@@ -101,19 +103,19 @@ extension Color {
                 if self == .black {
                     return .black
                 }
-                return .resolved(self, in: environment())
+                return self.resolved(in: environment())
 
             case "UIKitPlatformColorProvider", "AppKitPlatformColorProvider":
                 guard
                     let color = try? swift_getFieldValue("platformColor", PlatformRepresentable.self, provider)
                 else {
-                    return .resolved(self, in: environment())
+                    return self.resolved(in: environment())
                 }
                 return color
 
             default:
                 os_log(.debug, log: .default, "Failed to resolve Color provider %{public}@. Please file an issue.", className)
-                return .resolved(self, in: environment())
+                return self.resolved(in: environment())
             }
         }
 
@@ -123,12 +125,18 @@ extension Color {
             let provider = try? swift_getFieldValue("provider", Any.self, self),
             let base = try? swift_getFieldValue("base", Any.self, provider)
         else {
-            return .resolved(self, in: environment())
+            return self.resolved(in: environment())
         }
         return resolve(provider: base)
     }
     #endif
 
+    /// Returns a color with random red, green and blue components.
+    ///
+    /// - Parameters:
+    ///   - colorSpace: The color space of the components.
+    ///   - range: The range each component is randomly chosen from.
+    ///   - opacity: The opacity of the color.
     @inlinable
     public static func random(
         _ colorSpace: RGBColorSpace = .sRGB,
@@ -145,15 +153,22 @@ extension Color {
     }
 }
 
-extension Color.PlatformRepresentable {
+extension Color {
 
+    /// Transforms SwiftUI `Color` to a platform color using the built in bridging initializer.
+    ///
+    /// On iOS, tvOS and visionOS 17 and later, when an environment is provided the result is
+    /// a dynamic `UIColor` that resolves the color in the environment, updated with the
+    /// color scheme and contrast of the trait collection.
+    ///
+    /// Prefer ``SwiftUI/Color/toPlatformValue(in:)``, which avoids bridging where possible.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
-    static func resolved(
-        _ color: Color,
+    public func resolved(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> Color.PlatformRepresentable {
         #if os(iOS) || os(tvOS) || os(visionOS)
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *), let environment = environment() {
+            let color = self
             return UIColor { [environment] traitCollection in
                 var environment = environment
                 if let colorScheme = ColorScheme(traitCollection.userInterfaceStyle) {
@@ -166,11 +181,11 @@ extension Color.PlatformRepresentable {
                 return UIColor(cgColor: cgColor)
             }
         }
-        return UIColor(color)
+        return UIColor(self)
         #elseif os(watchOS)
-        return UIColor(color)
+        return UIColor(self)
         #else
-        return NSColor(color)
+        return NSColor(self)
         #endif
     }
 }

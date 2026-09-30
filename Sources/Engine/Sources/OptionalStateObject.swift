@@ -7,6 +7,9 @@ import Combine
 
 /// A property wrapper that instantiates an optional observable object
 /// and invalidates a view whenever the observable object changes.
+///
+/// Like `StateObject`, the initial value is created once for the lifetime
+/// of the view. Assigning a new object, or `nil`, also invalidates the view.
 @MainActor @preconcurrency
 @propertyWrapper
 @frozen
@@ -67,18 +70,22 @@ public struct OptionalStateObject<
     @usableFromInline
     var storage: StateObject<Storage>
 
+    /// Creates an optional state object with an autoclosure that provides the initial object.
     @inlinable
     public init(wrappedValue: @autoclosure @escaping () -> ObjectType?) {
         storage = StateObject<Storage>(wrappedValue: Storage(value: wrappedValue()))
     }
 
+    /// The underlying object referenced by the optional state object, if any.
     public var wrappedValue: ObjectType? {
         get { storage.wrappedValue.value }
         nonmutating set { storage.wrappedValue.value = newValue }
     }
 
+    /// A projection of the optional state object that creates bindings to
+    /// its properties using dynamic member lookup.
     public var projectedValue: OptionalObservedObject<ObjectType>.Binding {
-        OptionalObservedObject<ObjectType>(wrappedValue: wrappedValue).projectedValue
+        OptionalObservedObject<ObjectType>.Binding(root: storage.projectedValue.value)
     }
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)

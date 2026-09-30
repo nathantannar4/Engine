@@ -4,10 +4,13 @@
 
 import SwiftUI
 
+/// A type that makes the body of a ``TextReader`` from the resolved string of a `Text`.
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public protocol TextReaderRenderer: DynamicProperty {
 
+    /// The type of view representing the body.
     associatedtype Body: View
+    /// Creates the view that represents the body, given the resolved string of the text.
     @ViewBuilder @MainActor @preconcurrency func makeBody(text: String) -> Body
 }
 
@@ -24,6 +27,8 @@ public struct TextReader<
     @usableFromInline
     var renderer: Renderer
 
+    /// Creates a view that resolves `text` in the current environment and passes
+    /// the resolved string to `renderer`.
     @inlinable
     public init(
         _ text: Text,
@@ -33,6 +38,8 @@ public struct TextReader<
         self.renderer = renderer
     }
 
+    /// Creates a view that resolves a localized string in the current environment and
+    /// passes the resolved string to `renderer`.
     @inlinable
     public init(
         _ text: LocalizedStringKey,
@@ -41,6 +48,8 @@ public struct TextReader<
         self.init(Text(text), renderer: renderer)
     }
 
+    /// Creates a view that resolves `text` in the current environment and passes
+    /// the resolved string to `content`.
     @inlinable
     public init<Content: View>(
         _ text: Text,
@@ -49,6 +58,8 @@ public struct TextReader<
         self.init(text, renderer: TextReaderDefaultRenderer(content: content))
     }
 
+    /// Creates a view that resolves a localized string in the current environment and
+    /// passes the resolved string to `content`.
     @inlinable
     public init<Content: View>(
         _ text: LocalizedStringKey,
@@ -65,14 +76,17 @@ public struct TextReader<
     }
 }
 
+/// A ``TextReaderRenderer`` that makes its body from a closure.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct TextReaderDefaultRenderer<
     Content: View
 >: TextReaderRenderer {
 
+    /// The closure that makes the body from the resolved string.
     public var content: (String) -> Content
 
+    /// Creates a renderer that makes its body with `content`.
     public init(
         content: @escaping (String) -> Content
     ) {

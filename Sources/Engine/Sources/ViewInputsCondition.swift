@@ -6,16 +6,18 @@ import SwiftUI
 
 /// A static condition that is conditional on a view's inputs.
 public protocol ViewInputsCondition {
+    /// Returns whether the condition is `true` for the view inputs.
     static func evaluate(_ inputs: ViewInputs) -> Bool
 }
 
 extension ViewInputsCondition where Self: ViewInputFlag {
-    /// Evaluates to `true` when the input value is `true`
+    /// Evaluates to `true` when the input value is `true`.
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
         inputs[Self.Key.self]
     }
 }
 
+/// A condition that is `true` when the view is within a stack that has defined an axis.
 @frozen
 public struct IsAxisDefined: ViewInputsCondition {
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
@@ -23,6 +25,7 @@ public struct IsAxisDefined: ViewInputsCondition {
     }
 }
 
+/// A condition that is `true` when the view is within a stack with a horizontal axis.
 @frozen
 public struct IsAxisHorizontal: ViewInputsCondition {
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
@@ -31,6 +34,7 @@ public struct IsAxisHorizontal: ViewInputsCondition {
     }
 }
 
+/// A condition that is `true` when the view is within a stack with a vertical axis.
 @frozen
 public struct IsAxisVertical: ViewInputsCondition {
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
@@ -39,6 +43,9 @@ public struct IsAxisVertical: ViewInputsCondition {
     }
 }
 
+/// A condition that is `true` when the view is within a lazy container, such as `LazyVStack`.
+///
+/// The condition can be explicitly set with `input(_:)` or `defaultInput(_:)`.
 @frozen
 public struct IsInLazyContainer: ViewInputsCondition, ViewInputFlag {
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
@@ -49,6 +56,9 @@ public struct IsInLazyContainer: ViewInputsCondition, ViewInputFlag {
     }
 }
 
+/// A condition that is `true` when the view is within a `ScrollView`.
+///
+/// The condition can be explicitly set with `input(_:)` or `defaultInput(_:)`.
 @frozen
 public struct IsInScrollView: ViewInputsCondition, ViewInputFlag {
     public static func evaluate(_ inputs: ViewInputs) -> Bool {
@@ -59,6 +69,9 @@ public struct IsInScrollView: ViewInputsCondition, ViewInputFlag {
     }
 }
 
+/// A condition that is `true` when the view is within a `UIHostingConfiguration`.
+///
+/// The condition can be explicitly set with `input(_:)` or `defaultInput(_:)`.
 @available(iOS 14.0, tvOS 14.0, *)
 @frozen
 public struct IsInHostingConfiguration: ViewInputsCondition, ViewInputFlag {
@@ -72,16 +85,19 @@ public struct IsInHostingConfiguration: ViewInputsCondition, ViewInputFlag {
 
 extension ViewInputsCondition {
 
+    /// Returns whether the condition is `true` for the inputs of a view.
     @inlinable
     public static func evaluate(_ inputs: _ViewInputs) -> Bool {
         evaluate(ViewInputs(inputs: inputs))
     }
 
+    /// Returns whether the condition is `true` for the inputs of a view list.
     @inlinable
     public static func evaluate(_ inputs: _ViewListInputs) -> Bool {
         evaluate(ViewInputs(inputs: inputs))
     }
 
+    /// Returns whether the condition is `true` for the inputs of a view list count.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     @inlinable
     public static func evaluate(_ inputs: _ViewListCountInputs) -> Bool {

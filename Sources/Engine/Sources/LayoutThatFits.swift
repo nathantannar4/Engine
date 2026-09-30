@@ -6,6 +6,22 @@ import SwiftUI
 
 /// A layout that adapts to the available space by providing the first
 /// child layout that fits.
+///
+/// Each layout is measured with an unspecified proposal and is selected if
+/// its ideal size fits the proposal along the constrained axes. When none
+/// of the layouts fit, the last layout is used. Order matters, list layouts
+/// from most to least preferred.
+///
+///     LayoutThatFits(
+///         in: .horizontal,
+///         _HStackLayout(spacing: nil),
+///         _VStackLayout(spacing: nil)
+///     ) {
+///         Text("Layout")
+///         Text("That")
+///         Text("Fits")
+///     }
+///
 @frozen
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct LayoutThatFits: Layout {
@@ -79,6 +95,7 @@ public struct LayoutThatFits: Layout {
         return alignment
     }
 
+    /// The cache for the layout, which stores the cache of each child layout.
     public struct Cache {
         var caches: [AnyLayout.Cache]
     }
@@ -130,6 +147,11 @@ public struct LayoutThatFits: Layout {
 
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension LayoutThatFits {
+    /// Creates a layout that uses the first of the given layouts that fits.
+    ///
+    /// - Parameters:
+    ///   - axes: The axes along which a layout must fit the proposed size.
+    ///   - l1: The most preferred layout, followed by fallbacks in order.
     @inlinable
     public init<
         L1: Layout,
@@ -142,6 +164,11 @@ extension LayoutThatFits {
         self.init(in: axes, [AnyLayout(l1), AnyLayout(l2)])
     }
 
+    /// Creates a layout that uses the first of the given layouts that fits.
+    ///
+    /// - Parameters:
+    ///   - axes: The axes along which a layout must fit the proposed size.
+    ///   - l1: The most preferred layout, followed by fallbacks in order.
     @inlinable
     public init<
         L1: Layout,
@@ -156,6 +183,11 @@ extension LayoutThatFits {
         self.init(in: axes, [AnyLayout(l1), AnyLayout(l2), AnyLayout(l3)])
     }
 
+    /// Creates a layout that uses the first of the given layouts that fits.
+    ///
+    /// - Parameters:
+    ///   - axes: The axes along which a layout must fit the proposed size.
+    ///   - l1: The most preferred layout, followed by fallbacks in order.
     @inlinable
     public init<
         L1: Layout,
@@ -172,6 +204,11 @@ extension LayoutThatFits {
         self.init(in: axes, [AnyLayout(l1), AnyLayout(l2), AnyLayout(l3), AnyLayout(l4)])
     }
 
+    /// Creates a layout that uses the first of the given layouts that fits.
+    ///
+    /// - Parameters:
+    ///   - axes: The axes along which a layout must fit the proposed size.
+    ///   - l1: The most preferred layout, followed by fallbacks in order.
     @inlinable
     public init<
         L1: Layout,

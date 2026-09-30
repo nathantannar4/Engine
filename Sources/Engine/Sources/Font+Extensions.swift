@@ -8,14 +8,20 @@ import os.log
 extension Font {
 
     #if os(macOS)
-    typealias PlatformRepresentable = NSFont
-    typealias PlatformRepresentableDescriptor = NSFontDescriptor
+    /// The platform font type, `NSFont`
+    public typealias PlatformRepresentable = NSFont
+    /// The platform font descriptor type, `NSFontDescriptor`
+    public typealias PlatformRepresentableDescriptor = NSFontDescriptor
     #elseif os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
-    typealias PlatformRepresentable = UIFont
-    typealias PlatformRepresentableDescriptor = UIFontDescriptor
+    /// The platform font type, `UIFont`
+    public typealias PlatformRepresentable = UIFont
+    /// The platform font descriptor type, `UIFontDescriptor`
+    public typealias PlatformRepresentableDescriptor = UIFontDescriptor
     #endif
 
     #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+    /// Resolves the font to a `UIFont`, using the environment to resolve
+    /// dynamic type size and legibility weight when provided.
     public func toUIFont(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> UIFont? {
@@ -24,6 +30,8 @@ extension Font {
     #endif
 
     #if os(macOS)
+    /// Resolves the font to an `NSFont`, using the environment to resolve
+    /// dynamic type size and legibility weight when provided.
     public func toNSFont(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> NSFont? {
@@ -31,10 +39,12 @@ extension Font {
     }
     #endif
 
-    func toPlatformValue(
+    /// Resolves the font to the platform font type, using the environment to resolve
+    /// dynamic type size and legibility weight when provided.
+    public func toPlatformValue(
         in environment: @autoclosure () -> EnvironmentValues? = nil
     ) -> PlatformRepresentable? {
-        #if canImport(FoundationModels) // Xcode 26
+        #if XCODE_26
         if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *), let environment = environment() {
             let context = environment.fontResolutionContext
             let resolved = resolve(in: context)
@@ -59,15 +69,9 @@ private enum FontProvider {
             return nil
         }
 
-        let className = String(describing: type(of: base))
-        if let regex = try? NSRegularExpression(
-            pattern: "ModifierProvider<(.*)>"
-        ), let match = regex.firstMatch(
-            in: className,
-            range: NSRange(className.startIndex..<className.endIndex, in: className)
-        ) {
-            let modifier = className[Range(match.range(at: 1), in: className)!]
-
+        let names = FontProviderTypeNameCache.shared[type(of: base)]
+        let className = names.className
+        if let modifier = names.modifierName {
             guard
                 let sFont = try? swift_getFieldValue("base", Font.self, base),
                 var font = sFont.toPlatformValue(in: environment())
@@ -196,6 +200,48 @@ private enum FontProvider {
             return nil
         }
     }
+}
+
+private final class FontProviderTypeNameCache: @unchecked Sendable {
+
+    struct Names {
+        var className: String
+        /// The modifier name of a `ModifierProvider<Modifier>`
+        var modifierName: String?
+
+        init(_ type: Any.Type) {
+            className = String(describing: type)
+            let prefix = "ModifierProvider<"
+            if let start = className.range(of: prefix),
+                let end = className.range(of: ">", options: .backwards, range: start.upperBound..<className.endIndex)
+            {
+                modifierName = String(className[start.upperBound..<end.lowerBound])
+            }
+        }
+    }
+
+    private let lock: os_unfair_lock_t
+    private var storage = [UnsafeRawPointer: Names]()
+
+    static let shared = FontProviderTypeNameCache()
+    private init() {
+        self.lock = .allocate(capacity: 1)
+        self.lock.initialize(to: os_unfair_lock_s())
+    }
+
+    subscript(type: Any.Type) -> Names {
+        os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+        let id = unsafeBitCast(type, to: UnsafeRawPointer.self)
+        if let names = storage[id] {
+            return names
+        }
+        let names = Names(type)
+        storage[id] = names
+        return names
+    }
+}
+
+extension FontProvider {
 
     func resolved(
         in environment: @autoclosure () -> EnvironmentValues? = nil
@@ -251,6 +297,8 @@ private enum FontProvider {
 extension EnvironmentValues {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// A trait collection containing the content size category and legibility weight
+    /// of the environment, for resolving platform fonts.
     public func traitCollectionForFontResolution() -> UITraitCollection {
         let preferredContentSizeCategory: UIContentSizeCategory? = {
             if #available(iOS 15.0, tvOS 15.0, *) {
@@ -308,7 +356,9 @@ extension EnvironmentValues {
 }
 
 extension Font.PlatformRepresentable {
-    func with(
+
+    /// Returns a copy of the font with the given system design, if available.
+    public func with(
         design: Font.PlatformRepresentableDescriptor.SystemDesign
     ) -> Font.PlatformRepresentable? {
         guard let designedDescriptor = fontDescriptor.withDesign(design) else {
@@ -320,7 +370,10 @@ extension Font.PlatformRepresentable {
         )
     }
 
-    func with(
+    /// Returns a copy of the font with the given font feature type and selector applied.
+    ///
+    /// Returns `nil` on macOS.
+    public func with(
         featureType type: Int,
         selector: Int
     ) -> Font.PlatformRepresentable? {
@@ -351,15 +404,18 @@ extension Font.PlatformRepresentable {
         #endif
     }
 
-    var bold: Font.PlatformRepresentable? {
+    /// A bold variant of the font, if available.
+    public var bold: Font.PlatformRepresentable? {
         with(symbolicTraits: .traitBold)
     }
 
-    var italic: Font.PlatformRepresentable? {
+    /// An italic variant of the font, if available.
+    public var italic: Font.PlatformRepresentable? {
         with(symbolicTraits: .traitItalic)
     }
 
-    var monospaced: Font.PlatformRepresentable? {
+    /// A monospaced variant of the font that preserves its weight, if available.
+    public var monospaced: Font.PlatformRepresentable? {
         let traits = CTFontCopyTraits(self) as NSDictionary
         let weight: Font.PlatformRepresentable.Weight
         if let existingWeight = traits[kCTFontWeightTrait as String] as? CGFloat {
@@ -378,12 +434,14 @@ extension Font.PlatformRepresentable {
         #endif
     }
 
-    var monospacedDigit: Font.PlatformRepresentable? {
+    /// A variant of the font that uses fixed-width digits, if available.
+    public var monospacedDigit: Font.PlatformRepresentable? {
         with(featureType: kNumberSpacingType, selector: kMonospacedNumbersSelector)
     }
 
+    /// Returns a copy of the font with the given width trait.
     @available(watchOS 9.0, *)
-    func with(
+    public func with(
         width: Width
     ) -> Font.PlatformRepresentable? {
         let traits = NSMutableDictionary(dictionary: CTFontCopyTraits(self))
@@ -405,7 +463,9 @@ extension Font.PlatformRepresentable {
         return font
     }
 
-    func with(
+    /// Returns a copy of the font with the given weight, symbolic traits
+    /// and font feature merged into its existing traits.
+    public func with(
         weight: Weight? = nil,
         symbolicTraits: CTFontSymbolicTraits = [],
         feature: [Font.PlatformRepresentableDescriptor.FeatureKey: Int]? = nil
@@ -447,8 +507,10 @@ extension Font.PlatformRepresentable {
     }
 }
 
-fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
-    init?(_ design: Font.Design) {
+extension Font.PlatformRepresentableDescriptor.SystemDesign {
+
+    /// Creates a system design from a `Font.Design`, if supported on this platform.
+    public init?(_ design: Font.Design) {
         switch design {
         case .default:
             self = .default
@@ -484,8 +546,10 @@ fileprivate extension Font.PlatformRepresentableDescriptor.SystemDesign {
     }
 }
 
-fileprivate extension Font.PlatformRepresentable.Weight {
-    init?(_ weight: Font.Weight) {
+extension Font.PlatformRepresentable.Weight {
+
+    /// Creates a font weight from a `Font.Weight`.
+    public init?(_ weight: Font.Weight) {
         guard let value = try? swift_getFieldValue("value", CGFloat.self, weight) else {
             return nil
         }
@@ -494,8 +558,10 @@ fileprivate extension Font.PlatformRepresentable.Weight {
 }
 
 @available(iOS 13.0, macOS 11.0, tvOS 13.0, watchOS 6.0, *)
-fileprivate extension Font.PlatformRepresentable.TextStyle {
-    init?(_ textStyle: Font.TextStyle) {
+extension Font.PlatformRepresentable.TextStyle {
+
+    /// Creates a text style from a `Font.TextStyle`, if supported on this platform.
+    public init?(_ textStyle: Font.TextStyle) {
         switch textStyle {
         case .largeTitle:
             #if os(tvOS)
@@ -507,16 +573,22 @@ fileprivate extension Font.PlatformRepresentable.TextStyle {
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                 self = .extraLargeTitle
+            } else {
+                return nil
             }
-            #endif
+            #else
             return nil
+            #endif
         case .extraLargeTitle2:
             #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
             if #available(iOS 17.0, tvOS 17.0, watchOS 10.0, *) {
                 self = .extraLargeTitle2
+            } else {
+                return nil
             }
-            #endif
+            #else
             return nil
+            #endif
         case .title:
             self = .title1
         case .headline:
@@ -576,8 +648,8 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .body.monospaced().weight(.bold))
             }
 
-            #if canImport(FoundationModels) // Xcode 26
-            if #available(iOS 26.0, macOS 26.0,  *) {
+            #if XCODE_26
+            if #available(iOS 26.0, macOS 26.0, *) {
                 FontPreview(font: .body)
                     .monospaced()
 
@@ -594,7 +666,7 @@ struct Font_Previews: PreviewProvider {
                     .underline()
             }
 
-            if #available(iOS 16.0, macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 FontPreview(font: .body)
                     .kerning(3)
             }
@@ -603,13 +675,13 @@ struct Font_Previews: PreviewProvider {
                 FontPreview(font: .system(.body, design: .rounded, weight: .semibold))
             }
 
-            if #available(iOS 16.0, macOS 13.0,  *) {
+            if #available(iOS 16.0, macOS 13.0, *) {
                 FontPreview(font: .body)
                     .fontWidth(.compressed)
             }
 
-            #if canImport(FoundationModels) // Xcode 26
-            if #available(iOS 26.0, macOS 26.0,  *) {
+            #if XCODE_26
+            if #available(iOS 26.0, macOS 26.0, *) {
                 FontPreview(font: .body.scaled(by: 1.1).scaled(by: 1.2))
 
                 FontPreview(font: .body.pointSize(22))

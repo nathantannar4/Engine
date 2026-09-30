@@ -6,29 +6,37 @@ import SwiftUI
 import EngineCore
 import os.log
 
+/// The static inputs of a view, used to read and write custom ``ViewInputKey`` values.
 @frozen
 public struct ViewInputs {
 
+    /// The options of the view inputs.
     @frozen
     public struct Options: OptionSet, Sendable {
         public var rawValue: UInt32
 
+        /// Creates options from a raw value.
         public init(rawValue: UInt32) { self.rawValue = rawValue }
 
+        /// Returns the option for the bit at `index`.
         public static func flag(_ index: Int) -> Options {
             Options(rawValue: 1 << index)
         }
 
+        /// Set when the view is within a stack that has defined an axis.
         public static let isAxisDefined = Options(rawValue: 1 << 2)
 
+        /// Set when the axis of the stack the view is within is horizontal.
         public static let isAxisHorizontal = Options(rawValue: 1 << 3)
     }
 
     @usableFromInline
     var customInputs: PropertyList
 
+    /// The options of the view inputs.
     public let options: Options
 
+    /// Creates view inputs from graph inputs.
     @inlinable
     public init(inputs: _GraphInputs) {
         self.customInputs = inputs.customInputs
@@ -40,16 +48,19 @@ public struct ViewInputs {
         }
     }
 
+    /// Creates view inputs from the inputs of a view.
     @inlinable
     public init(inputs: _ViewInputs) {
         self.init(inputs: inputs.graphInputs)
     }
 
+    /// Creates view inputs from the inputs of a view list.
     @inlinable
     public init(inputs: _ViewListInputs) {
         self.init(inputs: inputs.graphInputs)
     }
 
+    /// Creates view inputs from the inputs of a view list count.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     @inlinable
     public init(inputs: _ViewListCountInputs) {
@@ -62,6 +73,7 @@ public struct ViewInputs {
         }
     }
 
+    /// Accesses the value for the input key, or its default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -69,6 +81,7 @@ public struct ViewInputs {
         set { customInputs[Input.self] = newValue }
     }
 
+    /// Accesses the value for the input key, or the given default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -77,6 +90,7 @@ public struct ViewInputs {
         set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
+    /// Accesses the value for the input key whose unqualified type name matches `key`.
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self
@@ -86,8 +100,9 @@ public struct ViewInputs {
     }
 }
 
-/// A `ViewModifier` that only modifies the static inputs
+/// A `ViewModifier` that only modifies the static inputs.
 public protocol ViewInputsModifier: GraphInputsModifier {
+    /// Modifies the static inputs of the content.
     nonisolated static func makeInputs(inputs: inout ViewInputs)
 }
 
@@ -102,6 +117,7 @@ extension ViewInputsModifier {
     }
 }
 
+/// A modifier that logs the view inputs on debug builds.
 @frozen
 public struct _ViewInputsLogModifier: ViewInputsModifier {
 
@@ -143,6 +159,7 @@ private struct PreferencesInputsLayout {
 
 extension _ViewInputs {
 
+    /// The underlying graph inputs.
     public var graphInputs: _GraphInputs {
         get {
             do {
@@ -161,6 +178,10 @@ extension _ViewInputs {
         }
     }
 
+    /// Adds the SwiftUI accessibility nodes preference key to the inputs, so that
+    /// accessibility is bridged from a hosting view embedded within the view.
+    ///
+    /// This has no effect prior to iOS 18, macOS 15, tvOS 18, watchOS 11 and visionOS 2.
     public mutating func bridgeHostingView() {
         if #available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
             do {
@@ -177,6 +198,7 @@ extension _ViewInputs {
         }
     }
 
+    /// Accesses the value for the input key, or its default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -184,6 +206,7 @@ extension _ViewInputs {
         set { graphInputs[Input.self] = newValue }
     }
 
+    /// Accesses the value for the input key, or the given default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -192,6 +215,7 @@ extension _ViewInputs {
         set { graphInputs[Input.self, default: defaultValue()] = newValue }
     }
 
+    /// Accesses the value for the input key whose unqualified type name matches `key`.
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self
@@ -203,6 +227,7 @@ extension _ViewInputs {
 
 extension _ViewListInputs {
 
+    /// The underlying graph inputs.
     public var graphInputs: _GraphInputs {
         get {
             do {
@@ -221,6 +246,7 @@ extension _ViewListInputs {
         }
     }
 
+    /// Accesses the value for the input key, or its default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -228,6 +254,7 @@ extension _ViewListInputs {
         set { graphInputs[Input.self] = newValue }
     }
 
+    /// Accesses the value for the input key, or the given default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -236,6 +263,7 @@ extension _ViewListInputs {
         set { graphInputs[Input.self, default: defaultValue()] = newValue }
     }
 
+    /// Accesses the value for the input key whose unqualified type name matches `key`.
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self
@@ -270,6 +298,7 @@ extension _ViewListCountInputs {
         }
     }
 
+    /// Accesses the value for the input key, or its default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -277,6 +306,7 @@ extension _ViewListCountInputs {
         set { customInputs[Input.self] = newValue }
     }
 
+    /// Accesses the value for the input key, or the given default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -285,6 +315,7 @@ extension _ViewListCountInputs {
         set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
+    /// Accesses the value for the input key whose unqualified type name matches `key`.
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self

@@ -6,6 +6,7 @@ import SwiftUI
 
 extension ForEach {
 
+    /// Creates an instance that repeats the given content `count` times.
     @inlinable
     public init(
         _ count: Int,
@@ -17,6 +18,7 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each index in `0..<count`.
     @inlinable
     public init(
         _ count: Int,
@@ -27,6 +29,7 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each index in a closed range.
     @inlinable
     public init(
         _ range: ClosedRange<Int>,
@@ -37,6 +40,8 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each element of a collection,
+    /// identified by the element's index.
     @_disfavoredOverload
     @inlinable
     public init<_Data: RandomAccessCollection>(
@@ -49,6 +54,8 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each index and element of a collection,
+    /// identified by the element's index.
     @_disfavoredOverload
     @inlinable
     public init<_Data: RandomAccessCollection>(
@@ -61,6 +68,8 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each index and element of a collection,
+    /// identified by the key path to an element's identifier.
     @inlinable
     public init<
         _Data: RandomAccessCollection
@@ -76,6 +85,8 @@ extension ForEach {
         }
     }
 
+    /// Creates an instance that computes views for each index and element of a
+    /// collection of identifiable elements.
     @inlinable
     public init<
         _Data: RandomAccessCollection

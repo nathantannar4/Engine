@@ -13,8 +13,10 @@ public struct FormatTransform<
     public typealias Input = F.FormatInput
     public typealias Output = F.FormatOutput
 
+    /// The format style used to format and parse the value.
     public var format: F
 
+    /// Creates a transform that formats and parses values with the given format style.
     @inlinable
     public init(format: F) {
         self.format = format
@@ -29,7 +31,7 @@ public struct FormatTransform<
     }
 }
 
-/// A ``BindingTransform`` that transforms the value with a `ParseableFormatStyle`
+/// A ``BindingTransform`` that transforms an optional value with a `ParseableFormatStyle`
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 public struct OptionalFormatTransform<
     F: ParseableFormatStyle
@@ -38,9 +40,13 @@ public struct OptionalFormatTransform<
     public typealias Input = F.FormatInput?
     public typealias Output = F.FormatOutput
 
+    /// The format style used to format and parse the value.
     public var format: F
+    /// The output used when the input value is `nil`.
     public var defaultValue: Output
 
+    /// Creates a transform that formats and parses values with the given format style,
+    /// using `defaultValue` when the input value is `nil`.
     @inlinable
     public init(format: F, defaultValue: Output) {
         self.format = format
@@ -60,6 +66,9 @@ public struct OptionalFormatTransform<
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension Binding {
 
+    /// Projects the binding to the formatted output of a `ParseableFormatStyle`.
+    ///
+    /// When a new value fails to parse, the underlying value is left unchanged.
     @inlinable
     @MainActor @preconcurrency
     public func format<
@@ -74,6 +83,10 @@ extension Binding {
         )
     }
 
+    /// Projects the optional binding to the formatted output of a `ParseableFormatStyle`,
+    /// using `defaultValue` when the underlying value is `nil`.
+    ///
+    /// When a new value fails to parse, the underlying value is left unchanged.
     @inlinable
     @MainActor @preconcurrency
     public func format<

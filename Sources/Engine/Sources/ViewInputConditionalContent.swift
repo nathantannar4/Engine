@@ -18,6 +18,9 @@ public struct ViewInputConditionalContent<
     @usableFromInline
     nonisolated(unsafe) var falseContent: FalseContent
 
+    /// Creates a view that is `then` when `Condition` evaluates to `true` for the view inputs,
+    /// otherwise `otherwise`.
+    @_disfavoredOverload
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
@@ -27,6 +30,8 @@ public struct ViewInputConditionalContent<
         self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
+    /// Creates a view that is `then` when `Condition` evaluates to `true` for the view inputs,
+    /// otherwise `otherwise`.
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,

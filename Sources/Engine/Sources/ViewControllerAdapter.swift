@@ -7,18 +7,29 @@ import EngineCore
 
 #if !os(watchOS)
 
-/// An adapter that converts a generic ``View`` into a view controller
+/// An adapter that converts a generic `View` into a view controller.
+///
+/// When `Content` is a `UIViewControllerRepresentable` or `NSViewControllerRepresentable`,
+/// its view controller is made and updated directly, using the context of the
+/// `Representable` that owns the adapter. Otherwise, the content is hosted in a
+/// ``HostingController``.
 @MainActor @preconcurrency
 open class ViewControllerAdapter<
     Content: View,
     Representable: PlatformViewRepresentable
 > {
 
+    /// The view controller for the content.
     public private(set) var viewController: PlatformViewController!
 
     var context: Any! // Context<Coordinator>
     var conformance: ProtocolConformance<PlatformViewControllerRepresentableProtocolDescriptor>? = nil
 
+    /// Creates an adapter for `content`.
+    ///
+    /// - Parameters:
+    ///   - content: The view to convert into a view controller.
+    ///   - context: The context of the representable that owns the adapter.
     public init(
         content: Content,
         context: Representable.Context
@@ -51,6 +62,7 @@ open class ViewControllerAdapter<
 
     // MARK: - Update
 
+    /// Updates the view controller with new `content`.
     public func updateViewController(
         content: Content,
         context: Representable.Context
@@ -73,6 +85,10 @@ open class ViewControllerAdapter<
 
     // MARK: - Available Overrides
 
+    /// Makes the hosting controller used when `Content` is not a view controller representable.
+    ///
+    /// Override to customize the hosting controller. The default implementation
+    /// returns a ``HostingController``.
     open func makeHostingController(
         content: Content,
         context: Representable.Context
@@ -80,6 +96,10 @@ open class ViewControllerAdapter<
         return HostingController(content: content)
     }
 
+    /// Updates the hosting controller used when `Content` is not a view controller representable.
+    ///
+    /// The default implementation updates the ``HostingController`` with `content`
+    /// and the context's transaction.
     open func updateHostingController(
         content: Content,
         context: Representable.Context
@@ -88,11 +108,17 @@ open class ViewControllerAdapter<
         hostingController.update(content: content, transaction: context.transaction)
     }
 
+    /// Transforms the environment passed to the context of a view controller representable `Content`.
+    ///
+    /// The default implementation does nothing.
     open func transformViewControllerEnvironment(
         _ environment: inout EnvironmentValues
     ) {
     }
 
+    /// Called after a view controller representable `Content` has updated its view controller.
+    ///
+    /// The default implementation does nothing.
     open func updateViewController(
         context: Representable.Context
     ) {
@@ -271,7 +297,7 @@ open class ViewControllerAdapter<
                             coordinator: coordinator
                         )
                     )
-                } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *),
+                } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *),
                     let values = try? swift_getFieldValue("values", RepresentableContextValues.V4.self, bridgedContext)
                 {
                     context = .v4(

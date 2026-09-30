@@ -5,15 +5,21 @@
 import SwiftUI
 
 /// A ``ViewInputsVisitor`` allows for the custom view inputs of `_GraphInputs`
-/// to be iterated upon
+/// to be iterated upon.
 public protocol ViewInputsVisitor {
 
+    /// Visits a custom view input.
+    ///
+    /// - Parameters:
+    ///   - value: The value of the input.
+    ///   - key: The fully qualified type name of the input key.
+    ///   - stop: Set to `true` to stop visiting the remaining inputs.
     mutating func visit<Value>(_ value: Value, key: String, stop: inout Bool)
 }
 
 extension ViewInputs {
 
-    /// Visits the custom view inputs with the `Visitor`
+    /// Visits the custom view inputs with the `Visitor`.
     public func visit<
         Visitor: ViewInputsVisitor
     >(
@@ -33,7 +39,7 @@ extension ViewInputs {
 
 extension _GraphInputs {
 
-    /// Visits the custom view inputs with the `Visitor`
+    /// Visits the custom view inputs with the `Visitor`.
     public func visit<
         Visitor: ViewInputsVisitor
     >(
@@ -45,7 +51,7 @@ extension _GraphInputs {
 
 extension _ViewInputs {
 
-    /// Visits the custom view inputs with the `Visitor`
+    /// Visits the custom view inputs with the `Visitor`.
     public func visit<
         Visitor: ViewInputsVisitor
     >(
@@ -57,7 +63,7 @@ extension _ViewInputs {
 
 extension _ViewListInputs {
 
-    /// Visits the custom view inputs with the `Visitor`
+    /// Visits the custom view inputs with the `Visitor`.
     public func visit<
         Visitor: ViewInputsVisitor
     >(
@@ -70,7 +76,7 @@ extension _ViewListInputs {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension _ViewListCountInputs {
 
-    /// Visits the custom view inputs with the `Visitor`
+    /// Visits the custom view inputs with the `Visitor`.
     public func visit<
         Visitor: ViewInputsVisitor
     >(
@@ -80,8 +86,11 @@ extension _ViewListCountInputs {
     }
 }
 
+/// A ``ViewInputsModifier`` that visits the custom view inputs of its content with a ``ViewInputsVisitor``.
 public protocol ViewInputsVisitorModifier: ViewInputsModifier {
+    /// The type of visitor.
     associatedtype Visitor: ViewInputsVisitor
+    /// The visitor used to visit the custom view inputs.
     nonisolated static var visitor: Visitor { get }
 }
 

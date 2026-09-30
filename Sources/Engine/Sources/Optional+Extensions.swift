@@ -2,7 +2,7 @@
 // Copyright (c) Nathan Tannar
 //
 
-import SwiftUI
+import Foundation
 
 extension Optional {
 
@@ -58,6 +58,11 @@ extension Optional {
     }
 }
 
+/// A key path subscript argument for values that may not be `Hashable`.
+///
+/// Key paths are compared by their subscript arguments, and `Binding`s are compared
+/// by their key paths. So `Subscript` compares by value where possible, so that a
+/// `Binding` transformed with the same value is equal between view updates.
 @usableFromInline
 final class Subscript<Value>: Hashable {
     var value: Value
@@ -69,12 +74,40 @@ final class Subscript<Value>: Hashable {
 
     @usableFromInline
     static func == (lhs: Subscript<Value>, rhs: Subscript<Value>) -> Bool {
-        lhs === rhs
+        if lhs === rhs {
+            return true
+        }
+        if let lhsValue = lhs.value as? any Hashable {
+            return lhsValue.isEqual(to: rhs.value)
+        }
+        if let lhsValue = lhs.value as? any Equatable {
+            return lhsValue.isEqual(to: rhs.value)
+        }
+        if Value.self is AnyClass {
+            return (lhs.value as AnyObject) === (rhs.value as AnyObject)
+        }
+        return false
     }
 
     @usableFromInline
     func hash(into hasher: inout Hasher) {
-        hasher.combine(ObjectIdentifier(self))
+        if let value = value as? any Hashable {
+            hasher.combine(AnyHashable(value))
+        } else if value is any Equatable {
+            // Equal values must have equal hashes, and `Equatable` values
+            // cannot be hashed, so rely on `==` to distinguish them
+        } else if Value.self is AnyClass {
+            hasher.combine(ObjectIdentifier(value as AnyObject))
+        } else {
+            hasher.combine(ObjectIdentifier(self))
+        }
+    }
+}
+
+extension Equatable {
+    fileprivate func isEqual(to other: Any) -> Bool {
+        guard let other = other as? Self else { return false }
+        return self == other
     }
 }
 
@@ -272,19 +305,6 @@ extension Optional where Wrapped == URL {
         }
         set {
             self = URL(string: newValue)
-        }
-    }
-}
-
-extension Equatable {
-
-    @usableFromInline
-    var optional: Optional<Self> {
-        get { Optional.some(self) }
-        set {
-            if case .some(let wrapped) = newValue {
-                self = wrapped
-            }
         }
     }
 }

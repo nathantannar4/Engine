@@ -17,6 +17,17 @@ public typealias ConditionalLayout<TrueLayout: Layout, FalseLayout: Layout> = Co
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension ConditionalLayout: Layout {
 
+    /// Creates a layout that is `then` when `condition` is `true`, and `otherwise` when `false`.
+    ///
+    ///     ConditionalLayout(if: isVertical) {
+    ///         VStackLayout()
+    ///     } otherwise: {
+    ///         HStackLayout()
+    ///     } {
+    ///         Text("Hello")
+    ///         Text("World")
+    ///     }
+    ///
     @inlinable
     public init(
         if condition: Bool,
@@ -123,13 +134,19 @@ extension ConditionalLayout: Layout {
         return spacing
     }
 
+    /// The cache of a ``ConditionalLayout``, which stores the cache of the current layout.
+    ///
+    /// When the condition changes, the cache of the previous layout is retained so that
+    /// it can be restored if the condition changes back.
     @frozen
     public struct Cache {
+        /// The cache of the current layout.
         public enum Storage {
             case trueCache(TrueContent.Cache)
             case falseCache(FalseContent.Cache)
         }
 
+        /// The cache of the current layout.
         public var storage: Storage
         var lastValue: Storage?
 
@@ -173,6 +190,8 @@ extension ConditionalLayout: Layout {
         }
     }
 
+    /// The layout properties shared by both layouts, such as the stack orientation when
+    /// both layouts have the same orientation.
     public static var layoutProperties: LayoutProperties {
         TrueContent.layoutProperties.combined(with: FalseContent.layoutProperties)
     }

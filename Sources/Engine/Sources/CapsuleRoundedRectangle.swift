@@ -4,18 +4,25 @@
 
 import SwiftUI
 
+/// A capsule shape whose corner radius is limited to a maximum, so that it becomes
+/// a rounded rectangle when its height is larger than twice the maximum corner radius.
 @frozen
 public struct CapsuleRoundedRectangle: Shape, InsettableShape {
 
+    /// The style of the corners of a ``CapsuleRoundedRectangle``.
     @frozen
     public enum Style: Hashable, Sendable {
+        /// Uses the specified rounded corner style.
         case rounded(RoundedCornerStyle)
 
-        /// Resolves to `.continuous` when capped by the maximum corner radius
+        /// Resolves to `.continuous` when capped by the maximum corner radius, or when
+        /// there is no maximum corner radius, and `.circular` otherwise
         case automatic
     }
 
+    /// The maximum corner radius, or `nil` for a capsule.
     public var maxCornerRadius: CGFloat?
+    /// The style of the corners.
     public var style: Style
 
     private var inset: CGFloat = 0
@@ -30,6 +37,7 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape {
         }
     }
 
+    /// Creates a capsule rounded rectangle with a maximum corner radius and a rounded corner style.
     @inlinable
     public init(
         maxCornerRadius: CGFloat?,
@@ -38,6 +46,7 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape {
         self.init(maxCornerRadius: maxCornerRadius, style: .rounded(style))
     }
 
+    /// Creates a capsule rounded rectangle with a maximum corner radius and a style.
     @inlinable
     public init(
         maxCornerRadius: CGFloat?,
@@ -82,7 +91,7 @@ public struct CapsuleRoundedRectangle: Shape, InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 extension CapsuleRoundedRectangle: RoundedRectangularShape {
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
@@ -133,7 +142,7 @@ struct CapsuleRoundedRectangle_Previews: PreviewProvider {
                 }
                 .frame(height: 50)
 
-                #if canImport(FoundationModels) && !os(visionOS) // Xcode 26
+                #if XCODE_26 && !os(visionOS)
                 if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
                     VStack {
                         Text("Hello, World")

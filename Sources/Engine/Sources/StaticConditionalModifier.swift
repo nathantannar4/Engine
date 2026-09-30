@@ -22,6 +22,9 @@ public struct StaticConditionalModifier<
     @usableFromInline
     nonisolated(unsafe) var storage: Storage
 
+    /// Creates a modifier that statically resolves to `then` when `Condition.value` is
+    /// `true`, otherwise to `otherwise`.
+    @_disfavoredOverload
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
@@ -31,6 +34,8 @@ public struct StaticConditionalModifier<
         self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
+    /// Creates a modifier that statically resolves to `then` when `Condition.value` is
+    /// `true`, otherwise to `otherwise`.
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,

@@ -8,13 +8,17 @@ import Combine
 /// The resulting image from ``ImageRendererAdapter``
 public struct ImageRenderedView: View {
 
+    /// The rendered image.
     public var cgImage: CGImage
+    /// The scale of the rendered image.
     public var scale: CGFloat
 
+    /// The rendered image as an `Image`.
     public var image: Image {
         Image(decorative: cgImage, scale: scale)
     }
 
+    /// The size of the rendered image, in points.
     public var size: CGSize {
         CGSize(width: CGFloat(cgImage.width) / scale, height: CGFloat(cgImage.height) / scale)
     }
@@ -26,8 +30,8 @@ public struct ImageRenderedView: View {
 
 /// A view that transforms the source view into an ``Image`` with ``ImageRenderer``
 ///
-/// The image is rendered with the current environments display scale, and
-/// color scheme. Any other environment values are not propogated.
+/// The image is rendered with the current environment's display scale and
+/// color scheme. Any other environment values are not propagated.
 ///
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct ImageRendererAdapter<
@@ -43,6 +47,11 @@ public struct ImageRendererAdapter<
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
 
+    /// Creates a view that renders the source view into an image, and passes
+    /// the rendered image to `content`, or `nil` if it has not been rendered.
+    ///
+    /// - Parameters:
+    ///   - proposedSize: The size proposed to the source view when rendering.
     public init(
         proposedSize: ProposedViewSize = .unspecified,
         @ViewBuilder source: () -> Source,
@@ -136,8 +145,9 @@ private struct ImageRendererSourceView<Content: View>: View {
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension ImageRenderer {
 
+    /// The rendered image as a view, or `nil` if the renderer could not produce an image.
     @MainActor
-    var image: ImageRenderedView? {
+    public var image: ImageRenderedView? {
         if let cgImage {
             return ImageRenderedView(cgImage: cgImage, scale: scale)
         }

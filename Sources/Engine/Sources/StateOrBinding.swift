@@ -5,7 +5,7 @@
 import SwiftUI
 
 /// A property wrapper that can read and write a value from
-/// a wrapped `State` or `Binding`
+/// a wrapped `State` or `Binding`.
 @propertyWrapper
 @frozen
 public struct StateOrBinding<Value>: DynamicProperty {
@@ -19,26 +19,34 @@ public struct StateOrBinding<Value>: DynamicProperty {
     @usableFromInline
     var storage: Storage
 
+    /// Creates the property wrapper backed by `State` with an initial value.
     @inlinable
+    @_disfavoredOverload
     public init(_ value: Value) {
         self.storage = .state(State(wrappedValue: value))
     }
 
+    /// Creates the property wrapper backed by the given binding.
     @inlinable
     public init(_ binding: Binding<Value>) {
         self.storage = .binding(binding)
     }
 
+    /// Creates the property wrapper backed by the given binding, or by `State`
+    /// with an initial value of `nil` when the binding is `nil`.
     @inlinable
     public init<V>(_ binding: Binding<V?>?) where Value == V? {
         self.storage = binding.map({ .binding($0) }) ?? .state(State(wrappedValue: nil))
     }
 
+    /// Creates the property wrapper backed by the given binding, or by `State`
+    /// with an initial value of `defaultValue` when the binding is `nil`.
     @inlinable
     public init(_ binding: Binding<Value>?, defaultValue: Value) {
         self.storage = binding.map({ .binding($0) }) ?? .state(State(wrappedValue: defaultValue))
     }
 
+    /// The underlying value referenced by the state or binding.
     public var wrappedValue: Value {
         get {
             switch storage {
@@ -58,6 +66,7 @@ public struct StateOrBinding<Value>: DynamicProperty {
         }
     }
 
+    /// A binding to the underlying value.
     public var projectedValue: Binding<Value> {
         switch storage {
         case .state(let state):

@@ -4,10 +4,13 @@
 
 import SwiftUI
 
+/// A point defined by a unit anchor within a size, plus an absolute offset.
 @frozen
 public struct AnchoredPoint: Hashable, Sendable, Animatable {
 
+    /// The unit point within a size.
     public var anchor: UnitPoint
+    /// The offset, in points, added to the anchored point.
     public var offset: CGPoint
 
     @inlinable
@@ -24,6 +27,7 @@ public struct AnchoredPoint: Hashable, Sendable, Animatable {
         }
     }
 
+    /// Creates an anchored point from a unit anchor and an offset.
     @inlinable
     public init(
         anchor: UnitPoint,
@@ -33,6 +37,7 @@ public struct AnchoredPoint: Hashable, Sendable, Animatable {
         self.offset = offset
     }
 
+    /// Returns the point within `size` at ``anchor``, offset by ``offset``.
     @inlinable
     public func point(in size: CGSize) -> CGPoint {
         anchor.point(in: size, offset: offset)

@@ -5,20 +5,29 @@
 import SwiftUI
 import EngineCore
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text.Layout.Run {
 
+    /// Returns the underlying Core Text run, if available.
     public func toCoreText() -> CTRun? {
         guard let run = try? swift_getFieldValue("run", CTRun.self, self) else { return nil }
         return run
     }
 
+    /// The characters of the run, reconstructed from its glyphs.
+    ///
+    /// Glyphs are mapped back to characters using the run's font, so the result is a
+    /// best-effort approximation. Glyphs that cannot be mapped are represented by `"?"`.
     public var string: String? {
         guard let run = toCoreText() else { return nil }
         let count = CTRunGetGlyphCount(run)
         return run.string(from: 0, count: count)
     }
 
+    /// The characters of the glyphs at `indices` in the run, reconstructed from its glyphs.
+    ///
+    /// Glyphs are mapped back to characters using the run's font, so the result is a
+    /// best-effort approximation. Glyphs that cannot be mapped are represented by `"?"`.
     public func string(indices: Indices) -> String? {
         guard let run = toCoreText() else { return nil }
         let count = indices.upperBound - indices.lowerBound
@@ -26,9 +35,12 @@ extension Text.Layout.Run {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text.Layout.RunSlice {
 
+    /// The characters of the slice, reconstructed from its glyphs.
+    ///
+    /// See `Text.Layout.Run.string` for details.
     public var string: String? {
         return run.string(indices: indices)
     }
@@ -97,7 +109,7 @@ extension CTRun {
 
 // MARK: - Previews
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 struct TextRenderer_Previews: PreviewProvider {
 
     struct PreviewTextRenderer: TextRenderer {
