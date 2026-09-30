@@ -7,6 +7,7 @@ import SwiftUI
 /// A ``ViewModifierVisitor`` allows for `some ViewModifier` to be unwrapped
 /// to visit the concrete `ViewModifier` type.
 public protocol ViewModifierVisitor {
+    /// Visits the concrete `ViewModifier` type.
     mutating func visit<Modifier: ViewModifier>(type: Modifier.Type)
 }
 

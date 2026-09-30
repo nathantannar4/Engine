@@ -14,24 +14,32 @@ extension Binding: @retroactive ExpressibleByNilLiteral where Value: Expressible
 extension Binding {
 
     /// Transforms the value to `true` when `nil`
+    ///
+    /// Setting the binding to `true` sets the value to `nil`, setting it to `false` has no effect.
     @inlinable
     public func isNil<Wrapped>() -> Binding<Bool> where Optional<Wrapped> == Value {
         self[keyPath: \.isNone]
     }
 
     /// Transforms the value to `true` when `.some`
+    ///
+    /// Setting the binding to `false` sets the value to `nil`, setting it to `true` has no effect.
     @inlinable
     public func isNotNil<Wrapped>() -> Binding<Bool> where Optional<Wrapped> == Value {
         self[keyPath: \.isNotNone]
     }
 
     /// Transforms the value to an optional
+    ///
+    /// Setting the binding to `nil` has no effect.
     @inlinable
     public func asOptional() -> Binding<Value?> where Value: Equatable {
         self[keyPath: \.optional]
     }
 
-    /// Creates a non-optional binding
+    /// Creates a non-optional binding, or `nil` if the base value is currently `nil`
+    ///
+    /// If the base value later becomes `nil`, the binding returns the value at the time it was created.
     @inlinable
     public init?(unwrapping base: Binding<Value?>) {
         guard let value = base.wrappedValue else { return nil }
@@ -44,7 +52,7 @@ extension Binding {
         self = base[default: defaultValue]
     }
 
-    /// Transforms a `nil` value to the `defaultValue` when nil
+    /// Transforms a `nil` value to the `defaultValue`
     @inlinable
     public func unwrap<Wrapped>(
         defaultValue: Wrapped
@@ -52,7 +60,7 @@ extension Binding {
         self[keyPath: \.[Subscript(defaultValue)]]
     }
 
-    /// Transforms a `nil` value to the `defaultValue` when nil
+    /// Transforms a `nil` value to the `defaultValue`
     @inlinable
     public subscript<Wrapped>(
         default defaultValue: Wrapped
@@ -68,7 +76,9 @@ extension Binding {
         Binding<Wrapped>(unwrapping: self)
     }
 
-    /// Creates a non-optional binding
+    /// Creates a non-optional binding, or `nil` if the base value is currently `nil`
+    ///
+    /// If the base value later becomes `nil`, the binding returns the value at the time it was created.
     @inlinable
     public init?(unwrapping base: Binding<Value?>) where Value: Hashable {
         guard let value = base.wrappedValue else { return nil }
@@ -81,7 +91,7 @@ extension Binding {
         self = base[default: defaultValue]
     }
 
-    /// Transforms a `nil` value to the `defaultValue` when nil
+    /// Transforms a `nil` value to the `defaultValue`
     @inlinable
     public func unwrap<Wrapped: Hashable>(
         defaultValue: Wrapped
@@ -89,7 +99,7 @@ extension Binding {
         self[keyPath: \.[defaultValue]]
     }
 
-    /// Transforms a `nil` value to the `defaultValue` when nil
+    /// Transforms a `nil` value to the `defaultValue`
     @inlinable
     public subscript<Wrapped: Hashable>(
         default defaultValue: Wrapped
@@ -115,13 +125,13 @@ extension Binding where Value == Optional<String> {
 
 extension Binding where Value == Optional<Int> {
 
-    /// Transforms a `nil` `Int` to an empty string, and an empty `String` to `nil`
+    /// Transforms a `nil` `Int` to an empty string, and an empty or invalid `String` to `nil`
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]
     }
 
-    /// Transforms a `Int` to a `String` using the `defaultValue` when nil
+    /// Transforms an `Int` to a `String` using the `defaultValue` when nil, and an invalid `String` to `nil`
     @inlinable
     public func value(defaultValue: String) -> Binding<String> {
         self[keyPath: \.[defaultValue]]
@@ -130,13 +140,13 @@ extension Binding where Value == Optional<Int> {
 
 extension Binding where Value == Optional<Double> {
 
-    /// Transforms a `nil` `Double` to an empty string, and an empty `String` to `nil`
+    /// Transforms a `nil` `Double` to an empty string, and an empty or invalid `String` to `nil`
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]
     }
 
-    /// Transforms an `Double` to a `String` using the `defaultValue` when nil
+    /// Transforms a `Double` to a `String` using the `defaultValue` when nil, and an invalid `String` to `nil`
     @inlinable
     public func value(defaultValue: String) -> Binding<String> {
         self[keyPath: \.[defaultValue]]
@@ -145,13 +155,13 @@ extension Binding where Value == Optional<Double> {
 
 extension Binding where Value == Optional<Float> {
 
-    /// Transforms a `nil` `Float` to an empty string, and an empty `String` to `nil`
+    /// Transforms a `nil` `Float` to an empty string, and an empty or invalid `String` to `nil`
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]
     }
 
-    /// Transforms an `Float` to a `String` using the `defaultValue` when nil
+    /// Transforms a `Float` to a `String` using the `defaultValue` when nil, and an invalid `String` to `nil`
     @inlinable
     public func value(defaultValue: String) -> Binding<String> {
         self[keyPath: \.[defaultValue]]
@@ -160,13 +170,13 @@ extension Binding where Value == Optional<Float> {
 
 extension Binding where Value == Optional<Bool> {
 
-    /// Transforms the value to `true` when `true`
+    /// Transforms the value to `true` when `true`, and `false` when `false` or `nil`
     @inlinable
     public func isTrue() -> Binding<Bool> {
         self[keyPath: \.isTrue]
     }
 
-    /// Transforms the value to `true` when `false`
+    /// Transforms the value to `true` when `false`, and `false` when `true` or `nil`
     @inlinable
     public func isFalse() -> Binding<Bool> {
         self[keyPath: \.isFalse]
@@ -175,11 +185,13 @@ extension Binding where Value == Optional<Bool> {
 
 extension Binding where Value == Bool {
 
+    /// Returns a binding to the inverse of the value
     @inlinable
     public static prefix func !(_ value: Binding<Bool>) -> Binding<Bool> {
         value[keyPath: \.inverted]
     }
 
+    /// Toggles the value
     @inlinable
     public func toggle() {
         wrappedValue.toggle()
@@ -197,13 +209,13 @@ extension Bool {
 
 extension Binding where Value == Optional<URL> {
 
-    /// Transforms a `URL` to a `String`
+    /// Transforms a `URL` to its absolute `String`, and a `String` to a `URL`, where `nil` is an empty string
     @inlinable
     public func value() -> Binding<String> {
         self[keyPath: \.value]
     }
 
-    /// Transforms a `URL` to a `String` using the `defaultValue` when nil
+    /// Transforms a `URL` to its absolute `String` using the `defaultValue` when nil
     @inlinable
     public func value(defaultValue: String) -> Binding<String> {
         self[keyPath: \.[defaultValue]]
@@ -212,7 +224,9 @@ extension Binding where Value == Optional<URL> {
 
 extension Binding {
 
-    /// Transforms a `Set` to a `Bool`
+    /// Transforms a `SetAlgebra` to a `Bool` that is `true` when it contains `id`
+    ///
+    /// Setting the binding inserts or removes `id`.
     @inlinable
     public func contains<Element: Hashable>(
         _ id: Element
@@ -238,7 +252,10 @@ extension SetAlgebra {
 
 extension Binding {
 
-    /// Transforms a `RangeReplaceableCollection` to a `Bool`
+    /// Transforms a `RangeReplaceableCollection` to a `Bool` that is `true` when it contains `element`
+    ///
+    /// Setting the binding to `true` appends `element` if missing, and setting it
+    /// to `false` removes the first occurrence of `element`.
     @inlinable
     public func contains(
         _ element: Value.Element
@@ -265,7 +282,10 @@ extension RangeReplaceableCollection {
 
 extension Binding {
 
-    /// Transforms a `RandomAccessCollection` to its `Index`
+    /// Transforms the value to its index in `elements`, or `nil` if the value is `nil` or not found
+    ///
+    /// Setting the binding to an index sets the value to the element at that index, and
+    /// setting an invalid index or `nil` sets the value to `nil`.
     @inlinable
     public func index<
         Collection: RandomAccessCollection & Hashable
@@ -273,7 +293,10 @@ extension Binding {
         self[keyPath: \.[elements]]
     }
 
-    /// Transforms a `RandomAccessCollection` to its `Index`
+    /// Transforms the value to its index in `elements`
+    ///
+    /// The value must be contained in `elements`. Setting the binding to an index sets the
+    /// value to the element at that index, and setting an invalid index has no effect.
     @inlinable
     public func index<
         Collection: RandomAccessCollection & Hashable
@@ -318,25 +341,33 @@ extension Hashable {
 
 extension Binding {
 
-    /// Transforms an `Equatable` to a `Bool`
+    /// Transforms an `Equatable` to a `Bool` that is `true` when equal to `value`
+    ///
+    /// Setting the binding to `true` sets `value`, and setting it to `false` sets `defaultValue`.
     @inlinable
     public func isEqual(to value: Value, defaultValue: Value) -> Binding<Bool> where Value: Equatable {
         self[keyPath: \.[isEqualTo: Subscript(IsEqualComparison(value: value, defaultValue: defaultValue))]]
     }
 
-    /// Transforms an optional `Equatable` to a `Bool`
+    /// Transforms an optional `Equatable` to a `Bool` that is `true` when equal to `value`
+    ///
+    /// Setting the binding to `true` sets `value`, and setting it to `false` sets `nil`.
     @inlinable
     public func isEqual<V: Equatable>(to value: V) -> Binding<Bool> where Value == V? {
         self[keyPath: \.[isEqualTo: Subscript(IsEqualComparison(value: value, defaultValue: nil))]]
     }
 
-    /// Transforms a `Hashable` to a `Bool`
+    /// Transforms a `Hashable` to a `Bool` that is `true` when equal to `value`
+    ///
+    /// Setting the binding to `true` sets `value`, and setting it to `false` sets `defaultValue`.
     @inlinable
     public func isEqual(to value: Value, defaultValue: Value) -> Binding<Bool> where Value: Hashable {
         self[keyPath: \.[isEqualTo: IsEqualComparison(value: value, defaultValue: defaultValue)]]
     }
 
-    /// Transforms an optional `Hashable` to a `Bool`
+    /// Transforms an optional `Hashable` to a `Bool` that is `true` when equal to `value`
+    ///
+    /// Setting the binding to `true` sets `value`, and setting it to `false` sets `nil`.
     @inlinable
     public func isEqual<V: Hashable>(to value: V) -> Binding<Bool> where Value == V? {
         self[keyPath: \.[isEqualTo: IsEqualComparison(value: value, defaultValue: nil)]]
@@ -377,6 +408,8 @@ extension Hashable {
 
 extension Binding {
 
+    /// Returns an optional binding to the property of the wrapped value at `keyPath`,
+    /// or a constant `nil` binding when the value is `nil`
     @_disfavoredOverload
     @inlinable
     public subscript<V, Subject>(
@@ -386,6 +419,8 @@ extension Binding {
         return SwiftUI.Binding(binding[dynamicMember: keyPath])
     }
 
+    /// Returns an optional binding to the property of the wrapped value at `keyPath`,
+    /// or a constant `nil` binding when the value is `nil`
     @_disfavoredOverload
     @inlinable
     public subscript<V, Subject>(
@@ -395,6 +430,8 @@ extension Binding {
         return SwiftUI.Binding(binding[dynamicMember: keyPath])
     }
 
+    /// Returns a binding to the optional property of the wrapped value at `keyPath`,
+    /// or a constant `nil` binding when the value is `nil`
     @_disfavoredOverload
     @inlinable
     public subscript<V, Subject>(
@@ -404,6 +441,8 @@ extension Binding {
         return binding[dynamicMember: keyPath]
     }
 
+    /// Returns a binding to the optional property of the wrapped value at `keyPath`,
+    /// or a constant `nil` binding when the value is `nil`
     @_disfavoredOverload
     @inlinable
     public subscript<V, Subject>(

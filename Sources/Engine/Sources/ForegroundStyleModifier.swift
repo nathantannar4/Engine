@@ -20,6 +20,7 @@ extension View {
 
 extension View {
 
+    /// Sets the color of the foreground elements displayed by this view when `isEnabled` is `true`.
     @_disfavoredOverload
     @available(iOS, introduced: 13.0, deprecated: 100000.0, renamed: "foregroundStyle(_:)")
     @available(macOS, introduced: 10.15, deprecated: 100000.0, renamed: "foregroundStyle(_:)")
@@ -34,7 +35,7 @@ extension View {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
 extension Text {
 
     /// Sets a view's foreground elements to use a given style when non-nil.
@@ -53,6 +54,7 @@ extension Text {
 
 extension Text {
 
+    /// Sets the color of the text displayed by this view when `isEnabled` is `true`.
     @_disfavoredOverload
     @available(iOS, introduced: 13.0, deprecated: 100000.0, renamed: "foregroundStyle(_:)")
     @available(macOS, introduced: 10.15, deprecated: 100000.0, renamed: "foregroundStyle(_:)")
@@ -77,11 +79,14 @@ public struct ForegroundStyleModifier<
     S: ShapeStyle
 >: ViewModifier {
 
+    /// The style to apply, or `nil` to preserve the inherited foreground style.
     public var style: S?
+    /// Whether the style is applied.
     public var isEnabled: Bool
 
     @Environment(\.foregroundStyle) private var foregroundStyle
 
+    /// Creates a modifier that applies the style when `isEnabled` is `true`.
     @inlinable
     public init(
         style: S? = nil,
@@ -97,15 +102,18 @@ public struct ForegroundStyleModifier<
     }
 }
 
-/// A modifier that sets a view's foreground elements to use a given style when non-nil.
+/// A modifier that sets a view's foreground elements to use a given color when enabled.
 @frozen
 public struct ForegroundColorModifier: ViewModifier {
 
+    /// The color to apply, or `nil` to use the default foreground color.
     public var color: Color?
+    /// Whether the color is applied.
     public var isEnabled: Bool
 
     @Environment(\.foregroundColor) private var foregroundColor
 
+    /// Creates a modifier that applies the color when `isEnabled` is `true`.
     @inlinable
     public init(
         color: Color? = nil,

@@ -5,12 +5,14 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `MenuStyle`.
 @available(iOS 14.0, macOS 11.0, tvOS 17.0, *)
 @available(watchOS, unavailable)
 public struct AnyMenuStyle: MenuStyle {
 
     var style: any MenuStyle
 
+    /// Creates a type-erased style that wraps the given style.
     public init<S: MenuStyle>(_ style: S) {
         self.style = style
     }

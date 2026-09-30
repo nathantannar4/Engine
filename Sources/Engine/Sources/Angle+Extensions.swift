@@ -6,6 +6,11 @@ import SwiftUI
 
 extension Angle {
 
+    /// Returns the angle to travel from this angle to `endAngle` in the given direction.
+    ///
+    /// When `clockwise` is `true` the result is zero or negative, otherwise it is
+    /// zero or positive. The result is suitable for
+    /// use as the `delta` of `Path.addRelativeArc(center:radius:startAngle:delta:transform:)`.
     public func delta(endAngle: Angle, clockwise: Bool) -> Angle {
         var delta = endAngle - self
         if clockwise, delta.degrees > 0 {

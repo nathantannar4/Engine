@@ -4,17 +4,44 @@
 
 import SwiftUI
 
+/// A shape that draws a line from a start point to an end point, optionally
+/// through a series of segments.
+///
+/// Points are expressed as an ``AnchoredPoint``, a unit point within the
+/// shape's bounds plus an optional offset. The resulting path is already
+/// stroked using ``strokeStyle``, so the shape can be filled directly.
+///
+///     Line(
+///         startPoint: .bottom,
+///         endPoint: .topTrailing,
+///         segments: [
+///             .quadCurve(controlPoint: .leading)
+///         ],
+///         strokeStyle: StrokeStyle(lineWidth: 2)
+///     )
+///
 @frozen
 public struct Line: Shape {
 
+    /// A segment of a ``Line`` that is drawn between the start and end points.
     @frozen
     public enum Segment: Hashable, Sendable, Animatable {
+        /// A straight line to the given point.
         case linear(point: AnchoredPoint)
+        /// A cubic Bézier curve with the given control points, ending at the
+        /// next segment's point or the line's end point.
         case curve(controlPoint1: AnchoredPoint, controlPoint2: AnchoredPoint)
+        /// A quadratic Bézier curve with the given control point, ending at the
+        /// next segment's point or the line's end point.
         case quadCurve(controlPoint: AnchoredPoint)
+        /// An arc of a circle with the given center and radius, starting at
+        /// `startAngle` and sweeping by `delta`.
         case arc(center: AnchoredPoint, radius: CGFloat, startAngle: Angle, delta: Angle)
+        /// An arc of the given radius that is tangent to the lines formed by
+        /// the current point and the two tangent end points.
         case tangentArc(tangent1End: AnchoredPoint, tangent2End: AnchoredPoint, radius: CGFloat)
 
+        /// A straight line to the given unit point.
         public static func linear(
             point: UnitPoint
         ) -> Segment {
@@ -23,6 +50,7 @@ public struct Line: Shape {
             )
         }
 
+        /// A cubic Bézier curve with the given unit control points.
         public static func curve(
             controlPoint1: UnitPoint,
             controlPoint2: UnitPoint
@@ -33,6 +61,7 @@ public struct Line: Shape {
             )
         }
 
+        /// A quadratic Bézier curve with the given unit control point.
         public static func quadCurve(
             controlPoint: UnitPoint
         ) -> Segment {
@@ -41,6 +70,7 @@ public struct Line: Shape {
             )
         }
 
+        /// An arc of a circle centered at the given unit point.
         public static func arc(
             center: UnitPoint,
             radius: CGFloat,
@@ -55,6 +85,7 @@ public struct Line: Shape {
             )
         }
 
+        /// A tangent arc using the given unit points as tangent end points.
         public static func tangentArc(
             tangent1End: UnitPoint,
             tangent2End: UnitPoint,
@@ -67,11 +98,14 @@ public struct Line: Shape {
             )
         }
 
+        /// An ordered, animatable collection of segments.
         @frozen
         public struct Set: Hashable, Sendable, Animatable, VectorArithmetic, ExpressibleByArrayLiteral {
 
+            /// The segments, in drawing order.
             public var elements: [Segment]
 
+            /// Creates a set from an array of segments.
             @inlinable
             public init(_ elements: [Segment]) {
                 self.elements = elements
@@ -83,11 +117,16 @@ public struct Line: Shape {
         }
     }
 
+    /// The point the line starts from.
     public var startPoint: AnchoredPoint
+    /// The point the line ends at.
     public var endPoint: AnchoredPoint
+    /// The segments drawn between the start and end points.
     public var segments: Segment.Set
+    /// The style used to stroke the line.
     public var strokeStyle: StrokeStyle
 
+    /// Creates a line between two anchored points.
     @inlinable
     public init(
         startPoint: AnchoredPoint,
@@ -101,6 +140,7 @@ public struct Line: Shape {
         self.strokeStyle = strokeStyle
     }
 
+    /// Creates a line between two unit points within the shape's bounds.
     @inlinable
     public init(
         startPoint: UnitPoint,
@@ -346,6 +386,7 @@ extension Line.Segment {
 
 extension Line.Segment.Set {
 
+    /// An empty set of segments.
     public static let zero = Line.Segment.Set([])
 
     public static func + (lhs: Line.Segment.Set, rhs: Line.Segment.Set) -> Line.Segment.Set {

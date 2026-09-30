@@ -6,6 +6,9 @@ import SwiftUI
 
 extension Group where Content: View {
 
+    /// Constructs a group from the subviews of the given view.
+    ///
+    /// A back-port of `Group(subviews:transform:)` for earlier platforms.
     @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviews: ...) init")
     @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(subviews: ...) init")
     @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(subviews: ...) init")
@@ -23,6 +26,9 @@ extension Group where Content: View {
         }
     }
 
+    /// Constructs a group from the sections of the given view.
+    ///
+    /// A back-port of `Group(sections:transform:)` for earlier platforms.
     @available(iOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sections: ...) init")
     @available(macOS, introduced: 10.15, deprecated: 15.0, message: "Please use the built in Group(sections: ...) init")
     @available(tvOS, introduced: 13.0, deprecated: 18.0, message: "Please use the built in Group(sections: ...) init")

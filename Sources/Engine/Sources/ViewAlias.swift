@@ -6,7 +6,7 @@ import SwiftUI
 
 /// A view that is an alias for another view that's statically defined by an ancestor.
 ///
-/// A ``ViewAlias`` is can be defined statically by one of its ancestors.
+/// A ``ViewAlias`` can be defined statically by one of its ancestors.
 /// Because ``ViewAlias`` is guaranteed to be static it can be used for
 /// type-erasure without the performance impacts associated with `AnyView`.
 /// Use the ``View/viewAlias(_:source:)`` on an ancestor to define
@@ -47,7 +47,11 @@ import SwiftUI
 ///
 public protocol ViewAlias: PrimitiveView {
 
+    /// The type of view representing the fallback body.
     associatedtype DefaultBody: View = EmptyView
+    /// The view to resolve to when the alias is not defined by an ancestor.
+    ///
+    /// Defaults to `EmptyView`.
     @ViewBuilder @MainActor @preconcurrency var defaultBody: DefaultBody { get }
 }
 
@@ -61,6 +65,7 @@ public struct ViewAliasSourceModifier<
     @usableFromInline
     var source: Source
 
+    /// Creates a modifier that defines `source` as the view that `Alias` resolves to.
     @inlinable
     public init(
         _ : Alias.Type = Alias.self,

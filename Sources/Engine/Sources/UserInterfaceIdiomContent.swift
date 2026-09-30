@@ -4,62 +4,83 @@
 
 import SwiftUI
 
-/// A view that's `Body` is statically conditional on the user interface idiom.
+/// A view whose `Body` is statically conditional on the user interface idiom.
 ///
-/// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifer``
-/// to aide with cross platform compatibility.
+/// On iOS, the body is selected using the current device's user interface idiom,
+/// where only the phone, pad and mac idioms are supported.
+///
+/// > Tip: Use ``UserInterfaceIdiomContent`` and ``UserInterfaceIdiomModifier``
+/// to aid with cross platform compatibility.
 ///
 public protocol UserInterfaceIdiomContent: PrimitiveView {
+    /// The type of view representing the body on iPhone.
     associatedtype PhoneBody: View = EmptyView
+    /// The content of the view on iPhone.
     @ViewBuilder @MainActor @preconcurrency var phoneBody: PhoneBody { get }
 
+    /// The type of view representing the body on iPad.
     associatedtype PadBody: View = EmptyView
+    /// The content of the view on iPad.
     @ViewBuilder @MainActor @preconcurrency var padBody: PadBody { get }
 
+    /// The type of view representing the body on Mac.
     associatedtype MacBody: View = EmptyView
+    /// The content of the view on Mac.
     @ViewBuilder @MainActor @preconcurrency var macBody: MacBody { get }
 
+    /// The type of view representing the body on Apple TV.
     associatedtype TvBody: View = EmptyView
+    /// The content of the view on Apple TV.
     @ViewBuilder @MainActor @preconcurrency var tvBody: TvBody { get }
 
+    /// The type of view representing the body on Apple Watch.
     associatedtype WatchBody: View = EmptyView
+    /// The content of the view on Apple Watch.
     @ViewBuilder @MainActor @preconcurrency var watchBody: WatchBody { get }
 
+    /// The type of view representing the body on visionOS.
     associatedtype VisionBody: View = EmptyView
+    /// The content of the view on visionOS.
     @ViewBuilder @MainActor @preconcurrency var visionBody: VisionBody { get }
 }
 
 extension UserInterfaceIdiomContent where PhoneBody == EmptyView {
+    /// By default, the view is empty on iPhone.
     public var phoneBody: PhoneBody {
         EmptyView()
     }
 }
 
 extension UserInterfaceIdiomContent where PadBody == EmptyView {
+    /// By default, the view is empty on iPad.
     public var padBody: PadBody {
         EmptyView()
     }
 }
 
 extension UserInterfaceIdiomContent where MacBody == EmptyView {
+    /// By default, the view is empty on Mac.
     public var macBody: MacBody {
         EmptyView()
     }
 }
 
 extension UserInterfaceIdiomContent where TvBody == EmptyView {
+    /// By default, the view is empty on Apple TV.
     public var tvBody: TvBody {
         EmptyView()
     }
 }
 
 extension UserInterfaceIdiomContent where WatchBody == EmptyView {
+    /// By default, the view is empty on Apple Watch.
     public var watchBody: WatchBody {
         EmptyView()
     }
 }
 
 extension UserInterfaceIdiomContent where VisionBody == EmptyView {
+    /// By default, the view is empty on visionOS.
     public var visionBody: VisionBody {
         EmptyView()
     }

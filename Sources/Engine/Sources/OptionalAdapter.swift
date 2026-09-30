@@ -6,6 +6,7 @@ import SwiftUI
 
 extension Optional {
 
+    /// Creates an optional view that is `content` when `value` is non-`nil`.
     @inlinable
     public init<Value>(
         _ value: Value?,
@@ -19,6 +20,7 @@ extension Optional {
         }
     }
 
+    /// Creates an optional view that is `content` when the binding's value is non-`nil`.
     @inlinable
     @MainActor @preconcurrency
     public init<Value>(
@@ -32,6 +34,8 @@ extension Optional {
         }
     }
 
+    /// Creates an optional view that is `content` when the binding's value is
+    /// non-`nil`, providing an unwrapped binding to the value.
     @inlinable
     @MainActor @preconcurrency
     public init<Value>(
@@ -46,7 +50,7 @@ extension Optional {
     }
 }
 
-/// A view maps an `Optional` value to it's `Content` or `Placeholder`.
+/// A view that maps an `Optional` value to its `Content` or `Placeholder`.
 @frozen
 public struct OptionalAdapter<
     Content: View,
@@ -56,6 +60,8 @@ public struct OptionalAdapter<
     @usableFromInline
     var content: ConditionalContent<Content, Placeholder>
 
+    /// Creates a view that shows `content` when `value` is non-`nil`,
+    /// otherwise `placeholder`.
     @inlinable
     public init<Value>(
         _ value: Value?,
@@ -70,6 +76,8 @@ public struct OptionalAdapter<
         }
     }
 
+    /// Creates a view that shows `content` with an unwrapped binding when the
+    /// binding's value is non-`nil`, otherwise `placeholder`.
     @inlinable
     public init<Value>(
         _ value: Binding<Value?>,
@@ -83,6 +91,7 @@ public struct OptionalAdapter<
         }
     }
 
+    /// Creates a view that shows `content` when `flag` is `true`, otherwise `placeholder`.
     @inlinable
     public init(
         _ flag: Bool,
@@ -99,6 +108,8 @@ public struct OptionalAdapter<
 
 extension OptionalAdapter {
 
+    /// Creates a view that shows `content` when all of the values are
+    /// non-`nil`, otherwise `placeholder`.
     @inlinable
     public init<each Value>(
         _ values: repeat (each Value)?,

@@ -80,7 +80,9 @@ extension EnvironmentValues {
 
     /// Visit the `EnvironmentKey` type that matches the key to set the value
     ///
-    /// > Warning: Only works if `EnvironmentKey` exists
+    /// > Warning: Only works if the `EnvironmentKey` already exists in the environment
+    ///
+    /// - Returns: Whether the value was set
     @discardableResult
     public mutating func setValue<Value>(
         _ value: Value,
@@ -214,7 +216,8 @@ private class EnvironmentKeyLookupCache: @unchecked Sendable {
 
     subscript(_ key: String) -> ProtocolConformance<EnvironmentKeyProtocolDescriptor>? {
         get {
-            storage[key]
+            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+            return storage[key]
         }
         set {
             os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }

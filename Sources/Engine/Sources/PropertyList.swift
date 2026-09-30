@@ -521,6 +521,7 @@ struct PropertyList {
         }
     }
 
+    /// Accesses the value for the input key, or its default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -528,6 +529,7 @@ struct PropertyList {
         set { add(Input.self, newValue) }
     }
 
+    /// Accesses the value for the input key, or the given default value if not set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -536,6 +538,7 @@ struct PropertyList {
         set { add(Input.self, newValue ?? defaultValue() ?? Input.defaultValue) }
     }
 
+    /// Accesses the value for the input key whose unqualified type name matches `key`.
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self

@@ -4,11 +4,18 @@
 
 import SwiftUI
 
-/// An `AlignmentID` that is resolved from multiple values
+/// An `AlignmentID` that is resolved from multiple values.
 ///
 /// > Tip: Use ``VariadicAlignmentID`` to create alignments
 /// similar to `.firstTextBaseline`
 public protocol VariadicAlignmentID: AlignmentID {
+    /// Combines the explicit alignment value of the child at index `n` into the
+    /// resolved alignment value.
+    ///
+    /// - Parameters:
+    ///   - value: The resolved alignment value so far, or `nil` if not yet resolved.
+    ///   - n: The zero-based index of the child among those with an explicit value.
+    ///   - nextValue: The explicit alignment value of the child.
     static func reduce(value: inout CGFloat?, n: Int, nextValue: CGFloat)
 }
 

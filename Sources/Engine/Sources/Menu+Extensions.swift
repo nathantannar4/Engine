@@ -8,16 +8,19 @@ import SwiftUI
 @available(watchOS, unavailable)
 extension MenuStyleConfiguration {
 
+    /// The action performed when the menu's label is tapped, if any.
     @available(iOS 15.0, macOS 12.0, tvOS 17.0, *)
     public var primaryAction: (() -> Void)? {
         try? swift_getFieldValue("primaryAction", (() -> Void)?.self, self)
     }
 
+    /// A view that represents the label of the menu.
     public var label: MenuStyle.Configuration.Label {
         let label = unsafeBitCast(Void(), to: MenuStyle.Configuration.Label.self)
         return label
     }
 
+    /// A view that represents the content of the menu.
     public var content: MenuStyle.Configuration.Content {
         let content = unsafeBitCast(Void(), to: MenuStyle.Configuration.Content.self)
         return content
@@ -28,6 +31,10 @@ extension MenuStyleConfiguration {
 @available(watchOS, unavailable)
 extension Menu {
 
+    /// Creates a menu with an optional primary action.
+    ///
+    /// When `primaryAction` is `nil`, this is equivalent to a menu without a
+    /// primary action, allowing the primary action to be toggled dynamically.
     public init(
         primaryAction: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content,
@@ -40,6 +47,21 @@ extension Menu {
         }
     }
 
+    /// Creates a menu from a style configuration with a custom label.
+    ///
+    /// Use this within a `MenuStyle` to restyle the label while preserving
+    /// the configuration's content and primary action.
+    ///
+    ///     struct BorderedMenuStyle: MenuStyle {
+    ///         func makeBody(configuration: Configuration) -> some View {
+    ///             Menu(configuration) { label in
+    ///                 label
+    ///                     .padding(8)
+    ///                     .border(Color.accentColor)
+    ///             }
+    ///         }
+    ///     }
+    ///
     public init(
         _ configuration: MenuStyleConfiguration,
         @ViewBuilder label: (MenuStyleConfiguration.Label) -> Label

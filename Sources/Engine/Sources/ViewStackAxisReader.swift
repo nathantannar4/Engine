@@ -4,9 +4,9 @@
 
 import SwiftUI
 
-/// A `View` that statically depends if its parent is a `VStack`, `HStack` or neither.
+/// A `View` that statically depends on whether its parent is a `VStack`, `HStack` or neither.
 ///
-/// > Tip: You to make views that behave like `Divider` and `Spacer`
+/// > Tip: Use to make views that behave like `Divider` and `Spacer`.
 ///
 @frozen
 public struct ViewStackAxisReader<
@@ -24,6 +24,9 @@ public struct ViewStackAxisReader<
     @usableFromInline
     var other: OtherContent
 
+    /// Creates a reader whose content is built for the axis of its parent stack.
+    ///
+    /// When the parent is not a stack, the content is built for the `.vertical` axis.
     @inlinable
     public init(
         @ViewBuilder content: (Axis) -> VerticalContent
@@ -34,6 +37,8 @@ public struct ViewStackAxisReader<
         self.other = vertical
     }
 
+    /// Creates a reader that is `vertical` within a vertical stack, `horizontal`
+    /// within a horizontal stack, and `other` otherwise.
     @inlinable
     public init(
         @ViewBuilder vertical: () -> VerticalContent,
@@ -45,6 +50,8 @@ public struct ViewStackAxisReader<
         self.other = other()
     }
 
+    /// Creates a reader that is `horizontal` within a horizontal stack, and
+    /// `vertical` otherwise.
     @inlinable
     public init(
         @ViewBuilder vertical: () -> VerticalContent,
@@ -153,7 +160,7 @@ struct ViewStackAxisReader_Previews: PreviewProvider {
                 }
             }
 
-            if #available(iOS 16.0, tvOS 16.0, macOS 13.0, watchOS 9.0, *) {
+            if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *) {
                 Grid(verticalSpacing: 8) {
                     CustomDivider()
 

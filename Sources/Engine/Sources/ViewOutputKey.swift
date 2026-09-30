@@ -5,7 +5,7 @@
 import SwiftUI
 import EngineCore
 
-/// A key that defines a list of `View`'s that are defined by descendants.
+/// A key that defines a list of views that are defined by descendants.
 ///
 /// A ``ViewOutputKey`` can be optimized to be static rather than
 /// type-erasure with `AnyView` by defining the `Content`.
@@ -17,8 +17,14 @@ import EngineCore
 /// 
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public protocol ViewOutputKey {
+    /// The type of the source views. Defaults to `AnyView`.
     associatedtype Content: View = AnyView
+    /// The list of views sourced by descendants.
     typealias Value = ViewOutputList<Content>
+    /// Combines a sequence of values by modifying the previously-accumulated
+    /// value with the result of a closure that provides the next value.
+    ///
+    /// The default implementation appends the next views to the list.
     static func reduce(value: inout Value, nextValue: () -> Value)
 }
 
@@ -32,19 +38,23 @@ extension ViewOutputKey where Value == ViewOutputList<Content> {
     }
 }
 
-/// A list of views sourced by a ``ViewOutputKey``
+/// A list of views sourced by a ``ViewOutputKey``.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Sequence {
 
+    /// A view sourced by a ``ViewOutputKey``.
     @frozen
     public struct Subview: View, Identifiable {
 
+        /// The identity of a ``ViewOutputList/Subview``.
         public struct ID: Hashable {
             var value: Namespace.ID
         }
 
+        /// The identity of the view, unique to the modifier that sourced it.
         public nonisolated(unsafe) var id: ID
+        /// The sourced view.
         public var content: Content
 
         var phase: UpdatePhase.Value
@@ -64,6 +74,7 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Seque
         }
     }
 
+    /// The sourced views.
     public var elements: [Subview]
 
     public var body: some View {
@@ -106,7 +117,7 @@ public struct ViewOutputList<Content: View>: View, RandomAccessCollection, Seque
     }
 }
 
-/// A modifier that writes a `Source` view to a ``ViewOutputKey``
+/// A modifier that writes a `Source` view to a ``ViewOutputKey``.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputSourceModifier<
@@ -120,6 +131,7 @@ public struct ViewOutputSourceModifier<
     @Namespace private var namespace
     @UpdatePhase private var phase
 
+    /// Creates a modifier that writes `source` to the key.
     @inlinable
     public init(
         _ key: Key.Type = Key.self,
@@ -150,7 +162,7 @@ public struct ViewOutputSourceModifier<
 
 extension View {
 
-    /// A modifier that writes a `Source` view to a ``ViewOutputKey``
+    /// Statically writes a `Source` view to a ``ViewOutputKey``.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     @inlinable
     public func viewOutput<
@@ -168,7 +180,7 @@ extension View {
         )
     }
 
-    /// A modifier that writes a `Source` view to a ``ViewOutputKey``
+    /// Writes a type-erased `Source` view to a ``ViewOutputKey``.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     @inlinable
     public func viewOutput<
@@ -219,13 +231,13 @@ private struct ViewOutputPreferenceKey<
     }
 }
 
-/// A proxy to a ``ViewOutputKey.Value`` that must be read by ``ViewOutputKeyValueReader``
+/// A proxy to a ``ViewOutputKey/Value`` that must be read by ``ViewOutputKeyValueReader``.
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputKeyValueProxy<Key: ViewOutputKey> {
     fileprivate var value: PreferenceKeyValueProxy<ViewOutputPreferenceKey<Key>>
 }
 
-/// A container view that resolves it's content from a ``ViewOutputKey``
+/// A container view that resolves its content from a ``ViewOutputKey``.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputKeyReader<
@@ -233,11 +245,15 @@ public struct ViewOutputKeyReader<
     Content: View
 >: View {
 
+    /// A proxy to the value of the key.
     public typealias Value = ViewOutputKeyValueProxy<Key>
 
     @usableFromInline
     var content: (Value) -> Content
 
+    /// Creates a container view that resolves its content from the value of `key`.
+    ///
+    /// The value proxy must be read with a ``ViewOutputKeyValueReader``.
     @inlinable
     public init(
         _ key: Key.Type = Key.self,
@@ -254,9 +270,9 @@ public struct ViewOutputKeyReader<
     }
 }
 
-/// A container view that resolves it's content from a ``ViewOutputKey`` value
+/// A container view that resolves its content from a ``ViewOutputKey`` value.
 ///
-/// > Important: The ``ViewOutputKey`` value of `Content` is ignored
+/// > Important: The ``ViewOutputKey`` value of `Content` is ignored.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputKeyValueReader<
@@ -270,6 +286,7 @@ public struct ViewOutputKeyValueReader<
     @usableFromInline
     var content: (ViewOutputList<Key.Content>) -> Content
 
+    /// Creates a view that reads the views of `value`.
     @inlinable
     public init(
         _ value: ViewOutputKeyValueProxy<Key>,

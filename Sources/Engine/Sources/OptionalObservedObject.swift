@@ -7,6 +7,9 @@ import Combine
 
 /// A property wrapper that subscribes to an optional observable
 /// object and invalidates a view whenever the observable object changes.
+///
+/// The object is held weakly, and the view is also invalidated when the
+/// object is deallocated.
 @MainActor @preconcurrency
 @propertyWrapper
 @frozen
@@ -23,10 +26,18 @@ public struct OptionalObservedObject<
         private var cancellable: AnyCancellable?
 
         @usableFromInline
-        init(value: ObjectType?) {
-            self.value = value
+        init() { }
+
+        /// Subscribes to the object, if it is not already subscribed to
+        func update(value newValue: ObjectType?) {
+            guard newValue !== value else { return }
             if let value {
-                bind(to: value)
+                DeallocationTracker.shared(for: value).removeObserver(self)
+            }
+            cancellable = nil
+            value = newValue
+            if let newValue {
+                bind(to: newValue)
             }
         }
 
@@ -50,26 +61,42 @@ public struct OptionalObservedObject<
     }
 
     @usableFromInline
-    var storage: ObservedObject<Storage>
+    weak var object: ObjectType?
 
+    // The storage persists for the lifetime of the view, so that a new
+    // subscription is not created each time the view is initialized
+    @usableFromInline
+    var storage: StateObject<Storage>
+
+    /// Creates an optional observed object with an initial value.
     @inlinable
     public init(wrappedValue: ObjectType?) {
-        storage = ObservedObject<Storage>(wrappedValue: Storage(value: wrappedValue))
+        object = wrappedValue
+        storage = StateObject<Storage>(wrappedValue: Storage())
     }
 
+    /// The underlying object referenced by the optional observed object, if any.
     public var wrappedValue: ObjectType? {
-        get { storage.wrappedValue.value }
+        get { object }
     }
 
+    /// A projection of the optional observed object that creates bindings to
+    /// its properties using dynamic member lookup.
     public var projectedValue: Binding {
         Binding(root: storage.projectedValue.value)
     }
 
-    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
-    public static var _propertyBehaviors: UInt32 {
-        ObservedObject<Storage>._propertyBehaviors
+    public mutating func update() {
+        storage.wrappedValue.update(value: object)
     }
 
+    @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
+    public static var _propertyBehaviors: UInt32 {
+        StateObject<Storage>._propertyBehaviors
+    }
+
+    /// A wrapper of an optional observed object that can create bindings to
+    /// its properties using dynamic member lookup.
     @MainActor @preconcurrency
     @frozen
     @dynamicMemberLookup
@@ -77,6 +104,8 @@ public struct OptionalObservedObject<
         @usableFromInline
         let root: SwiftUI.Binding<ObjectType?>
 
+        /// Returns a binding to the value at the key path, or a constant `nil`
+        /// binding when the object is `nil`.
         @inlinable
         public subscript<Subject>(
             dynamicMember keyPath: ReferenceWritableKeyPath<ObjectType, Subject>
@@ -85,6 +114,8 @@ public struct OptionalObservedObject<
             return SwiftUI.Binding(binding[dynamicMember: keyPath])
         }
 
+        /// Returns a binding to the value at the key path, or `nil` when the
+        /// object is `nil`.
         @inlinable
         public subscript<Subject>(
             dynamicMember keyPath: ReferenceWritableKeyPath<ObjectType, Subject>

@@ -8,6 +8,7 @@ import SwiftUI
 @frozen
 public struct EmptyShape: Shape {
 
+    /// Creates an empty shape.
     @inlinable
     public init() { }
 

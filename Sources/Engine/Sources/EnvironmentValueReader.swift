@@ -14,6 +14,8 @@ public struct EnvironmentValueReader<Value, Content: View>: View {
     @usableFromInline
     var content: (Value) -> Content
 
+    /// Creates a view that reads the environment value at `keyPath` and
+    /// passes it to `content` to derive its content.
     @inlinable
     public init(
         _ keyPath: KeyPath<EnvironmentValues, Value>,

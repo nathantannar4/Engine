@@ -6,7 +6,8 @@ import SwiftUI
 
 extension View {
 
-    /// A modifier that transforms a vertical alignment to another
+    /// Sets the view's vertical alignment guide `g` to the position of another
+    /// vertical alignment guide, `value`, of the same view.
     @inlinable
     public func alignmentGuide(
         _ g: VerticalAlignment,
@@ -15,7 +16,8 @@ extension View {
         alignmentGuide(g) { $0[value] }
     }
 
-    /// A modifier that transforms a horizontal alignment to another
+    /// Sets the view's horizontal alignment guide `g` to the position of another
+    /// horizontal alignment guide, `value`, of the same view.
     @inlinable
     public func alignmentGuide(
         _ g: HorizontalAlignment,

@@ -23,6 +23,7 @@ import SwiftUI
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 public struct LayoutBuilder {
 
+    /// Builds a `VStackLayout` when the closure is empty.
     public static func buildBlock() -> VStackLayout {
         VStackLayout()
     }

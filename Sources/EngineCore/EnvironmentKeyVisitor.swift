@@ -7,6 +7,7 @@ import SwiftUI
 /// An ``EnvironmentKeyVisitor`` allows for `some _EnvironmentKey` to be unwrapped
 /// to visit the concrete `EnvironmentKey` type.
 public protocol EnvironmentKeyVisitor {
+    /// Visits the concrete `EnvironmentKey` type.
     mutating func visit<Key: EnvironmentKey>(type: Key.Type)
 }
 

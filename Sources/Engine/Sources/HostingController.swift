@@ -11,31 +11,43 @@ import WatchKit
 #endif
 
 #if os(macOS)
+/// The platform hosting controller type, `NSHostingController`
 public typealias PlatformHostingController<Content: View> = NSHostingController<Content>
 #elseif os(watchOS)
+/// The platform hosting controller type, `WKHostingController`
 public typealias PlatformHostingController<Content: View> = WKHostingController<Content>
 #else
+/// The platform hosting controller type, `UIHostingController`
 public typealias PlatformHostingController<Content: View> = UIHostingController<Content>
 #endif
 
 #if !os(watchOS)
+/// A type-erased platform hosting controller.
 public protocol AnyHostingController: PlatformViewController {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// Whether the hosting controller ignores the safe area insets.
     var disableSafeArea: Bool { get set }
     #endif
+    /// Forces the hosting controller to render its content immediately.
     func render()
 }
 #endif
 
 #if os(iOS)
+/// The root view of a ``HostingController``, which applies a transaction to its content
+/// when updated and can ignore the keyboard safe area.
 @frozen
 public struct HostingControllerRootView<Content: View>: View {
 
+    /// The hosted content.
     public var content: Content
+    /// The transaction applied to the content when it is updated.
     public var transaction: Transaction
+    /// Whether the content ignores the keyboard safe area.
     public var disablesKeyboardSafeArea: Bool
 
+    /// Creates a root view for the content that applies the transaction when updated.
     @inlinable
     public init(
         content: Content,
@@ -72,19 +84,24 @@ public struct HostingControllerRootView<Content: View>: View {
     }
 }
 #else
+/// The root view of a ``HostingController``.
 public typealias HostingControllerRootView<Content: View> = HostingRootView<Content>
 #endif
 
+/// A platform hosting controller for SwiftUI content, whose content can be
+/// updated with a `Transaction`.
 open class HostingController<
     Content: View
 >: PlatformHostingController<HostingControllerRootView<Content>> {
 
+    /// The hosted content.
     public var content: Content {
         get { rootView.content }
         set { rootView.content = newValue }
     }
 
     #if os(watchOS)
+    /// The root view of the hosting controller.
     public var rootView: HostingRootView<Content> {
         didSet {
             setNeedsBodyUpdate()
@@ -93,12 +110,16 @@ open class HostingController<
     #endif
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// The number of pending updates in which SwiftUI layout changes are allowed
+    /// to participate in an enclosing UIKit animation.
     @available(iOS 18.1, tvOS 18.1, visionOS 2.1, *)
     public var allowUIKitAnimations: Int32 {
         get { (view as! AnyHostingView).allowUIKitAnimations }
         set { (view as! AnyHostingView).allowUIKitAnimations = newValue }
     }
 
+    /// Whether SwiftUI layout changes in the next update are allowed to participate
+    /// in an enclosing UIKit animation.
     @available(iOS, introduced: 16.0, obsoleted: 18.1)
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     public var allowUIKitAnimationsForNextUpdate: Bool {
@@ -106,6 +127,8 @@ open class HostingController<
         set { (view as! AnyHostingView).allowUIKitAnimationsForNextUpdate = newValue }
     }
 
+    /// When `true`, SwiftUI layout changes are automatically allowed to participate in
+    /// an enclosing UIKit animation during layout. Defaults to `true`.
     @available(iOS 16.0, tvOS 16.0, *)
     public var automaticallyAllowUIKitAnimationsForNextUpdate: Bool {
         get { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate }
@@ -115,6 +138,8 @@ open class HostingController<
     #endif
 
     #if os(iOS)
+    /// When `true`, the keyboard safe area is ignored unless the first responder is
+    /// within this controller. Defaults to `true`.
     @available(iOS 14.0, *)
     public var automaticallyDisableKeyboardSafeArea: Bool {
         get { shouldAutomaticallyDisableKeyboardSafeArea }
@@ -156,6 +181,7 @@ open class HostingController<
     }
     #endif
 
+    /// Creates a hosting controller for the content.
     public init(content: Content) {
         let rootView = HostingControllerRootView(content: content, transaction: Transaction())
         #if os(watchOS)
@@ -179,6 +205,7 @@ open class HostingController<
     }
     #endif
 
+    /// Updates the hosted content, applying the transaction to the update.
     open func update(content: Content, transaction: Transaction) {
         #if os(iOS)
         rootView = HostingControllerRootView(
@@ -212,6 +239,8 @@ open class HostingController<
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// Returns the size of the content that fits the proposal, where unspecified
+    /// dimensions are unconstrained.
     public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
         let fittingSize = proposal
             .replacingUnspecifiedDimensions(
@@ -224,6 +253,7 @@ open class HostingController<
         return size
     }
     #elseif os(macOS)
+    /// Returns the fitting size of the content, expanded to at least the proposed size.
     public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
         var sizeThatFits = view.fittingSize
         if let proposedWidth = proposal.width, proposedWidth != .infinity {
@@ -328,7 +358,16 @@ open class HostingController<
 
     private func hasFirstResponder() -> Bool {
         guard presentedViewController == nil, let firstResponder = UIResponder.current else { return false }
-        return firstResponder.isInResponderChain(of: self)
+        if firstResponder.isInResponderChain(of: self) {
+            return true
+        }
+        if let navigationController,
+            navigationController.topViewController == self,
+            firstResponder.isInResponderChain(of: navigationController)
+        {
+            return true
+        }
+        return false
     }
 
     private func isKeyboardSafeAreaDisabledDidChange() {
@@ -352,12 +391,14 @@ open class HostingController<
 extension PlatformHostingController: AnyHostingController {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// Whether the hosting controller ignores the safe area insets.
     public var disableSafeArea: Bool {
         get { _disableSafeArea }
         set { _disableSafeArea = newValue }
     }
     #endif
 
+    /// Forces the hosting controller to render its content immediately.
     public func render() {
         _render(seconds: 1 / 60)
     }
@@ -367,6 +408,8 @@ extension PlatformHostingController: AnyHostingController {
 #if os(iOS) || os(tvOS) || os(visionOS)
 extension AnyHostingController {
 
+    /// Whether the hosting controller should be rendered immediately when its content is
+    /// updated, such as when it has a frame but is not in a window.
     public var shouldRenderForContentUpdate: Bool {
         if view.frame != .zero, transitionCoordinator == nil, view.window == nil {
             return true

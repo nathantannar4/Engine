@@ -7,27 +7,37 @@ import SwiftUI
 /// A ``ViewVisitor`` allows for `some View` to be unwrapped
 /// to visit the concrete `View` type.
 public protocol ViewVisitor {
+    /// Visits the concrete `View` type.
     mutating func visit<Content: View>(type: Content.Type)
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// Visits the concrete `UIViewRepresentable` type.
     mutating func visit<Content: UIViewRepresentable>(type: Content.Type)
 
+    /// Visits the concrete `UIViewControllerRepresentable` type.
     mutating func visit<Content: UIViewControllerRepresentable>(type: Content.Type)
     #endif
 
     #if os(macOS)
+    /// Visits the concrete `NSViewRepresentable` type.
     mutating func visit<Content: NSViewRepresentable>(type: Content.Type)
 
+    /// Visits the concrete `NSViewControllerRepresentable` type.
     mutating func visit<Content: NSViewControllerRepresentable>(type: Content.Type)
     #endif
 }
 
 extension ViewVisitor {
+    /// A default implementation that does nothing.
     public func visit<Content: View>(type: Content.Type) { }
 }
 
 extension View {
 
+    /// Visits the type of the view with the `Visitor`.
+    ///
+    /// Platform view representables are visited with their more specific
+    /// `visit(type:)` overload, when the type conforms.
     public func visit<
         Visitor: ViewVisitor
     >(

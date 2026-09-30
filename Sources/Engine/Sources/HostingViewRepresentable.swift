@@ -8,12 +8,20 @@ import SwiftUI
 
 #if os(macOS)
 
+/// A view representable that hosts SwiftUI content in a ``HostingView``.
+///
+/// Use a ``HostingViewRepresentable`` to customize the hosting view that
+/// renders the ``content``, while the size of the content is used for layout.
 public protocol HostingViewRepresentable: NSViewRepresentable where NSViewType == HostingView<Content> {
 
+    /// The type of content hosted by the view.
     associatedtype Content: View
+    /// The content hosted by the view.
     var content: Content { get }
 
+    /// Configures the hosting view when it is created.
     func makeHostingView(_ hostingView: NSViewType, context: Context)
+    /// Updates the hosting view after its content has been updated.
     func updateHostingView(_ hostingView: NSViewType, context: Context)
 }
 
@@ -50,12 +58,20 @@ extension HostingViewRepresentable {
 
 #else
 
+/// A view representable that hosts SwiftUI content in a ``HostingView``.
+///
+/// Use a ``HostingViewRepresentable`` to customize the hosting view that
+/// renders the ``content``, while the size of the content is used for layout.
 public protocol HostingViewRepresentable: UIViewRepresentable where UIViewType == HostingView<Content> {
 
+    /// The type of content hosted by the view.
     associatedtype Content: View
+    /// The content hosted by the view.
     var content: Content { get }
 
+    /// Configures the hosting view when it is created.
     func makeHostingView(_ hostingView: UIViewType, context: Context)
+    /// Updates the hosting view after its content has been updated.
     func updateHostingView(_ hostingView: UIViewType, context: Context)
 }
 

@@ -13,6 +13,7 @@ extension VerticalAlignment {
         }
     }
 
+    /// A guide that marks the vertical midpoint of the first line of text in a view.
     public static let firstTextMidline = VerticalAlignment(FirstTextMidlineAlignment.self)
 }
 

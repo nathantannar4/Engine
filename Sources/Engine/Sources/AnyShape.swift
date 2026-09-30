@@ -26,6 +26,7 @@ public struct AnyShape: Shape, InsettableShape {
         }
     }
 
+    /// Creates a type erased shape from a shape.
     @available(iOS, deprecated: 16.0, renamed: "init(_:)")
     @available(macOS, deprecated: 13.0, renamed: "init(_:)")
     @available(tvOS, deprecated: 16.0, renamed: "init(_:)")
@@ -40,7 +41,7 @@ public struct AnyShape: Shape, InsettableShape {
         storage.path(in: rect)
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var layoutDirectionBehavior: LayoutDirectionBehavior {
         storage.layoutDirectionBehavior
     }
@@ -55,10 +56,10 @@ public struct AnyShape: Shape, InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 extension AnyShape: RoundedRectangularShape {
 
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     public func corners(in size: CGSize?) -> Corners? {
         storage.corners(in: size)
     }
@@ -77,7 +78,7 @@ class AnyShapeStorageBase: @unchecked Sendable {
         fatalError("base")
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     var layoutDirectionBehavior: LayoutDirectionBehavior {
         fatalError("base")
     }
@@ -91,8 +92,8 @@ class AnyShapeStorageBase: @unchecked Sendable {
         fatalError("base")
     }
 
-    #if canImport(FoundationModels) // Xcode 26
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    #if XCODE_26
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
         fatalError("base")
     }
@@ -128,7 +129,7 @@ final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable 
         shape.path(in: rect)
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     override var layoutDirectionBehavior: LayoutDirectionBehavior {
         shape.layoutDirectionBehavior
     }
@@ -148,8 +149,8 @@ final class AnyShapeStorage<S: Shape>: AnyShapeStorageBase, @unchecked Sendable 
         return _openExistential(shape, do: project)
     }
 
-    #if canImport(FoundationModels) // Xcode 26
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    #if XCODE_26
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     override func corners(in size: CGSize?) -> RoundedRectangularShapeCorners? {
         guard let shape = shape as? (any RoundedRectangularShape) else { return nil }
         return shape.corners(in: size)

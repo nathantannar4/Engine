@@ -9,18 +9,22 @@ import SwiftUI
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 @frozen
 public struct SafeAreaInsetsModifier: VersionedViewModifier {
+    /// The additional safe area insets to add to each edge.
     public var edgeInsets: EdgeInsets
 
+    /// Creates a modifier that adds the given insets to the safe area.
     @inlinable
     public init(_ edgeInsets: EdgeInsets) {
         self.edgeInsets = edgeInsets
     }
 
+    /// Creates a modifier that adds the given length to the safe area of all edges.
     @inlinable
     public init(_ length: CGFloat = 16) {
         self.init(EdgeInsets(top: length, leading: length, bottom: length, trailing: length))
     }
 
+    /// Creates a modifier that adds the given length to the safe area of the specified edges.
     @inlinable
     public init(_ edges: Edge.Set, _ length: CGFloat = 16) {
         let edgeInsets = EdgeInsets(
@@ -52,22 +56,22 @@ public struct SafeAreaInsetsModifier: VersionedViewModifier {
 @available(visionOS, unavailable)
 extension View {
 
-    /// A modifier that adds additional safe area padding
-    /// to the edges of a view.
+    /// Adds the specified amount of additional safe area padding to each
+    /// edge of this view.
     @inlinable
     public func safeAreaInsets(_ edgeInsets: EdgeInsets) -> some View {
         modifier(SafeAreaInsetsModifier(edgeInsets))
     }
 
-    /// A modifier that adds additional safe area padding
-    /// to the edges of a view.
+    /// Adds the specified amount of additional safe area padding to all
+    /// edges of this view.
     @inlinable
     public func safeAreaInsets(_ length: CGFloat = 16) -> some View {
         modifier(SafeAreaInsetsModifier(length))
     }
 
-    /// A modifier that adds additional safe area padding
-    /// to the edges of a view.
+    /// Adds the specified amount of additional safe area padding to the
+    /// specified edges of this view.
     @inlinable
     public func safeAreaInsets(_ edges: Edge.Set, _ length: CGFloat = 16) -> some View {
         modifier(SafeAreaInsetsModifier(edges, length))

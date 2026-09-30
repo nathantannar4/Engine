@@ -9,14 +9,16 @@ import EngineCore
 /// Accessors to internal keys ``Engine.EnvironmentKeyVisitor``
 extension EnvironmentValues {
 
+    /// Whether the view is rendered within a glass effect.
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     public var hasGlassEffect: Bool {
         self["__Key_hasGlassEffect", default: false]
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// The hosting controller that is hosting the view, if available.
     public var hostingController: UIViewController? {
-        if #available(iOS 17.0, tvOS 17.0, visionOS 1.0, *) {
+        if #available(iOS 17.0, tvOS 17.0, *) {
             return self["WithCurrentHostingControllerKey"]
         } else if let context = self["ToolbarUpdateContextKey", as: Any.self] {
             return try? swift_getFieldValue("targetController", UIViewController?.self, context)
@@ -39,6 +41,7 @@ extension EnvironmentValues {
         self["ForegroundStyleKey", default: AnyShapeStyle(.foreground)]
     }
 
+    /// The color resolved from the ``.foregroundStyle(_)``/``.foregroundColor(_)`` modifier
     public var foregroundColor: Color? {
         if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *),
             let foregroundStyle = self["ForegroundStyleKey", as: AnyShapeStyle.self]
@@ -60,7 +63,7 @@ extension EnvironmentValues {
         return tintStyle.color(in: self)
     }
 
-    /// The tint color resolved from the ``.tint(_)`` or  ``.accentColor(_)`` modifier
+    /// The tint color resolved from the ``.tint(_)`` or ``.accentColor(_)`` modifier
     public var tintColor: Color? {
         if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), let tint {
             return tint
@@ -103,13 +106,13 @@ extension EnvironmentValues {
         self["DefaultBaselineOffsetKey", default: 0]
     }
 
-    /// The value for the ``.lineLimit(_)`` modifier
+    /// The lower bound for the ``.lineLimit(_)`` modifier, when a range is specified
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var lineLimitMininum: Int? {
         self["LowerLineLimitKey"]
     }
 
-    /// The value for the ``.lineLimit(_)`` modifier
+    /// The range of lines for the ``.lineLimit(_)`` modifier
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     public var lineLimitRange: ClosedRange<Int>? {
         let min = lineLimitMininum ?? 0
@@ -118,7 +121,7 @@ extension EnvironmentValues {
     }
 
     /// The value for the ``.textScale(_)`` modifier
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var textScale: Text.Scale {
         self["TextScaleKey", default: Text.Scale.default]
     }
@@ -173,7 +176,7 @@ extension EnvironmentValues {
         self["KeyboardTypeKey", default: UIKeyboardType.default]
     }
 
-    /// The value for the ``.submitRole(_)`` modifier
+    /// The return key type resolved from the ``.submitLabel(_)``/``.submitRole(_)`` modifier
     public var returnKeyType: UIReturnKeyType? {
         guard let role = submitLabelRole else { return nil }
         return UIReturnKeyType(role)
@@ -193,6 +196,7 @@ extension EnvironmentValues {
         }
     }
 
+    /// The action for the ``.onSubmit(_)`` modifier
     public var submit: SubmitAction? {
         get {
             if let submitAction = self[SubmitAction.Key.self] {
@@ -205,11 +209,13 @@ extension EnvironmentValues {
         }
     }
 
+    /// The value for the ``.submitLabel(_)`` modifier
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public var submitLabel: SubmitLabel? {
         self["SubmitLabelKey"]
     }
 
+    /// The role for the ``.submitLabel(_)``/``.submitRole(_)`` modifier
     public var submitLabelRole: SubmitLabelRole? {
         get {
             if let role = self[SubmitLabelRole.Key.self] {
@@ -230,7 +236,7 @@ extension EnvironmentValues {
         self["DisplayCornerRadiusKey"]
     }
 
-    /// The value for the color scheme of the system
+    /// The contrast associated with the color scheme of this environment
     public var colorSchemeContrast: ColorSchemeContrast {
         get { _colorSchemeContrast }
         set { _colorSchemeContrast = newValue }
@@ -247,13 +253,154 @@ extension EnvironmentValues {
     }
 }
 
+#if !os(macOS) && !os(watchOS)
+extension EnvironmentValues {
+
+    /// Creates environment values from the traits of a `UITraitCollection`.
+    public init(_ traitCollection: UITraitCollection) {
+        self = EnvironmentValues().merging(traitCollection)
+    }
+
+    /// Updates the environment values with the traits of a `UITraitCollection`,
+    /// such as the color scheme, size classes, layout direction and dynamic type size.
+    public mutating func merge(_ traitCollection: UITraitCollection) {
+        if #available(iOS 14.0, tvOS 14.0, *), let colorScheme = ColorScheme(traitCollection.userInterfaceStyle) {
+            self.colorScheme = colorScheme
+        } else {
+            switch traitCollection.userInterfaceStyle {
+            case .light:
+                colorScheme = .light
+            case .dark:
+                colorScheme = .dark
+            default:
+                break
+            }
+        }
+        #if !os(tvOS)
+        if #available(iOS 14.0, *) {
+            horizontalSizeClass = UserInterfaceSizeClass(traitCollection.horizontalSizeClass)
+        } else {
+            switch traitCollection.horizontalSizeClass {
+            case .regular:
+                horizontalSizeClass = .regular
+            case .compact:
+                horizontalSizeClass = .compact
+            default:
+                break
+            }
+        }
+
+        if #available(iOS 14.0, *) {
+            verticalSizeClass = UserInterfaceSizeClass(traitCollection.verticalSizeClass)
+        } else {
+            switch traitCollection.verticalSizeClass {
+            case .regular:
+                verticalSizeClass = .regular
+            case .compact:
+                verticalSizeClass = .compact
+            default:
+                break
+            }
+        }
+        #endif
+        if #available(iOS 14.0, tvOS 14.0, *), let layoutDirection = LayoutDirection(traitCollection.layoutDirection) {
+            self.layoutDirection = layoutDirection
+        } else {
+            switch traitCollection.layoutDirection {
+            case .leftToRight:
+                layoutDirection = .leftToRight
+            case .rightToLeft:
+                layoutDirection = .rightToLeft
+            default:
+                break
+            }
+        }
+        if #available(iOS 15.0, tvOS 15.0, *), let dynamicTypeSize = DynamicTypeSize(traitCollection.preferredContentSizeCategory) {
+            self.dynamicTypeSize = dynamicTypeSize
+        } else if #available(iOS 14.0, tvOS 14.0, *), let sizeCategory = ContentSizeCategory(traitCollection.preferredContentSizeCategory) {
+            self.sizeCategory = sizeCategory
+        } else {
+            let sizeCategory: ContentSizeCategory? = {
+                switch traitCollection.preferredContentSizeCategory {
+                case .extraSmall:
+                    return .extraSmall
+                case .small:
+                    return .small
+                case .medium:
+                    return .medium
+                case .large:
+                    return .large
+                case .extraLarge:
+                    return .extraLarge
+                case .extraExtraLarge:
+                    return .extraExtraLarge
+                case .extraExtraExtraLarge:
+                    return .extraExtraExtraLarge
+                case .accessibilityMedium:
+                    return .accessibilityMedium
+                case .accessibilityLarge:
+                    return .accessibilityLarge
+                case .accessibilityExtraLarge:
+                    return .accessibilityExtraLarge
+                case .accessibilityExtraExtraLarge:
+                    return .accessibilityExtraExtraLarge
+                case .accessibilityExtraExtraExtraLarge:
+                    return .accessibilityExtraExtraExtraLarge
+                default:
+                    return nil
+                }
+            }()
+            if let sizeCategory {
+                self.sizeCategory = sizeCategory
+            }
+        }
+        if #available(iOS 14.0, tvOS 14.0, *), let colorSchemeContrast = ColorSchemeContrast(traitCollection.accessibilityContrast) {
+            self.colorSchemeContrast = colorSchemeContrast
+        } else {
+            switch traitCollection.accessibilityContrast {
+            case .normal:
+                colorSchemeContrast = .standard
+            case .high:
+                colorSchemeContrast = .increased
+            default:
+                break
+            }
+        }
+        displayScale = traitCollection.displayScale
+        if #available(iOS 14.0, tvOS 14.0, *), let legibilityWeight = LegibilityWeight(traitCollection.legibilityWeight) {
+            self.legibilityWeight = legibilityWeight
+        } else {
+            switch traitCollection.legibilityWeight {
+            case .regular:
+                legibilityWeight = .regular
+            case .bold:
+                legibilityWeight = .bold
+            default:
+                break
+            }
+        }
+    }
+
+    /// Returns a copy of the environment values updated with the traits of a `UITraitCollection`.
+    public func merging(_ traitCollection: UITraitCollection) -> EnvironmentValues {
+        var copy = self
+        copy.merge(traitCollection)
+        return copy
+    }
+}
+#endif
+
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension OpenURLAction {
 
+    /// The result of performing an `OpenURLAction`.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     public enum OpenResult {
+        /// The system should open the URL, or a different URL if one is provided.
         case systemAction(URL?, prefersInApp: Bool?)
+        /// The handler opened the URL.
         case handled
+        /// The handler discarded the URL.
         case discarded
 
         @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
@@ -300,6 +447,8 @@ extension OpenURLAction {
         case custom(CustomHandler, fallback: SystemHandler?)
     }
 
+    /// Opens a URL, following the user's preferences, and returns the result
+    /// of a custom handler if one was provided.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     @_disfavoredOverload
     @MainActor @preconcurrency
@@ -316,7 +465,9 @@ extension OpenURLAction {
         return .handled
     }
 
-    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *)
+    /// Opens a URL, following the user's preferences, and returns the result
+    /// of a custom handler if one was provided.
+    @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     @_disfavoredOverload
     @MainActor @preconcurrency
     public func callAsFunction(_ url: URL, prefersInApp: Bool) -> OpenResult {
@@ -332,6 +483,7 @@ extension OpenURLAction {
         return .handled
     }
 
+    /// Whether the action is the default system action.
     public var isDefault: Bool {
         do {
             return try swift_getFieldValue("isDefault", Bool.self, self)
@@ -345,6 +497,7 @@ extension OpenURLAction {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension OpenURLAction.Result {
 
+    /// The underlying result of the action.
     public var result: OpenURLAction.OpenResult? {
         do {
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
@@ -362,6 +515,7 @@ extension OpenURLAction.Result {
 }
 
 
+/// An action that triggers the submission of a view, such as a text field.
 @MainActor @preconcurrency
 public struct SubmitAction {
     struct Key: EnvironmentKey {
@@ -370,6 +524,7 @@ public struct SubmitAction {
 
     var onSubmit: () -> Void
 
+    /// Triggers the submit action.
     public func callAsFunction() {
         onSubmit()
     }
@@ -377,6 +532,9 @@ public struct SubmitAction {
 
 extension View {
 
+    /// Adds an action to perform when the user submits a value to this view.
+    ///
+    /// A back-port of `onSubmit(of:_:)` for earlier platforms.
     @available(iOS, deprecated: 15.0)
     @available(macOS, deprecated: 12.0)
     @available(tvOS, deprecated: 15.0)
@@ -388,6 +546,9 @@ extension View {
     }
 }
 
+/// A semantic label describing the label of submission within a view hierarchy.
+///
+/// A back-port of `SubmitLabel` for earlier platforms.
 public enum SubmitLabelRole: Sendable {
     struct Key: EnvironmentKey {
         static let defaultValue: SubmitLabelRole? = nil
@@ -415,6 +576,9 @@ public enum SubmitLabelRole: Sendable {
 
 extension View {
 
+    /// Sets the submit label for this view.
+    ///
+    /// A back-port of `submitLabel(_:)` for earlier platforms.
     @available(iOS, deprecated: 15.0)
     @available(macOS, deprecated: 12.0)
     @available(tvOS, deprecated: 15.0)
@@ -429,24 +593,35 @@ extension View {
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension SubmitLabel {
 
+    /// The role of the submit label.
     public var role: SubmitLabelRole? {
         try? swift_getFieldValue("role", SubmitLabelRole.self, self)
     }
 }
 
+/// The kind of autocapitalization behavior applied during text input.
+///
+/// A back-port of `TextInputAutocapitalization` for earlier platforms.
 public enum TextInputAutocapitalizationBehaviour: Sendable {
     struct Key: EnvironmentKey {
         static let defaultValue: TextInputAutocapitalizationBehaviour? = nil
     }
 
+    /// Defines an autocapitalizing behavior that will not capitalize anything.
     case never
+    /// Defines an autocapitalizing behavior that will capitalize the first letter of every word.
     case words
+    /// Defines an autocapitalizing behavior that will capitalize the first letter in every sentence.
     case sentences
+    /// Defines an autocapitalizing behavior that will capitalize every letter.
     case characters
 }
 
 extension View {
 
+    /// Sets how often the shift key in the keyboard is automatically enabled.
+    ///
+    /// A back-port of `textInputAutocapitalization(_:)` for earlier platforms.
     @available(iOS, deprecated: 15.0)
     @available(macOS, deprecated: 12.0)
     @available(tvOS, deprecated: 15.0)
@@ -462,6 +637,7 @@ extension View {
 @available(iOS 15.0, tvOS 15.0, watchOS 8.0, *)
 extension TextInputAutocapitalization {
 
+    /// The behavior of the autocapitalization.
     public var behaviour: TextInputAutocapitalizationBehaviour? {
         try? swift_getFieldValue("behavior", TextInputAutocapitalizationBehaviour.self, self)
     }
@@ -472,12 +648,14 @@ extension TextInputAutocapitalization {
 #if os(iOS) || os(tvOS) || os(visionOS)
 extension UITextAutocapitalizationType {
 
+    /// Creates an autocapitalization type from a `TextInputAutocapitalization`.
     @available(iOS 15.0, tvOS 15.0, *)
     public init?(_ textInputAutocapitalization: TextInputAutocapitalization) {
         guard let behaviour = textInputAutocapitalization.behaviour else { return nil }
         self.init(behaviour)
     }
 
+    /// Creates an autocapitalization type from a ``TextInputAutocapitalizationBehaviour``.
     public init(_ behaviour: TextInputAutocapitalizationBehaviour) {
         switch behaviour {
         case .never:
@@ -494,12 +672,14 @@ extension UITextAutocapitalizationType {
 
 extension UIReturnKeyType {
 
+    /// Creates a return key type from a `SubmitLabel`.
     @available(iOS 15.0, tvOS 15.0, *)
     public init?(_ label: SubmitLabel) {
         guard let role = label.role else { return nil }
         self.init(role)
     }
 
+    /// Creates a return key type from a ``SubmitLabelRole``.
     public init(_ role: SubmitLabelRole) {
         switch role {
         case .done:
@@ -515,7 +695,7 @@ extension UIReturnKeyType {
         case .search:
             self = .search
         case .return:
-            self = .done
+            self = .default
         case .next:
             self = .next
         case .continue:

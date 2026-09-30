@@ -9,30 +9,41 @@ import EngineCore
 #if !os(watchOS)
 
 #if os(macOS)
+/// The platform hosting view type, `NSHostingView`
 public typealias PlatformHostingView<Content: View> = NSHostingView<Content>
 #else
+/// The platform hosting view type, `_UIHostingView`
 public typealias PlatformHostingView<Content: View> = _UIHostingView<Content>
 #endif
 
+/// A type-erased platform hosting view.
 public protocol AnyHostingView: PlatformView {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// The number of pending updates in which SwiftUI layout changes are allowed
+    /// to participate in an enclosing UIKit animation.
     @available(iOS 16.0, tvOS 16.0, *)
     var allowUIKitAnimations: Int32 { get set }
 
+    /// Whether SwiftUI layout changes in the next update are allowed to participate
+    /// in an enclosing UIKit animation.
     @available(iOS, introduced: 16.0, obsoleted: 18.1)
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     @available(visionOS, introduced: 1.0, obsoleted: 2.1)
     var allowUIKitAnimationsForNextUpdate: Bool { get set }
     #endif
 
+    /// Forces the hosting view to render its content immediately.
     func render()
 }
 
+/// A platform hosting view for SwiftUI content, whose content can be
+/// updated with a `Transaction`.
 open class HostingView<
     Content: View
 >: PlatformHostingView<HostingRootView<Content>> {
 
+    /// The hosted content.
     public var content: Content {
         get { _rootView.content }
         set { _rootView.content = newValue }
@@ -76,6 +87,7 @@ open class HostingView<
         }
     }
 
+    /// When `true`, the safe area insets of the view are zero.
     public var disablesSafeArea: Bool = false {
         didSet {
             guard oldValue != disablesSafeArea else { return }
@@ -88,6 +100,8 @@ open class HostingView<
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// When `true`, SwiftUI layout changes are automatically allowed to participate in
+    /// an enclosing UIKit animation during layout. Defaults to `true`.
     @available(iOS 16.0, tvOS 16.0, visionOS 1.0, *)
     public var automaticallyAllowUIKitAnimationsForNextUpdate: Bool {
         get { shouldAutomaticallyAllowUIKitAnimationsForNextUpdate }
@@ -98,18 +112,21 @@ open class HostingView<
     /// Set to `true` when embedded in a `UIViewRepresentable` to trigger a layout if `Content` size changes outside of a rootView update
     public var invalidatesIntrinsicContentSizeOnIdealSizeChange: Bool = false
 
-    /// When `true`, an animated layout on the parent hosting view will be triggered when the intrinsic content size changes
+    /// When `true`, an animated layout on the parent hosting view will be triggered when the intrinsic content size changes.
+    /// When `false`, the intrinsic content size of the superview will be invalidated instead
     public var automaticallyLayoutIntrinsicContentSizeChange: Bool = true
 
     private var cachedIntrinsicContentSize: CGSize? {
         didSet {
-            guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating else { return }
+            guard oldValue != nil, oldValue != cachedIntrinsicContentSize, !isUpdating || !automaticallyLayoutIntrinsicContentSizeChange else { return }
             invalidateIntrinsicContentSize()
             layoutIntrinsicContentSizeChange()
         }
     }
     #endif
 
+    /// When `true`, hit tests that do not hit any content pass through the view.
+    /// Defaults to `false` on iOS 26 and later.
     public var isHitTestingPassthrough: Bool = {
         if #available(iOS 26.0, *) {
             // iOS 26 changes hit testing making passthrough less reliable
@@ -119,18 +136,22 @@ open class HostingView<
     }()
 
     #if os(macOS)
+    /// The safe area insets of the view, which are zero when ``disablesSafeArea`` is `true`.
     @available(macOS 11.0, *)
     open override var safeAreaInsets: NSEdgeInsets {
         disablesSafeArea ? NSEdgeInsets() : super.safeAreaInsets
     }
     #else
+    /// The safe area insets of the view, which are zero when ``disablesSafeArea`` is `true`.
     open override var safeAreaInsets: UIEdgeInsets {
         disablesSafeArea ? .zero : super.safeAreaInsets
     }
     #endif
 
-    private var isUpdating = false
+    /// Whether the view is currently updating its content.
+    public private(set) var isUpdating = false
 
+    /// Creates a hosting view for the content.
     public init(content: Content) {
         let rootView = HostingRootView(content: content, transaction: Transaction())
         super.init(rootView: rootView)
@@ -142,6 +163,7 @@ open class HostingView<
         clipsToBounds = false
     }
 
+    /// Creates a hosting view for the content.
     public convenience init(@ViewBuilder content: () -> Content) {
         self.init(content: content())
     }
@@ -157,6 +179,7 @@ open class HostingView<
         fatalError("init(rootView:) has not been implemented")
     }
 
+    /// Updates the hosted content, applying the transaction to the update.
     open func update(content: Content, transaction: Transaction) {
         isUpdating = true; defer { isUpdating = false }
 
@@ -175,6 +198,8 @@ open class HostingView<
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// Returns the size of the content that fits the proposal, where unspecified
+    /// dimensions are unconstrained.
     public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
         let fittingSize = proposal
             .replacingUnspecifiedDimensions(
@@ -187,6 +212,7 @@ open class HostingView<
         return size
     }
     #elseif os(macOS)
+    /// Returns the fitting size of the content, expanded to at least the proposed size.
     public func sizeThatFits(_ proposal: ProposedSize) -> CGSize {
         var sizeThatFits = fittingSize
         if let proposedWidth = proposal.width, proposedWidth != .infinity {
@@ -201,7 +227,7 @@ open class HostingView<
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     open override func layoutSubviews() {
-        if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+        if #available(iOS 16.0, tvOS 16.0, *), shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
             enableUIKitAnimationsIfNeeded()
         }
         super.layoutSubviews()
@@ -210,29 +236,37 @@ open class HostingView<
         }
     }
 
+    /// Called when the intrinsic content size of the view changes.
+    ///
+    /// When ``automaticallyLayoutIntrinsicContentSizeChange`` is `true`, the nearest
+    /// ancestor hosting view is laid out, otherwise the intrinsic content size of the
+    /// superview is invalidated.
     open func layoutIntrinsicContentSizeChange() {
-        guard automaticallyLayoutIntrinsicContentSizeChange else { return }
-        let hostingView: AnyHostingView? = {
-            var ancestor = superview
-            while let current = ancestor {
-                if let hostingView = current as? AnyHostingView {
-                    return hostingView
-                }
-                ancestor = current.superview
-            }
-            return nil
-        }()
-        if let hostingView {
-            if shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
-                UIView.animate(with: .default) {
-                    if #available(iOS 16.0, tvOS 16.0, visionOS 1.0, *) {
-                        hostingView.enableUIKitAnimationsIfNeeded()
+        if automaticallyLayoutIntrinsicContentSizeChange {
+            let hostingView: AnyHostingView? = {
+                var ancestor = superview
+                while let current = ancestor {
+                    if let hostingView = current as? AnyHostingView {
+                        return hostingView
                     }
+                    ancestor = current.superview
+                }
+                return nil
+            }()
+            if let hostingView {
+                if shouldAutomaticallyAllowUIKitAnimationsForNextUpdate {
+                    UIView.animate(with: .default) {
+                        if #available(iOS 16.0, tvOS 16.0, *) {
+                            hostingView.enableUIKitAnimationsIfNeeded()
+                        }
+                        hostingView.layoutIfNeeded()
+                    }
+                } else {
                     hostingView.layoutIfNeeded()
                 }
-            } else {
-                hostingView.layoutIfNeeded()
             }
+        } else {
+            superview?.invalidateIntrinsicContentSize()
         }
     }
     #endif
@@ -272,7 +306,6 @@ open class HostingView<
                 layer.render(in: context)
 
                 let image = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
 
                 guard
                     let cgImage = image?.cgImage,
@@ -324,6 +357,8 @@ open class HostingView<
 extension PlatformHostingView: AnyHostingView {
 
     #if os(iOS) || os(tvOS) || os(visionOS)
+    /// The number of pending updates in which SwiftUI layout changes are allowed
+    /// to participate in an enclosing UIKit animation.
     @available(iOS 16.0, tvOS 16.0, *)
     public var allowUIKitAnimations: Int32 {
         get {
@@ -343,6 +378,8 @@ extension PlatformHostingView: AnyHostingView {
         }
     }
 
+    /// Whether SwiftUI layout changes in the next update are allowed to participate
+    /// in an enclosing UIKit animation.
     @available(iOS, introduced: 16.0, obsoleted: 18.1)
     @available(tvOS, introduced: 16.0, obsoleted: 18.1)
     @available(visionOS, introduced: 1.0, obsoleted: 2.1)
@@ -371,6 +408,7 @@ extension PlatformHostingView: AnyHostingView {
     }
     #endif
 
+    /// Forces the hosting view to render its content immediately.
     public func render() {
         _renderForTest(interval: 1 / 60)
     }

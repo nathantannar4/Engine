@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-/// A view that flashes a debug overlay to indicate when a view update occurred
+/// A view that flashes a debug overlay to indicate when a view update occurred.
 ///
 /// > Note: DEBUG builds only
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
@@ -16,6 +16,7 @@ public struct ViewUpdateDebugView<Content: View>: View {
     @UpdatePhase private  var phase
     #endif
 
+    /// Creates a view that flashes a debug overlay over `content` when it updates.
     public init(
         @ViewBuilder content: () -> Content
     ) {
@@ -37,7 +38,7 @@ public struct ViewUpdateDebugView<Content: View>: View {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension View {
 
-    /// A view that flashes a debug overlay to indicate when a view update occurred
+    /// Flashes a debug overlay over the view to indicate when a view update occurred.
     ///
     /// > Note: DEBUG builds only
     public func withViewUpdateDebugView() -> some View {
@@ -49,6 +50,9 @@ extension View {
     }
 }
 
+/// A modifier that flashes an overlay over the content whenever `phase` changes.
+///
+/// See ``UpdatePhase``.
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 @frozen
 public struct ViewUpdateOverlayModifier<Overlay: View>: ViewModifier {
@@ -62,6 +66,7 @@ public struct ViewUpdateOverlayModifier<Overlay: View>: ViewModifier {
         phase != lastPhase
     }
 
+    /// Creates a modifier that flashes `overlay` whenever `phase` changes.
     public init(
         phase: UpdatePhase.Value,
         @ViewBuilder overlay: () -> Overlay

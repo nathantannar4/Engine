@@ -4,13 +4,13 @@
 
 import SwiftUI
 
-/// A view that transforms the attachment view into a ``Text`` with ``ImageRenderer``
+/// A view that transforms the attachment view into a `Text` with `ImageRenderer`.
 ///
-/// The proposed height of the attachment is determined by the environments font, with a
+/// The proposed height of the attachment is the cap height of the environment's font, with a
 /// baseline offset applied to center the attachment in the line.
 ///
-/// The attachment is rendered with the current environments display scale, and
-/// will update when the attachment changes
+/// The attachment is rendered with the current environment's display scale, and
+/// will update when the attachment changes.
 ///
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 @frozen
@@ -19,11 +19,16 @@ public struct TextAttachmentAdapter<
     Content: View
 >: View {
 
+    /// The view rendered into an image for the text attachment.
     public var attachment: Attachment
+    /// The content, which is passed the rendered attachment as a `Text`.
     public var content: (Text) -> Content
 
     @Environment(\.self) var environment
 
+    /// Creates a view that renders `attachment` into a `Text` and passes it to `content`.
+    ///
+    /// The text is empty if the attachment fails to render.
     public init(
         @ViewBuilder content: @escaping (Text) -> Content,
         @ViewBuilder attachment: () -> Attachment

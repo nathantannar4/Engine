@@ -4,10 +4,10 @@
 
 import SwiftUI
 
-/// A view that transforms a each variadic view subview
+/// A view that transforms each subview of a variadic view
 ///
-/// > Important: You must specify `id` key path if maintaining
-/// the source view identity is neccesary
+/// > Important: You must specify the `id` key path if maintaining
+/// the source view identity is necessary
 ///
 @frozen
 public struct ForEachSubview<
@@ -25,6 +25,9 @@ public struct ForEachSubview<
     @usableFromInline
     var content: (Int, Subview) -> Content
 
+    /// Creates a view that transforms each subview of a variadic view.
+    ///
+    /// Subviews that do not have an identifier for `id` are excluded.
     public init(
         _ source: VariadicView,
         id: KeyPath<Subview, ID> = \.id,
@@ -35,6 +38,9 @@ public struct ForEachSubview<
         self.content = content
     }
 
+    /// Creates a view that transforms each subview in a collection of variadic view subviews.
+    ///
+    /// Subviews that do not have an identifier for `id` are excluded.
     public init(
         _ source: [VariadicView.Subview],
         id: KeyPath<Subview, ID> = \.id,
@@ -45,6 +51,7 @@ public struct ForEachSubview<
         self.content = content
     }
 
+    /// Creates a view that transforms each subview in a collection of visited subviews.
     public init(
         _ source: [MultiViewSubviewVisitor.Subview],
         @ViewBuilder content: @escaping (Int, Subview) -> Content
@@ -54,6 +61,8 @@ public struct ForEachSubview<
         self.content = content
     }
 
+    /// Creates a view that transforms each subview of the source view,
+    /// visited with a ``MultiViewSubviewVisitor``.
     @_disfavoredOverload
     public init<Source: View>(
         _ source: Source,

@@ -17,12 +17,21 @@ import Combine
 @frozen
 public struct PublishedState<Value>: DynamicProperty {
 
+    /// A publisher that emits the value whenever it changes.
     public typealias Publisher = AnyPublisher<Value, Never>
 
     @usableFromInline
     final class PublisherStorage: ObservableObject {
         @Published var value: Value
         private var cancellables = Set<AnyCancellable>()
+        private var isSynchronizing = false
+        // Children are cached weakly so that repeated `$state.member` access returns
+        // the same storage, which keeps a `Binding` equal between view updates
+        private var children = [AnyKeyPath: WeakChild]()
+
+        private struct WeakChild {
+            weak var storage: AnyObject?
+        }
 
         @usableFromInline
         init(value: Value) {
@@ -33,20 +42,34 @@ public struct PublishedState<Value>: DynamicProperty {
         subscript<Subject>(
             dynamicMember keyPath: WritableKeyPath<Value, Subject>
         ) -> PublishedState<Subject>.PublisherStorage where Value: Equatable, Subject: Equatable {
+            if let storage = children[keyPath]?.storage as? PublishedState<Subject>.PublisherStorage {
+                return storage
+            }
             let storage = PublishedState<Subject>.PublisherStorage(value: value[keyPath: keyPath])
+            children[keyPath] = WeakChild(storage: storage)
+            // Both subscriptions are owned by the child storage, so that they are
+            // cancelled when the child is released rather than accumulating in the parent
+            // `@Published` emits during `willSet`, so a flag is used rather than comparing
+            // values to prevent a change from being echoed back to where it came from
             $value
                 .removeDuplicates()
                 .map { $0[keyPath: keyPath] }
                 .sink { [weak storage] newValue in
-                    storage?.value = newValue
+                    guard let storage, !storage.isSynchronizing else { return }
+                    storage.isSynchronizing = true
+                    defer { storage.isSynchronizing = false }
+                    storage.value = newValue
                 }
-                .store(in: &cancellables)
+                .store(in: &storage.cancellables)
 
             storage.$value
                 .dropFirst()
                 .removeDuplicates()
-                .sink { [weak self] newValue in
-                    self?.value[keyPath: keyPath] = newValue
+                .sink { [weak self, weak storage] newValue in
+                    guard let self, let storage, !storage.isSynchronizing else { return }
+                    storage.isSynchronizing = true
+                    defer { storage.isSynchronizing = false }
+                    self.value[keyPath: keyPath] = newValue
                 }
                 .store(in: &storage.cancellables)
             return storage
@@ -56,16 +79,20 @@ public struct PublishedState<Value>: DynamicProperty {
     @usableFromInline
     var storage: State<PublisherStorage>
 
+    /// Creates a published state with an initial value.
     @inlinable
     public init(wrappedValue: Value) {
         storage = State(wrappedValue: PublisherStorage(value: wrappedValue))
     }
 
+    /// The underlying value referenced by the published state.
     public var wrappedValue: Value {
         get { storage.wrappedValue.value }
         nonmutating set { storage.wrappedValue.value = newValue }
     }
 
+    /// A ``PublishedState/Binding`` to the value, which can be passed to
+    /// child views that should be invalidated when the value changes.
     public var projectedValue: Binding {
         Binding(storage.wrappedValue)
     }
@@ -75,6 +102,11 @@ public struct PublishedState<Value>: DynamicProperty {
         State<PublisherStorage>._propertyBehaviors
     }
 
+    /// A property wrapper that reads and writes the value of a
+    /// ``PublishedState``.
+    ///
+    /// Unlike the ``PublishedState`` it was derived from, a view that holds a
+    /// ``PublishedState/Binding`` is invalidated when the value changes.
     @MainActor @preconcurrency
     @frozen
     @dynamicMemberLookup
@@ -136,23 +168,29 @@ public struct PublishedState<Value>: DynamicProperty {
             self.storage = .constant(constant)
         }
 
+        /// Creates a binding with an immutable value.
         public static func constant(_ value: Value) -> Binding {
             Binding(value)
         }
 
+        /// The underlying value referenced by the binding.
         public var wrappedValue: Value {
             get { storage.value }
             nonmutating set { storage.value = newValue }
         }
 
+        /// A SwiftUI `Binding` to the value.
         public var projectedValue: SwiftUI.Binding<Value> {
             storage.projectedValue
         }
 
+        /// A publisher that emits the value whenever it changes.
         public var publisher: Publisher {
             storage.publisher
         }
 
+        /// Returns a binding to the value at the given key path, which is kept
+        /// in sync with this binding.
         @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
         public subscript<Subject>(
             dynamicMember keyPath: WritableKeyPath<Value, Subject>

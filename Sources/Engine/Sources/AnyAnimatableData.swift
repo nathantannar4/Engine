@@ -5,12 +5,16 @@
 import SwiftUI
 
 /// A type erased `AnimatableData`
+///
+/// Arithmetic between values wrapping different vector types leaves the left-hand
+/// side unchanged, except with ``zero`` which acts as an identity.
 @frozen
 public struct AnyAnimatableData: VectorArithmetic, Sendable {
 
     @usableFromInline
     var storage: AnyAnimatableDataStorageBase
 
+    /// Creates a type erased value wrapping `vector`.
     @inlinable
     public init<V: VectorArithmetic>(_ vector: V) {
         storage = AnyAnimatableDataStorage(vector)
@@ -24,6 +28,7 @@ public struct AnyAnimatableData: VectorArithmetic, Sendable {
         storage = storage.scaled(by: rhs)
     }
 
+    /// A zero value that is compatible with, and equal to the zero of, any wrapped vector type.
     public static let zero: AnyAnimatableData = AnyAnimatableData(EmptyAnimatableData.zero)
 
     public static func == (lhs: AnyAnimatableData, rhs: AnyAnimatableData) -> Bool {
@@ -52,6 +57,7 @@ public struct AnyAnimatableData: VectorArithmetic, Sendable {
         return ret
     }
 
+    /// Returns the wrapped vector as `V`, or `nil` if the wrapped vector is not of type `V`.
     public func value<V: VectorArithmetic>(as _: V.Type) -> V? {
         storage.value(as: V.self)
     }

@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  # Forwarded by xcodebuild to the test process as `CI`, so snapshot tests
+  # skip rather than fail on OS versions without reference images
+  TEST_RUNNER_CI: true
+
 jobs:
   build-16:
     runs-on: macos-15
@@ -33,9 +38,16 @@ jobs:
     - name: Build for visionOS
       run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
     - name: Test for macOS
-      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/macOS.xcresult test
     - name: Test for iOS
-      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 16' -skip-testing EngineTestsBenchmarks test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 16' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/iOS.xcresult test
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        # Includes the actual and diff images of failed snapshot tests
+        name: test-results-16
+        path: TestResults
   build-26:
     runs-on: macos-26
     steps:
@@ -59,6 +71,47 @@ jobs:
     - name: Build for visionOS
       run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
     - name: Test for macOS
-      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/macOS.xcresult test
     - name: Test for iOS
-      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 17' -skip-testing EngineTestsBenchmarks test
+      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 17' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/iOS.xcresult test
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        # Includes the actual and diff images of failed snapshot tests
+        name: test-results-26
+        path: TestResults
+  build-27:
+    # macOS 27 is only available through the Xcode 27 preview image
+    runs-on: xcode-27
+    steps:
+    - uses: actions/checkout@v5
+    - name: Set up Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_27.app
+    - name: Show available schemes
+      run: xcodebuild -resolvePackageDependencies -list
+    - name: Show available destinations
+      run: xcodebuild -scheme Engine -showdestinations
+    - name: Build for macOS
+      run: xcodebuild -scheme Engine -destination 'platform=macOS' build
+    - name: Build for Catalyst
+      run: xcodebuild -scheme Engine -destination 'platform=macOS,variant=Mac Catalyst' build
+    - name: Build for iOS
+      run: xcodebuild -scheme Engine -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+    - name: Build for watchOS
+      run: xcodebuild -scheme Engine -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 4 (49mm)' build
+    - name: Build for tvOS
+      run: xcodebuild -scheme Engine -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build
+    - name: Build for visionOS
+      run: xcodebuild -scheme Engine -destination 'generic/platform=visionOS Simulator' build
+    - name: Test for macOS
+      run: xcodebuild -scheme Engine-Package -destination 'platform=macOS' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/macOS.xcresult test
+    - name: Test for iOS
+      run: xcodebuild -scheme Engine-Package -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -skip-testing EngineTestsBenchmarks -resultBundlePath TestResults/iOS.xcresult test
+    - name: Upload test results
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        # Includes the actual and diff images of failed snapshot tests
+        name: test-results-27
+        path: TestResults

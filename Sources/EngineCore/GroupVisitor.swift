@@ -6,6 +6,7 @@ import SwiftUI
 
 extension Group: MultiView where Content: View {
 
+    /// The content of the group, read via reflection.
     public var content: Content {
         try! swift_getFieldValue("content", Content.self, self)
     }

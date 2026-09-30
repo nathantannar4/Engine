@@ -4,6 +4,8 @@
 
 import SwiftUI
 
+/// A rectangular shape with independently rounded corners, back-ported from
+/// `UnevenRoundedRectangle`.
 @frozen
 @available(iOS, introduced: 13.0, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
 @available(macOS, introduced: 10.15, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
@@ -12,11 +14,17 @@ import SwiftUI
 @available(visionOS, introduced: 1.0, deprecated: 100000.0, message: "Please use the built in UnevenRoundedRectangle")
 public struct RoundedCornersRectangle: Shape, InsettableShape {
 
+    /// The radius of the top-leading corner.
     public var topLeadingRadius: CGFloat
+    /// The radius of the bottom-leading corner.
     public var bottomLeadingRadius: CGFloat
+    /// The radius of the bottom-trailing corner.
     public var bottomTrailingRadius: CGFloat
+    /// The radius of the top-trailing corner.
     public var topTrailingRadius: CGFloat
+    /// The amount the shape is inset from its bounds.
     public var inset: CGFloat
+    /// The style of corners drawn by the rounded rectangle.
     public var style: RoundedCornerStyle
 
     public typealias AnimatableData = AnimatablePair<AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>>, CGFloat>
@@ -39,6 +47,7 @@ public struct RoundedCornersRectangle: Shape, InsettableShape {
         }
     }
 
+    /// Creates a new rounded rectangle shape with uneven corners.
     @inlinable
     public init(
         topLeadingRadius: CGFloat = 0,
@@ -121,7 +130,7 @@ public struct RoundedCornersRectangle: Shape, InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 extension RoundedCornersRectangle: RoundedRectangularShape {
 
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)

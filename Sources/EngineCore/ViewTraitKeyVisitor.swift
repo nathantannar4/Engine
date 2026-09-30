@@ -7,6 +7,7 @@ import SwiftUI
 /// A ``ViewTraitKeyVisitor`` allows for `some _ViewTraitKey` to be unwrapped
 /// to visit the concrete `_ViewTraitKey` type.
 public protocol ViewTraitKeyVisitor {
+    /// Visits the concrete `_ViewTraitKey` type.
     mutating func visit<Key: _ViewTraitKey>(type: Key.Type)
 }
 

@@ -4,6 +4,7 @@
 
 import SwiftUI
 
+/// A view that owns a `State` value and provides a binding to it for its content.
 @frozen
 public struct StateAdapter<Value, Content: View>: View {
 
@@ -11,6 +12,7 @@ public struct StateAdapter<Value, Content: View>: View {
 
     var content: (Binding<Value>) -> Content
 
+    /// Creates a view that stores `initialValue` as state and passes a binding to that state to `content`.
     public init(
         initialValue: Value,
         @ViewBuilder content: @escaping (Binding<Value>) -> Content

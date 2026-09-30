@@ -4,7 +4,7 @@
 
 import SwiftUI
 
-/// A view that is an alias for another view that's defined by a descendent.
+/// A view that is an alias for another view that's defined by a descendant.
 ///
 /// A ``ViewOutputAlias`` can be optimized to be static rather than
 /// type-erasure with `AnyView` by defining the `Content`.
@@ -23,12 +23,17 @@ import SwiftUI
 ///
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public protocol ViewOutputAlias: PrimitiveView {
+    /// The type of the source view. Defaults to `AnyView`.
     associatedtype Content: View = AnyView
+    /// The type of view representing the fallback body.
     associatedtype DefaultBody: View = EmptyView
+    /// The view to resolve to when the alias source is not defined.
+    ///
+    /// Defaults to `EmptyView`.
     @MainActor @ViewBuilder var defaultBody: DefaultBody { get }
 }
 
-/// A modifier that defines a `Source` view to a ``ViewOutputAlias``
+/// A modifier that defines a `Source` view for a ``ViewOutputAlias``.
 @frozen
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct ViewOutputAliasSourceModifier<
@@ -39,6 +44,7 @@ public struct ViewOutputAliasSourceModifier<
     @usableFromInline
     var source: Source
 
+    /// Creates a modifier that defines `source` as the view that `Alias` resolves to.
     @inlinable
     public init(
         _ key: Alias.Type = Alias.self,
@@ -105,6 +111,7 @@ public struct ViewOutputAliasReader<
     @usableFromInline
     var content: Content
 
+    /// Creates a container view that defines the scope of `alias`.
     @inlinable
     public init(
         _ alias: Alias.Type = Alias.self,

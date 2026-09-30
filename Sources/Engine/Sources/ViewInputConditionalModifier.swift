@@ -18,6 +18,9 @@ public struct ViewInputConditionalModifier<
     @usableFromInline
     nonisolated(unsafe) var falseModifier: FalseModifier
 
+    /// Creates a modifier that is `then` when `Condition` evaluates to `true` for the view inputs,
+    /// otherwise `otherwise`.
+    @_disfavoredOverload
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
@@ -27,11 +30,13 @@ public struct ViewInputConditionalModifier<
         self.init(Condition.self, then: then(), otherwise: otherwise())
     }
 
+    /// Creates a modifier that is `then` when `Condition` evaluates to `true` for the view inputs,
+    /// otherwise `otherwise`.
     @inlinable
     public init(
         _ : Condition.Type = Condition.self,
-        then: TrueModifier,
-        otherwise: FalseModifier
+        then: TrueModifier = EmptyModifier(),
+        otherwise: FalseModifier = EmptyModifier()
     ) {
         self.trueModifier = then
         self.falseModifier = otherwise

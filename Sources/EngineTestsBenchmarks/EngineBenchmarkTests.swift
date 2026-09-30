@@ -6,6 +6,8 @@ import XCTest
 import SwiftUI
 @testable import Engine
 
+#if !os(watchOS)
+
 @MainActor
 final class BenchmarkTests: XCTestCase {
 
@@ -36,7 +38,7 @@ final class BenchmarkTests: XCTestCase {
     func testVersionedView() {
         struct ViewBuilderVersionedView: View {
             var body: some View {
-                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                     Text("Version >= 5")
                 } else {
                     Text("Version < 5")
@@ -146,3 +148,5 @@ final class BenchmarkTests: XCTestCase {
         XCTAssertLessThan(baseRenderTime, transformedRenderTime)
     }
 }
+
+#endif

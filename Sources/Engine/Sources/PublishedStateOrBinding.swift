@@ -5,7 +5,7 @@
 import SwiftUI
 
 /// A property wrapper that can read and write a value from
-/// a wrapped `PublishedState` or `Binding`
+/// a wrapped ``PublishedState/Binding`` or `Binding`.
 @MainActor @preconcurrency
 @propertyWrapper
 @frozen
@@ -20,16 +20,19 @@ public struct PublishedStateOrBinding<Value>: DynamicProperty {
     @usableFromInline
     var storage: Storage
 
+    /// Creates a property wrapper that reads and writes through a published state binding.
     @inlinable
     public init(_ binding: PublishedState<Value>.Binding) {
         self.storage = .published(binding)
     }
 
+    /// Creates a property wrapper that reads and writes through a binding.
     @inlinable
     public init(_ binding: Binding<Value>) {
         self.storage = .binding(binding)
     }
 
+    /// The underlying value referenced by the wrapped storage.
     public var wrappedValue: Value {
         get {
             switch storage {
@@ -49,6 +52,7 @@ public struct PublishedStateOrBinding<Value>: DynamicProperty {
         }
     }
 
+    /// A binding to the value.
     public var projectedValue: Binding<Value> {
         switch storage {
         case .published(let state):
@@ -58,6 +62,8 @@ public struct PublishedStateOrBinding<Value>: DynamicProperty {
         }
     }
 
+    /// A publisher of the value when backed by a ``PublishedState/Binding``,
+    /// otherwise `nil`.
     @inlinable
     public var publisher: PublishedState<Value>.Publisher? {
         switch storage {

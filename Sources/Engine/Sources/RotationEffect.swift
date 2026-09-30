@@ -4,11 +4,13 @@
 
 import SwiftUI
 
-/// A ``GeometryEffect`` that can rotate the view by an angle relative to an anchor
+/// A `GeometryEffect` that can rotate the view by an angle relative to an anchor.
 @frozen
 public struct RotationEffect: GeometryEffect, Animatable {
 
+    /// The angle of rotation.
     public var angle: Angle
+    /// The location within the view to rotate around.
     public var anchor: UnitPoint
 
     public var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>> {
@@ -24,6 +26,7 @@ public struct RotationEffect: GeometryEffect, Animatable {
         }
     }
 
+    /// Creates a rotation effect with an angle and anchor.
     @inlinable
     public init(
         angle: Angle,

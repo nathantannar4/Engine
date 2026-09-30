@@ -8,12 +8,17 @@ import os.log
 @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
 extension AnyShapeStyle {
 
+    /// A best-effort description of the underlying style of an `AnyShapeStyle`.
     @frozen
     public struct ResolvedStyle: Sendable {
+        /// The kind of an underlying shape style.
         @frozen
         public indirect enum Kind: Sendable {
+            /// A `Color` style.
             case color(Color)
+            /// A `Material` style.
             case material(Material)
+            /// A level of a hierarchical shape style, such as `.secondary`.
             @frozen
             public enum HierarchicalLevel: Int, Sendable {
                 case primary = 0
@@ -35,16 +40,28 @@ extension AnyShapeStyle {
                     }
                 }
             }
+            /// A hierarchical level, either of the current foreground style when the base is `nil`,
+            /// or of a base style such as from `ShapeStyle.secondary`.
             case hierarchical(HierarchicalLevel, ResolvedStyle.Kind?)
+            /// A pair or triple of styles for the primary, secondary and optional tertiary levels.
             case tuple(AnyShapeStyle, AnyShapeStyle, AnyShapeStyle?)
+            /// The `ForegroundStyle` style.
             case foreground
+            /// The `BackgroundStyle` style.
             case background
+            /// The `SelectionShapeStyle` style.
             case selection
+            /// The `SeparatorShapeStyle` style.
             case separator
+            /// The `TintShapeStyle` style.
             case tint
+            /// The `PlaceholderTextShapeStyle` style.
             case placeholder
+            /// The `LinkShapeStyle` style.
             case link
+            /// The `FillShapeStyle` style.
             case fill
+            /// The `WindowBackgroundShapeStyle` style.
             case windowBackground
 
             func color(in environment: EnvironmentValues, level: Int = 0) -> Color? {
@@ -102,11 +119,24 @@ extension AnyShapeStyle {
                 }
             }
         }
+        /// The kind of the underlying style.
         public var kind: Kind
+        /// The opacity applied to the underlying style.
         public var opacity: Double = 1
+        /// The blend mode applied to the underlying style.
         public var blendMode: BlendMode = .normal
     }
 
+    /// Resolves the style to a `Color`, or `nil` if the style cannot be represented as a color.
+    ///
+    /// Materials and other non-color styles return `nil`. Styles that depend
+    /// on the environment, such as the foreground, background and tint styles, are
+    /// resolved using `environment`.
+    ///
+    /// - Parameters:
+    ///   - environment: The environment used to resolve contextual styles.
+    ///   - level: The hierarchical level to resolve for styles with multiple levels,
+    ///     where `0` is primary, `1` is secondary and `2` is tertiary.
     public func color(in environment: EnvironmentValues, level: Int = 0) -> Color? {
         guard
             let style = resolve(in: environment),
@@ -117,11 +147,16 @@ extension AnyShapeStyle {
         return color.opacity(style.opacity)
     }
 
+    /// Returns the blend mode applied to the style, or `nil` if the style cannot be resolved.
     public func blendMode(in environment: EnvironmentValues) -> BlendMode? {
         let style = resolve(in: environment)
         return style?.blendMode
     }
 
+    /// Resolves the type erased style into a ``ResolvedStyle``, or `nil` if the
+    /// underlying style is not recognized.
+    ///
+    /// The style is inspected using runtime reflection, so the result is a best effort.
     public func resolve(in environment: EnvironmentValues) -> ResolvedStyle? {
         func resolve(provider: Any) -> ResolvedStyle? {
             let className = String(describing: type(of: provider))

@@ -4,7 +4,11 @@
 
 import SwiftUI
 
-/// A property wrapper that defers initialization similar to `StateObject`
+/// A property wrapper that defers initialization similar to `StateObject`.
+///
+/// The initial value is created once, the first time the view is installed,
+/// and persists for the lifetime of the view. Unlike `State`, mutating the
+/// value does not invalidate the view.
 @MainActor @preconcurrency
 @propertyWrapper
 @frozen
@@ -26,16 +30,19 @@ public struct LazyState<
     @usableFromInline
     var storage: StateObject<Storage>
 
+    /// Creates a lazy state with an autoclosure that provides the initial value.
     @inlinable
     public init(wrappedValue thunk: @autoclosure @escaping () -> Value) {
         self.storage = StateObject(wrappedValue: Storage(value: thunk()))
     }
 
+    /// The underlying value referenced by the lazy state.
     public var wrappedValue: Value {
         get { storage.wrappedValue.value }
         set { storage.wrappedValue.value = newValue }
     }
 
+    /// A binding to the lazy state value.
     public var projectedValue: Binding<Value> {
         storage.projectedValue.value
     }

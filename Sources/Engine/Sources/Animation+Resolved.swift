@@ -14,7 +14,7 @@ extension Animation {
         return resolved.duration(defaultDuration: defaultDuration)
     }
 
-    /// The duration of the animation
+    /// The duration of the animation's timing curve, not factoring in the speed
     public func timingCurveDuration(defaultDuration: TimeInterval) -> TimeInterval {
         guard let resolved = Resolved(animation: self) else { return defaultDuration }
         return resolved.timingCurveDuration(defaultDuration: defaultDuration)
@@ -26,7 +26,7 @@ extension Animation {
         return resolved.delay
     }
 
-    /// The speed of the animation
+    /// The speed multiplier of the animation
     public var speed: TimeInterval? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.speed
@@ -51,6 +51,8 @@ extension Animation {
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS) || os(macOS)
+    /// Converts the animation to an equivalent Core Animation animation, or `nil`
+    /// if the animation cannot be resolved.
     public func toCoreAnimation() -> CABasicAnimation? {
         guard let resolved = Resolved(animation: self) else { return nil }
         return resolved.toCoreAnimation()
@@ -64,15 +66,23 @@ extension Animation {
 
     /// A deconstructed opaque `Animation`
     public struct Resolved: Codable, Equatable, Sendable {
+        /// The timing curve of a resolved animation.
         public enum TimingCurve: Codable, Equatable, Sendable {
+            /// The `Animation.default` timing curve.
             case `default`
 
+            /// A timing curve backed by a custom `SwiftUI.CustomAnimation`.
             public struct CustomAnimation: Codable, Equatable, Sendable {
+                /// The `duration` of the custom animation, if it has one.
                 public var duration: TimeInterval?
             }
+            /// A timing curve backed by a custom `SwiftUI.CustomAnimation`.
             case custom(CustomAnimation)
 
+            /// A cubic Bézier timing curve, such as `easeInOut` or `linear`.
             public struct BezierAnimation: Codable, Equatable, Sendable {
+                /// The polynomial coefficients of a cubic Bézier unit curve,
+                /// where `x(t) = ((ax * t + bx) * t + cx) * t` and likewise for `y`.
                 public struct AnimationCurve: Codable, Equatable, Sendable {
                     public var ax: Double
                     public var bx: Double
@@ -82,38 +92,188 @@ extension Animation {
                     public var cy: Double
                 }
 
+                /// The duration of the animation, in seconds.
                 public var duration: TimeInterval
+                /// The Bézier curve of the animation.
                 public var curve: AnimationCurve
             }
+            /// A cubic Bézier timing curve, such as `easeInOut` or `linear`.
             case bezier(BezierAnimation)
 
+            /// A spring timing curve defined by its physical parameters,
+            /// such as from `interpolatingSpring(mass:stiffness:damping:initialVelocity:)`.
             public struct SpringAnimation: Codable, Equatable, Sendable {
-                public var mass: Double
-                public var stiffness: Double
-                public var damping: Double
-                public var initialVelocity: Double
-
-                public var duration: TimeInterval {
-                    if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
-                        return Spring(mass: mass, stiffness: stiffness, damping: damping).duration
+                enum Payload: Codable, Equatable, Sendable {
+                    struct V8Payload: Codable, Equatable, Sendable {
+                        var mass: Double
+                        var stiffness: Double
+                        var damping: Double
+                        var initialVelocity: Double
+                        var timingCurve: UnitCurveTypeLayout
                     }
+                    case v8(V8Payload)
+
+                    struct V1Payload: Codable, Equatable, Sendable {
+                        var mass: Double
+                        var stiffness: Double
+                        var damping: Double
+                        var initialVelocity: Double
+                    }
+                    case v1(V1Payload)
+
+                    var mass: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.mass
+                            case .v1(let payload):
+                                return payload.mass
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.mass = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.mass = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var stiffness: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.stiffness
+                            case .v1(let payload):
+                                return payload.stiffness
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.stiffness = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.stiffness = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var damping: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.damping
+                            case .v1(let payload):
+                                return payload.damping
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.damping = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.damping = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    var initialVelocity: Double {
+                        get {
+                            switch self {
+                            case .v8(let payload):
+                                return payload.initialVelocity
+                            case .v1(let payload):
+                                return payload.initialVelocity
+                            }
+                        }
+                        set {
+                            switch self {
+                            case .v8(var payload):
+                                payload.initialVelocity = newValue
+                                self = .v8(payload)
+                            case .v1(var payload):
+                                payload.initialVelocity = newValue
+                                self = .v1(payload)
+                            }
+                        }
+                    }
+
+                    @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                    var timingCurve: UnitCurve? {
+                        switch self {
+                        case .v8(let payload):
+                            return UnitCurve(payload.timingCurve)
+                        case .v1:
+                            return nil
+                        }
+                    }
+                }
+
+                var payload: Payload
+
+                /// The mass of the object attached to the spring.
+                public var mass: Double {
+                    get { payload.mass }
+                    set { payload.mass = newValue }
+                }
+
+                /// The stiffness of the spring.
+                public var stiffness: Double {
+                    get { payload.stiffness }
+                    set { payload.stiffness = newValue }
+                }
+
+                /// The spring damping value.
+                public var damping: Double {
+                    get { payload.damping }
+                    set { payload.damping = newValue }
+                }
+
+                /// The initial velocity of the spring.
+                public var initialVelocity: Double {
+                    get { payload.initialVelocity }
+                    set { payload.initialVelocity = newValue }
+                }
+
+                /// The unit curve the spring is mapped through, if any.
+                @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
+                public var timingCurve: UnitCurve? {
+                    payload.timingCurve
+                }
+
+                /// The time for the spring to settle, `Spring.duration` is not used as it
+                /// is the perceptual duration which is shorter than the animation runs for
+                public var duration: TimeInterval {
                     guard mass > 0, stiffness > 0, damping > 0 else { return 0 }
                     let naturalFrequency = sqrt(stiffness / mass)
                     let dampingRatio = damping / (2.0 * mass * naturalFrequency)
                     let threshold = 0.00185
-                    if dampingRatio < 1.0 {
-                        let decayRate = dampingRatio * naturalFrequency
-                        return -log(threshold) / decayRate
-                    } else {
-                        let root = dampingRatio - sqrt(max(0, dampingRatio * dampingRatio - 1.0))
-                        let decayRate = naturalFrequency * root
-                        guard decayRate > 0 else { return 0 }
-                        return -log(threshold) / decayRate
-                    }
+                    let duration: TimeInterval = {
+                        if dampingRatio < 1.0 {
+                            let decayRate = dampingRatio * naturalFrequency
+                            return -log(threshold) / decayRate
+                        } else {
+                            let root = dampingRatio - sqrt(max(0, dampingRatio * dampingRatio - 1.0))
+                            let decayRate = naturalFrequency * root
+                            guard decayRate > 0 else { return 0 }
+                            return -log(threshold) / decayRate
+                        }
+                    }()
+                    return (duration * 100).rounded() / 100
                 }
             }
+            /// A spring timing curve defined by its physical parameters.
             case spring(SpringAnimation)
 
+            /// A spring timing curve defined by its perceptual duration and damping,
+            /// such as from `spring(response:dampingFraction:blendDuration:)`.
             public struct FluidSpringAnimation: Codable, Equatable, Sendable {
                 enum Payload: Codable, Equatable, Sendable {
                     struct V8Payload: Codable, Equatable, Sendable {
@@ -218,33 +378,40 @@ extension Animation {
 
                 var payload: Payload
 
+                /// The perceptual duration of the spring, also known as the response.
                 public var duration: Double {
                     get { payload.duration }
                     set { payload.duration = newValue }
                 }
 
+                /// The amount of drag applied to the spring, as a fraction of critical damping.
                 public var dampingFraction: Double {
                     get { payload.dampingFraction }
                     set { payload.dampingFraction = newValue }
                 }
 
+                /// The duration, in seconds, over which to interpolate changes to the duration.
                 public var blendDuration: TimeInterval {
                     get { payload.blendDuration }
                     set { payload.blendDuration = newValue }
                 }
 
+                /// The delay, in seconds, stored with the spring.
                 @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
                 public var delay: TimeInterval {
                     get { payload.delay }
                     set { payload.delay = newValue }
                 }
 
+                /// An initial velocity derived from the duration and damping fraction,
+                /// used when converting to UIKit and Core Animation springs.
                 public var initialVelocity: Double {
                     guard duration > 0, dampingFraction > 0 else { return 0 }
                     let initialVelocity = duration > 0 ? log(dampingFraction) / duration : 0
                     return initialVelocity
                 }
             }
+            /// A spring timing curve defined by its perceptual duration and damping.
             case fluidSpring(FluidSpringAnimation)
 
             init?(animator: Any) {
@@ -259,11 +426,19 @@ extension Animation {
                         let bezier = unsafeBitCast(animator, to: BezierAnimation.self)
                         return .bezier(bezier)
                     case "SpringAnimation":
-                        guard MemoryLayout<SpringAnimation>.size == MemoryLayout<T>.size else {
-                            return nil
+                        if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
+                            guard MemoryLayout<SpringAnimation.Payload.V8Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: SpringAnimation.Payload.V8Payload.self)
+                            return .spring(SpringAnimation(payload: .v8(payload)))
+                        } else {
+                            guard MemoryLayout<SpringAnimation.Payload.V1Payload>.size == MemoryLayout<T>.size else {
+                                return nil
+                            }
+                            let payload = unsafeBitCast(animator, to: SpringAnimation.Payload.V1Payload.self)
+                            return .spring(SpringAnimation(payload: .v1(payload)))
                         }
-                        let spring = unsafeBitCast(animator, to: SpringAnimation.self)
-                        return .spring(spring)
                     case "FluidSpringAnimation":
                         if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                             guard MemoryLayout<FluidSpringAnimation.Payload.V8Payload>.size == MemoryLayout<T>.size else {
@@ -293,6 +468,11 @@ extension Animation {
                 self = timingCurve
             }
 
+            /// The duration of the timing curve, not factoring in speed.
+            ///
+            /// For a ``SpringAnimation`` this is the settling duration, and for a
+            /// ``FluidSpringAnimation`` this is the perceptual duration. The value is
+            /// `nil` for the default curve and custom animations without a duration.
             public var duration: TimeInterval? {
                 switch self {
                 case .default:
@@ -309,12 +489,20 @@ extension Animation {
             }
         }
 
+        /// The timing curve of the animation.
         public var timingCurve: TimingCurve
+        /// The total delay of the animation, in seconds.
         public var delay: TimeInterval
+        /// The combined speed multiplier of the animation.
         public var speed: TimeInterval
+        /// The repeat count of the animation, `.max` indicates forever.
         public var repeatCount: Int
+        /// A Boolean value that indicates whether the animation autoreverses when repeating.
         public var autoreverses: Bool
 
+        /// Resolves an opaque `Animation` into its timing curve and modifiers.
+        ///
+        /// Returns `nil` if the animation's timing curve cannot be determined.
         public init?(animation: Animation) {
             if animation == .default {
                 self.timingCurve = .default
@@ -395,10 +583,29 @@ extension Animation {
             return timingCurveDuration / speed
         }
 
-        /// The duration of the animation
+        /// The duration of the animation's timing curve, not factoring in the speed
         public func timingCurveDuration(defaultDuration: TimeInterval) -> TimeInterval {
             return timingCurve.duration ?? defaultDuration
         }
+    }
+}
+
+struct UnitCurveTypeLayout: Codable, Equatable, Sendable {
+    var p0: Double
+    var p1: Double
+    var p2: Double
+    var p3: Double
+    var tag: UInt8
+}
+
+@available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+extension UnitCurve {
+
+    init?(_ layout: UnitCurveTypeLayout) {
+        guard MemoryLayout<UnitCurveTypeLayout>.size == MemoryLayout<UnitCurve>.size else {
+            return nil
+        }
+        self = unsafeBitCast(layout, to: UnitCurve.self)
     }
 }
 
@@ -406,6 +613,10 @@ extension Animation {
 
 extension Animation.Resolved {
 
+    /// Converts the resolved animation to an equivalent Core Animation animation.
+    ///
+    /// Spring timing curves return a `CASpringAnimation`. The delay is applied
+    /// as the `beginTime`, relative to the current media time.
     public func toCoreAnimation() -> CABasicAnimation {
         switch timingCurve {
         case .default, .custom:
@@ -459,10 +670,11 @@ extension Animation.Resolved {
 
 extension Animation.Resolved.TimingCurve.BezierAnimation.AnimationCurve {
 
+    /// Converts the curve to an equivalent Core Animation timing function.
     public func toCoreAnimation() -> CAMediaTimingFunction {
         return CAMediaTimingFunction(
             controlPoints:
-                Float(ax / 3), Float(ay / 3),
+                Float(cx / 3), Float(cy / 3),
                 Float(cx - (cx - bx) / 3), Float(cy - (cy - by) / 3)
         )
     }
@@ -481,12 +693,6 @@ struct AnimationResolved_Previews: PreviewProvider {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading) {
                     Text(label)
-
-//                    Text({
-//                        var str = ""
-//                        dump(animation, to: &str)
-//                        return str
-//                    }())
                 }
 
                 VStack(alignment: .leading) {
@@ -524,7 +730,7 @@ struct AnimationResolved_Previews: PreviewProvider {
 
                 Divider()
 
-                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+                if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                     AnimationPreview(label: "PreviewAnimation", animation: .init(PreviewAnimation()).speed(2).delay(1))
                 }
 

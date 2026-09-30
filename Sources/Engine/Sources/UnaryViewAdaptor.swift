@@ -4,13 +4,13 @@
 
 import SwiftUI
 
-/// A view that wraps `Content` in unary view.
+/// A view that wraps `Content` in a unary view.
 ///
 /// Most views such as `ZStack`, `VStack` and `HStack` are
 /// unary views. This means they would produce a single subview
 /// if transformed by a ``VariadicViewAdapter``.  This is contrary
 /// to `ForEach`, `TupleView`, `Section` and `Group` which
-/// would produce multiple subviews. This different in behaviour can be
+/// would produce multiple subviews. This difference in behaviour can be
 /// crucial, as it impacts: layout, how a view is modified by a `ViewModifier`,
 /// and performance.
 ///
@@ -27,6 +27,7 @@ public struct UnaryViewAdaptor<Content: View>: View {
     @usableFromInline
     var content: Content
 
+    /// Creates a unary view that wraps `content`.
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()

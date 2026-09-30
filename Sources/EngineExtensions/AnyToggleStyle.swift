@@ -5,10 +5,12 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `ToggleStyle`.
 public struct AnyToggleStyle: ToggleStyle {
 
     var style: any ToggleStyle
 
+    /// Creates a type-erased style that wraps the given style.
     public init<S: ToggleStyle>(_ style: S) {
         self.style = style
     }

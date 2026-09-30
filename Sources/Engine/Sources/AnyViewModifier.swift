@@ -7,7 +7,7 @@ import SwiftUI
 /// A type-erased view modifier.
 ///
 /// An `AnyViewModifier` allows changing the type of view modifier used in a given view
-/// hierarchy. Whenever the type of view used with an `AnyViewModifier` changes, the old
+/// hierarchy. Whenever the type of view modifier used with an `AnyViewModifier` changes, the old
 /// hierarchy is destroyed and a new hierarchy is created for the new type.
 @frozen
 public struct AnyViewModifier: ViewModifier {
@@ -15,7 +15,7 @@ public struct AnyViewModifier: ViewModifier {
     @usableFromInline
     var storage: AnyViewModifierStorageBase
 
-    /// Create an instance that type-erases `view`.
+    /// Create an instance that type-erases `modifier`.
     public init<M: ViewModifier>(_ modifier: M) {
         storage = AnyViewModifierStorage(modifier)
     }
@@ -24,6 +24,7 @@ public struct AnyViewModifier: ViewModifier {
         storage.body(content: content)
     }
 
+    /// Returns a type-erased modifier that applies this modifier followed by `modifier`.
     public func concat<M: ViewModifier>(_ modifier: M) -> AnyViewModifier {
         storage.concat(modifier)
     }
@@ -31,6 +32,16 @@ public struct AnyViewModifier: ViewModifier {
 
 extension View {
 
+    /// Applies a modifier for each element of a collection, in order.
+    ///
+    ///     Text("Hello, World")
+    ///         .modifier(colors) { color in
+    ///             BorderModifier(color: color)
+    ///         }
+    ///
+    /// - Parameters:
+    ///   - collection: The elements to create modifiers from.
+    ///   - makeModifier: A closure that creates the modifier for an element.
     @inlinable
     public func modifier<C: Collection, Modifier: ViewModifier>(
         _ collection: C,

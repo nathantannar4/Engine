@@ -8,10 +8,12 @@ import EngineCore
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Label {
 
+    /// The title view of the label.
     public var title: Title {
         try! swift_getFieldValue("title", Title.self, self)
     }
 
+    /// The icon view of the label.
     public var icon: Icon {
         try! swift_getFieldValue("icon", Icon.self, self)
     }

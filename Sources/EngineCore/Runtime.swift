@@ -4,6 +4,10 @@
 
 import Foundation
 
+/// Returns whether opaque `some View` return types are erased to `AnyView`.
+///
+/// Opaque type erasure (`SWIFT_ENABLE_OPAQUE_TYPE_ERASURE`) is enabled by default
+/// for debug builds with certain SDK versions. Always `false` in release builds.
 @inline(__always)
 public func isOpaqueViewAnyView() -> Bool {
     #if DEBUG && canImport(SwiftUICore)
@@ -14,11 +18,17 @@ public func isOpaqueViewAnyView() -> Bool {
     #endif
 }
 
+/// A stored field of a type, as resolved from its runtime metadata.
 public struct MetadataField {
+    /// The name of the field.
     public let key: String
+    /// The type of the field.
     public let type: Any.Type
 }
 
+/// Returns the stored fields of an instance along with their values.
+///
+/// For an enum, the single element returned is the current case and its payload.
 public func swift_getFields<InstanceType>(
     _ instance: InstanceType
 ) throws -> [(field: MetadataField, value: Any)] {
@@ -33,6 +43,7 @@ public func swift_getFields<InstanceType>(
     }
 }
 
+/// Returns the named stored fields of a type.
 public func swift_getFields(
     _ type: Any.Type
 ) -> [MetadataField] {
@@ -50,6 +61,7 @@ public func swift_getFields(
     }
 }
 
+/// Returns the type of the stored field named `key` on an instance.
 public func swift_getFieldType(
     _ key: String,
     _ instance: Any
@@ -57,6 +69,15 @@ public func swift_getFieldType(
     try swift_getField(key, type(of: instance)).type
 }
 
+/// Returns the value of the stored field named `key` on an instance.
+///
+/// For an enum, `key` is matched against the name of the current case and its payload is returned.
+///
+/// - Parameters:
+///   - key: The name of the field.
+///   - value: The expected type of the field, or `Any` to box the value.
+///   - instance: The instance to read the field from.
+/// - Throws: An error if the field is not found or its size does not match `Value`.
 public func swift_getFieldValue<Value, InstanceType>(
     _ key: String,
     _ value: Value.Type,
@@ -65,6 +86,7 @@ public func swift_getFieldValue<Value, InstanceType>(
     try getFieldValue(key, value, instance)
 }
 
+/// Returns the value of the stored field named `key` on an instance, or `nil` if the instance is `nil`.
 public func swift_getFieldValue<Value, InstanceType>(
     _ key: String,
     _ value: Value.Type,
@@ -76,6 +98,10 @@ public func swift_getFieldValue<Value, InstanceType>(
     return try getFieldValue(key, value, instance)
 }
 
+/// Sets the value of the stored field named `key` on an instance.
+///
+/// - Throws: An error if the field is not found, its type does not match `Value`,
+///   or the instance is an enum.
 public func swift_setFieldValue<Value, InstanceType>(
     _ key: String,
     _ value: Value,
@@ -84,6 +110,7 @@ public func swift_setFieldValue<Value, InstanceType>(
     try setFieldValue(key, value, &instance)
 }
 
+/// Sets the value of the stored field named `key` on an instance, if the instance is not `nil`.
 public func swift_setFieldValue<Value, InstanceType>(
     _ key: String,
     _ value: Value,
@@ -93,6 +120,7 @@ public func swift_setFieldValue<Value, InstanceType>(
     try setFieldValue(key, value, &instance!)
 }
 
+/// Sets the value of the stored field named `key` on a class instance.
 public func swift_setFieldValue<Value, InstanceType: AnyObject>(
     _ key: String,
     _ value: Value,
@@ -102,6 +130,7 @@ public func swift_setFieldValue<Value, InstanceType: AnyObject>(
     try setFieldValue(key, value, &instance)
 }
 
+/// Sets the value of the stored field named `key` on a class instance, if the instance is not `nil`.
 public func swift_setFieldValue<Value, InstanceType: AnyObject>(
     _ key: String,
     _ value: Value,
@@ -111,6 +140,7 @@ public func swift_setFieldValue<Value, InstanceType: AnyObject>(
     try setFieldValue(key, value, &instance)
 }
 
+/// Returns the generic arguments of a struct type, or `nil` if the type is not a struct.
 public func swift_getStructGenerics(for type: Any.Type) -> [Any.Type]? {
     guard let metadata = Metadata<StructMetadata>(type) else {
         return nil
@@ -118,6 +148,7 @@ public func swift_getStructGenerics(for type: Any.Type) -> [Any.Type]? {
     return metadata[\.genericTypes]
 }
 
+/// Returns the generic arguments of an enum type, or `nil` if the type is not an enum.
 public func swift_getEnumGenerics(for type: Any.Type) -> [Any.Type]? {
     guard let metadata = Metadata<EnumMetadata>(type) else {
         return nil
@@ -125,6 +156,7 @@ public func swift_getEnumGenerics(for type: Any.Type) -> [Any.Type]? {
     return metadata[\.genericTypes]
 }
 
+/// Returns the generic arguments of a class type, or `nil` if the type is not a class.
 public func swift_getClassGenerics(for type: Any.Type) -> [Any.Type]? {
     guard let metadata = Metadata<ClassMetadata>(type) else {
         return nil
@@ -132,14 +164,17 @@ public func swift_getClassGenerics(for type: Any.Type) -> [Any.Type]? {
     return metadata[\.genericTypes]
 }
 
+/// Returns whether the type is a class.
 public func swift_getIsClassType(_ type: Any.Type) -> Bool {
     return c_swift_isClassType(type)
 }
 
+/// Returns whether the dynamic type of the instance is a class.
 public func swift_getIsClassType(_ instance: Any) -> Bool {
     return c_swift_isClassType(type(of: instance))
 }
 
+/// Returns whether the type is a struct.
 public func swift_getIsStructType(_ type: Any.Type) -> Bool {
     var type = type
     if type == Any.self {
@@ -151,10 +186,12 @@ public func swift_getIsStructType(_ type: Any.Type) -> Bool {
     return Metadata<StructMetadata>(type) != nil
 }
 
+/// Returns whether the dynamic type of the instance is a struct.
 public func swift_getIsStructType(_ instance: Any) -> Bool {
     return swift_getIsStructType(type(of: instance))
 }
 
+/// Returns whether the type is an enum.
 public func swift_getIsEnumType(_ type: Any.Type) -> Bool {
     var type = type
     if type == Any.self {
@@ -166,10 +203,14 @@ public func swift_getIsEnumType(_ type: Any.Type) -> Bool {
     return Metadata<EnumMetadata>(type) != nil
 }
 
+/// Returns whether the dynamic type of the instance is an enum.
 public func swift_getIsEnumType(_ instance: Any) -> Bool {
     return swift_getIsEnumType(type(of: instance))
 }
 
+/// Returns the name of the current case of an enum instance.
+///
+/// - Throws: An error if the instance is not an enum.
 public func swift_getEnumCase<InstanceType>(_ instance: InstanceType) throws -> String {
     guard
         swift_getIsEnumType(InstanceType.self),
@@ -181,11 +222,13 @@ public func swift_getEnumCase<InstanceType>(_ instance: InstanceType) throws -> 
     return label
 }
 
+/// Returns the mangled name of the type.
 public func swift_getMangledTypeName(of type: Any.Type) -> String? {
     guard let namePtr = swift_getMangledTypeName(type) else { return nil }
     return String(cString: namePtr)
 }
 
+/// Returns the size in bytes of the type, as given by `MemoryLayout.size`.
 public func swift_getSize(of type: Any.Type) -> Int {
     func project<T>(_: T.Type) -> Int {
         MemoryLayout<T>.size
@@ -368,7 +411,8 @@ private class FieldLookupCache: @unchecked Sendable {
 
     subscript(type: Any.Type, key: String) -> Field? {
         get {
-            storage[unsafeBitCast(type, to: UnsafeRawPointer.self)]?[key]
+            os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
+            return storage[unsafeBitCast(type, to: UnsafeRawPointer.self)]?[key]
         }
         set {
             os_unfair_lock_lock(lock); defer { os_unfair_lock_unlock(lock) }
@@ -408,7 +452,7 @@ private func swift_getFields_slow(
     for i in 0..<count {
         var field = FieldReflectionMetadata()
         let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
-        defer { field.dealloc?(field.name) }
+        defer { field.dealloc?(field.identifier) }
         let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
         fields.append(Field(type: fieldType, name: field.name, offset: offset))
     }
@@ -423,7 +467,7 @@ private func swift_getField_slow(
     for i in 0..<count {
         var field = FieldReflectionMetadata()
         let fieldType = swift_reflectionMirror_recursiveChildMetadata(type, index: i, fieldMetadata: &field)
-        defer { field.dealloc?(field.name) }
+        defer { field.dealloc?(field.identifier) }
         guard field.name == key else { continue }
         let offset = swift_reflectionMirror_recursiveChildOffset(type, index: i)
         return Field(type: fieldType, name: field.name, offset: offset)

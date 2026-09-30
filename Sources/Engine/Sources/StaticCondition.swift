@@ -9,22 +9,37 @@ import SwiftUI
 /// > Important: The evaluation result should be static
 ///
 public protocol StaticCondition {
+    /// The result of evaluating the condition.
     static var value: Bool { get }
 }
 
+/// A `StaticCondition` that is always true
 @frozen
 public enum TrueStaticCondition: StaticCondition {
+    /// Always `true`.
     public static let value: Bool = true
 }
 
+/// A `StaticCondition` that is always false
 @frozen
 public enum FalseStaticCondition: StaticCondition {
+    /// Always `false`.
     public static let value: Bool = false
+}
+
+/// A `StaticCondition` that inverts the `Condition`
+@frozen
+public enum InvertedStaticCondition<Condition: StaticCondition>: StaticCondition {
+    /// The inverse of `Condition.value`.
+    public static var value: Bool {
+        return !Condition.value
+    }
 }
 
 /// A `StaticCondition` that compares types
 @frozen
 public enum IsEqual<LHS, RHS>: StaticCondition {
+    /// `true` when `LHS` and `RHS` are the same type.
     @inlinable
     public static var value: Bool {
         LHS.self == RHS.self

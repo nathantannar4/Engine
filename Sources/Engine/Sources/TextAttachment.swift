@@ -8,6 +8,13 @@ import SwiftUI
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
 extension Text {
 
+    /// Creates a text containing a snapshot of `attachment` rendered as an image.
+    ///
+    /// - Parameters:
+    ///   - attachment: The view to render into an image.
+    ///   - environment: The environment to render the attachment in. When `nil`, the
+    ///     attachment is rendered at the main screen's scale with the default environment.
+    ///   - label: The accessibility label of the image. When `nil`, the image is decorative.
     @_disfavoredOverload
     public init<S: StringProtocol, Content: View>(
         attachment: Content,
@@ -21,6 +28,13 @@ extension Text {
         )
     }
 
+    /// Creates a text containing a snapshot of `attachment` rendered as an image.
+    ///
+    /// - Parameters:
+    ///   - attachment: The view to render into an image.
+    ///   - environment: The environment to render the attachment in. When `nil`, the
+    ///     attachment is rendered at the main screen's scale with the default environment.
+    ///   - label: The localized accessibility label of the image.
     public init<Content: View>(
         attachment: Content,
         environment: EnvironmentValues? = nil,
@@ -33,6 +47,16 @@ extension Text {
         )
     }
 
+    /// Creates a text containing a snapshot of `attachment` rendered as an image.
+    ///
+    /// If the attachment fails to render, the text is the `label`, or empty when
+    /// there is no label.
+    ///
+    /// - Parameters:
+    ///   - attachment: The view to render into an image.
+    ///   - environment: The environment to render the attachment in. When `nil`, the
+    ///     attachment is rendered at the main screen's scale with the default environment.
+    ///   - label: The accessibility label of the image. When `nil`, the image is decorative.
     public init<Content: View>(
         attachment: Content,
         environment: EnvironmentValues? = nil,

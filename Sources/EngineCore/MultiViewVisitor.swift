@@ -7,16 +7,26 @@ import SwiftUI
 /// A ``MultiViewVisitor`` allows for an opaque collection of
 /// `some View` to be unwrapped to visit the concrete `View` element.
 public protocol MultiViewVisitor {
+    /// Visits a concrete `View` element.
+    ///
+    /// - Parameters:
+    ///   - content: The element being visited.
+    ///   - context: The identity and traits of the element.
+    ///   - stop: Set to `true` to stop visiting any remaining elements.
     mutating func visit<Content: View>(content: Content, context: Context, stop: inout Bool)
 
+    /// The context of a visited element.
     typealias Context = MultiViewElementContext
 }
 
+/// The context of an element visited by a ``MultiViewVisitor``.
 @frozen
 public struct MultiViewElementContext {
 
+    /// The type of identifier for an element.
     public typealias ID = ViewTypeIdentifier
 
+    /// The traits of an element, such as whether it is a section header or footer.
     public struct Traits: OptionSet, Sendable {
         public var rawValue: UInt8
 
@@ -24,11 +34,15 @@ public struct MultiViewElementContext {
             self.rawValue = rawValue
         }
 
+        /// The element is the header of a `Section`.
         public static let header = Traits(rawValue: 1 << 0)
+        /// The element is the footer of a `Section`.
         public static let footer = Traits(rawValue: 1 << 1)
     }
 
+    /// The structural identity of the element, derived from the view hierarchy it was visited from.
     public var id: ID
+    /// The traits of the element.
     public var traits: Traits
 
     init(context: MultiViewIteratorContext) {
@@ -56,24 +70,38 @@ func c_visit_MultiView(
 /// A protocol that defines views with children that can be iterated
 public protocol MultiView: View {
 
+    /// The type of iterator that visits the subviews.
     associatedtype Iterator: MultiViewIterator
+    /// Makes an iterator that visits each of the subviews.
     nonisolated func makeSubviewIterator() -> Iterator
 }
 
+/// A type that visits each of the subviews of a ``MultiView``.
 public protocol MultiViewIterator {
+    /// Visits each of the subviews with the `Visitor`.
+    ///
+    /// - Parameters:
+    ///   - visitor: The visitor to visit each subview with.
+    ///   - context: The context of the parent view.
+    ///   - stop: Set to `true` by the visitor to stop iterating.
     mutating func visit<Visitor: MultiViewVisitor>(
         visitor: UnsafeMutablePointer<Visitor>,
         context: Context,
         stop: inout Bool
     )
 
+    /// The context passed down while iterating.
     typealias Context = MultiViewIteratorContext
 }
 
+/// The context passed down while a ``MultiViewIterator`` visits subviews.
 public struct MultiViewIteratorContext {
 
+    /// The structural identity accumulated so far.
     public var id: MultiViewElementContext.ID
+    /// The traits accumulated so far.
     public var traits: MultiViewElementContext.Traits
+    /// The `ViewModifier` accumulated so far, to be applied to each visited element.
     public var modifier: Any?
 
     init(id: MultiViewElementContext.ID) {
@@ -82,18 +110,21 @@ public struct MultiViewIteratorContext {
         self.modifier = nil
     }
 
+    /// Creates a context rooted at the `Content` type.
     public init<Content: View>(_: Content.Type = Content.self) {
         self.id = .init(Content.self)
         self.traits = []
         self.modifier = nil
     }
 
+    /// Returns a copy of the context with the traits inserted.
     public func union(_ traits: MultiViewElementContext.Traits) -> Self {
         var copy = self
         copy.traits.formUnion(traits)
         return copy
     }
 
+    /// Returns a copy of the context with the modifier concatenated to any existing modifier.
     public func modifier<Modifier: ViewModifier>(_ modifier: Modifier) -> Self {
         var copy = self
         guard let m = self.modifier else {
@@ -116,6 +147,7 @@ public struct MultiViewIteratorContext {
 
 extension View {
 
+    /// Visits each of the subviews of the view with the `Visitor`.
     @_disfavoredOverload
     @inline(__always)
     public nonisolated func visit<
@@ -127,6 +159,7 @@ extension View {
         visit(visitor: visitor, stop: &stop)
     }
 
+    /// Visits each of the subviews of the view with the `Visitor`.
     @_disfavoredOverload
     @inline(__always)
     public nonisolated func visit<
@@ -138,6 +171,10 @@ extension View {
         visit(visitor: visitor, context: MultiViewIteratorContext(Self.self), stop: &stop)
     }
 
+    /// Visits each of the subviews of the view with the `Visitor`.
+    ///
+    /// If the view's type conforms to ``MultiView`` at runtime, its subviews are
+    /// visited, otherwise the default ``View/makeSubviewIterator()`` is used.
     @_disfavoredOverload
     public nonisolated func visit<
         Visitor: MultiViewVisitor
@@ -188,6 +225,7 @@ extension MultiView {
         visit(visitor: visitor, context: MultiViewIteratorContext(Self.self), stop: &stop)
     }
 
+    /// Unwraps the type to be visited by the `Visitor`
     @inlinable
     public nonisolated func visit<
         Visitor: MultiViewVisitor
@@ -260,6 +298,7 @@ public func _swift_visit_MultiView<Content: MultiView>(
 }
 
 extension MultiViewVisitor {
+    /// Visits a concrete `View` element, applying any modifier accumulated in the iterator context.
     public mutating func visit<Content: View>(
         content: Content,
         context: MultiViewIteratorContext,

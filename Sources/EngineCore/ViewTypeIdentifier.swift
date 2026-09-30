@@ -4,6 +4,8 @@
 
 import SwiftUI
 
+/// A structural identifier for a view, derived from the types and offsets
+/// along its path in a view hierarchy.
 public struct ViewTypeIdentifier: Hashable, Sendable, CustomDebugStringConvertible {
 
     private indirect enum Storage: Hashable, @unchecked Sendable, CustomDebugStringConvertible {

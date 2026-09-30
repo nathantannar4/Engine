@@ -4,10 +4,12 @@
 
 import SwiftUI
 
-/// The optional shape
+/// A shape that wraps an optional shape, drawing an empty path when the
+/// shape is `nil`.
 @frozen
 public struct OptionalShape<S: Shape>: Shape {
 
+    /// The wrapped shape, if any.
     public var shape: S?
 
     public var animatableData: AnyAnimatableData {
@@ -24,6 +26,7 @@ public struct OptionalShape<S: Shape>: Shape {
         }
     }
 
+    /// Creates an optional shape.
     @inlinable
     public init(
         _ shape: S?
@@ -36,7 +39,7 @@ public struct OptionalShape<S: Shape>: Shape {
         S.role
     }
 
-    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *)
+    @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     public var layoutDirectionBehavior: LayoutDirectionBehavior {
         shape?.layoutDirectionBehavior ?? .mirrors
     }
@@ -65,7 +68,7 @@ extension OptionalShape: InsettableShape where S: InsettableShape {
     }
 }
 
-#if canImport(FoundationModels) // Xcode 26
+#if XCODE_26
 @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
 extension OptionalShape: RoundedRectangularShape where S: RoundedRectangularShape {
 

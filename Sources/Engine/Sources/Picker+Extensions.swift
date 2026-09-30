@@ -6,6 +6,13 @@ import SwiftUI
 
 extension Picker {
 
+    /// Creates a picker that generates its options from an array of values.
+    ///
+    /// - Parameters:
+    ///   - sources: The values to choose from, in display order.
+    ///   - selection: A binding to the selected value.
+    ///   - content: A view builder that creates the label for each value.
+    ///   - label: A view that describes the purpose of selecting an option.
     public init<
         ValueLabel: View
     >(
@@ -24,6 +31,15 @@ extension Picker {
         }
     }
 
+    /// Creates a picker with an optional selection that generates its options
+    /// from an array of values, along with an option that clears the selection.
+    ///
+    /// - Parameters:
+    ///   - sources: The values to choose from, in display order.
+    ///   - selection: A binding to the optional selected value.
+    ///   - content: A view builder that creates the label for each value.
+    ///   - label: A view that describes the purpose of selecting an option.
+    ///   - clearSelectionLabel: The label for the option that sets the selection to `nil`.
     @MainActor
     public init<
         _SelectionValue: Hashable,
@@ -54,6 +70,15 @@ extension Picker {
 @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
 extension Picker {
 
+    /// Creates a picker that generates its options from an array of values,
+    /// with a custom label for the current value.
+    ///
+    /// - Parameters:
+    ///   - sources: The values to choose from, in display order.
+    ///   - selection: A binding to the selected value.
+    ///   - content: A view builder that creates the label for each value.
+    ///   - label: A view that describes the purpose of selecting an option.
+    ///   - currentValueLabel: A view builder that creates the label for the selected value.
     public init<
         ValueLabel: View,
         CurrentValueLabel: View
@@ -76,6 +101,15 @@ extension Picker {
         }
     }
 
+    /// Creates a picker with an optional selection that generates its options
+    /// from an array of values, with a custom label for the current value.
+    ///
+    /// - Parameters:
+    ///   - sources: The values to choose from, in display order.
+    ///   - selection: A binding to the optional selected value.
+    ///   - content: A view builder that creates the label for each value.
+    ///   - label: A view that describes the purpose of selecting an option.
+    ///   - currentValueLabel: A view builder that creates the label for the selected value.
     public init<
         _SelectionValue: Hashable,
         ValueLabel: View,
@@ -99,6 +133,17 @@ extension Picker {
         }
     }
 
+    /// Creates a picker with an optional selection that generates its options
+    /// from an array of values, with a custom label for the current value and
+    /// an option that clears the selection.
+    ///
+    /// - Parameters:
+    ///   - sources: The values to choose from, in display order.
+    ///   - selection: A binding to the optional selected value.
+    ///   - content: A view builder that creates the label for each value.
+    ///   - label: A view that describes the purpose of selecting an option.
+    ///   - currentValueLabel: A view builder that creates the label for the selected value.
+    ///   - clearSelectionLabel: The label for the option that sets the selection to `nil`.
     @MainActor
     public init<
         _SelectionValue: Hashable,
@@ -130,13 +175,16 @@ extension Picker {
     }
 }
 
+/// A picker option that is tagged with a `nil` selection value.
 @frozen
 public struct NilSelectionLabel<
     SelectionValue: Hashable,
     Content: View>: View {
 
+    /// The label of the option.
     public var content: Content
 
+    /// Creates a `nil` selection option with the given label.
     public init(content: Content) {
         self.content = content
     }

@@ -6,7 +6,7 @@ import SwiftUI
 
 extension AnyView {
 
-    /// Creates a type-erased view from a type-erased value if that value is also a `View`
+    /// Creates a type-erased view from a type-erased value if that value is also a `View`.
     @_disfavoredOverload
     public init?(visiting content: Any) {
         func project<T>(_ value: T) -> AnyView? {

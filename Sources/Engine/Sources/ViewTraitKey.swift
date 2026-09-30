@@ -10,16 +10,19 @@ import SwiftUI
 /// For examples, see:
 ///  - ``ZIndexTrait``
 ///  - ``LayoutPriorityTrait``
-///  - ``TagTrait``
+///  - ``TagValueTrait``
 ///
 /// See Also:
 ///  - ``ViewTraitWritingModifier``
 ///  
 public protocol ViewTraitKey {
+    /// The type of the trait value.
     associatedtype Value
+    /// The `_ViewTraitKey` conformance of the SwiftUI trait key this key represents.
     static var conformance: ProtocolConformance<ViewTraitKeyProtocolDescriptor>? { get }
 }
 
+/// A trait key for the z-index of a view, as set by `zIndex(_:)`.
 public struct ZIndexTrait: ViewTraitKey {
     public typealias Value = Double
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
@@ -27,6 +30,7 @@ public struct ZIndexTrait: ViewTraitKey {
     )
 }
 
+/// A trait key for the layout priority of a view, as set by `layoutPriority(_:)`.
 public struct LayoutPriorityTrait: ViewTraitKey {
     public typealias Value = Double
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
@@ -34,10 +38,14 @@ public struct LayoutPriorityTrait: ViewTraitKey {
     )
 }
 
+/// A trait key for the tag of a view, as set by `tag(_:)`.
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct TagValueTrait<V>: ViewTraitKey {
+    /// The tag value of a view.
     public enum Value {
+        /// The view has no tag of type `V`.
         case untagged
+        /// The view is tagged with a value of type `V`.
         case tagged(V)
     }
     public static var conformance: ProtocolConformance<ViewTraitKeyProtocolDescriptor>? {
@@ -48,6 +56,7 @@ public struct TagValueTrait<V>: ViewTraitKey {
     }
 }
 
+/// A trait key indicating if a view is the header of a `Section`.
 public struct IsSectionHeaderTrait: ViewTraitKey {
     public typealias Value = Bool
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
@@ -55,6 +64,7 @@ public struct IsSectionHeaderTrait: ViewTraitKey {
     )
 }
 
+/// A trait key indicating if a view is the footer of a `Section`.
 public struct IsSectionFooterTrait: ViewTraitKey {
     public typealias Value = Bool
     public static let conformance = ViewTraitKeyProtocolDescriptor.conformance(
@@ -63,6 +73,7 @@ public struct IsSectionFooterTrait: ViewTraitKey {
 }
 
 extension VariadicView.Subview {
+    /// Accesses the value of a trait for the subview, if available.
     public subscript<K: ViewTraitKey>(
         key: K.Type
     ) -> K.Value? {
@@ -101,6 +112,7 @@ extension Layout.Subviews.Element {
         self[ZIndexTrait.self, default: 0]
     }
 
+    /// Accesses the value of a trait for the subview, if available.
     public subscript<K: ViewTraitKey>(
         key: K.Type
     ) -> K.Value? {
@@ -114,6 +126,7 @@ extension Layout.Subviews.Element {
         return nil
     }
 
+    /// Accesses the value of a trait for the subview, or `defaultValue` when the trait is unavailable.
     public subscript<K: ViewTraitKey>(
         key: K.Type,
         default defaultValue: @autoclosure () -> K.Value
@@ -139,6 +152,9 @@ extension Layout.Subviews.Element {
 }
 
 extension View {
+    /// Sets the value of a trait for the view.
+    ///
+    /// If the trait key could not be resolved, the view is left unmodified.
     @inlinable
     public func trait<K: ViewTraitKey>(
         _ key: K.Type,
@@ -148,11 +164,17 @@ extension View {
     }
 }
 
+/// A modifier that writes a ``ViewTraitKey`` value to a view.
+///
+/// If the trait key could not be resolved, or its value type does not
+/// match, the content is left unmodified.
 @frozen
 public struct ViewTraitWritingModifier<Trait: ViewTraitKey>: ViewModifier {
 
+    /// The trait value to write.
     public var value: Trait.Value
 
+    /// Creates a modifier that writes `value` for the trait.
     public init(value: Trait.Value) {
         self.value = value
     }

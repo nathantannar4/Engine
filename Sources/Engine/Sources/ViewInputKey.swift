@@ -4,19 +4,25 @@
 
 import SwiftUI
 
-/// A static input key for a view
+/// A static input key for a view.
 public protocol ViewInputKey {
+    /// The type of value for the key.
     associatedtype Value
+    /// The default value for the key, when the input has not been set.
     static var defaultValue: Value { get }
 }
 
-/// A static input for a view
+/// A static input for a view.
 public protocol ViewInput {
+    /// The key of the input.
     associatedtype Key: ViewInputKey
+    /// The value of the input, set with `input(_:)`.
     static var value: Key.Value { get }
 }
 
-/// A ``ViewInput`` that's ``ViewInput/Value`` is a `Bool` that defaults to `true`.
+/// A ``ViewInput`` and ``ViewInputKey`` whose value is a `Bool`.
+///
+/// By default, the ``ViewInput/value`` of a flag is `true` and its ``ViewInputKey/defaultValue`` is the opposite.
 public protocol ViewInputFlag: ViewInput, ViewInputKey, ViewInputsCondition where Key == Self, Value == Bool { }
 
 extension ViewInputFlag {
@@ -26,7 +32,7 @@ extension ViewInputFlag {
 
 extension View {
 
-    /// Modifies the view inputs to set the ``ViewInput/value``
+    /// Modifies the view inputs to set the input's ``ViewInput/Key`` to its ``ViewInput/value``.
     @inlinable
     public func input<Input: ViewInput>(
         _: Input.Type
@@ -34,7 +40,7 @@ extension View {
         modifier(ViewInputModifier<Input>())
     }
 
-    /// Modifies the view inputs to set the ``ViewInput/defaultValue``
+    /// Modifies the view inputs to reset the flag to its ``ViewInputKey/defaultValue``.
     @inlinable
     public func defaultInput<Input: ViewInputFlag>(
         _: Input.Type
@@ -43,10 +49,11 @@ extension View {
     }
 }
 
-/// A ``ViewInputsModifier`` that modifies the input ``ViewInput/Key`` value to ``ViewInput/value``
+/// A modifier that sets the input's ``ViewInput/Key`` to its ``ViewInput/value``.
 @frozen
 public struct ViewInputModifier<Input: ViewInput>: ViewModifier {
 
+    /// Creates the modifier.
     @inlinable
     public init() { }
 
@@ -63,10 +70,11 @@ public struct ViewInputModifier<Input: ViewInput>: ViewModifier {
     }
 }
 
-/// A ``ViewInputsModifier`` that modifies the input ``ViewInput/Key`` value to ``ViewInputFlag/defaultValue``
+/// A modifier that resets the flag to its ``ViewInputKey/defaultValue``.
 @frozen
 public struct ViewInputFlagDefaultModifier<Input: ViewInputFlag>: ViewModifier {
 
+    /// Creates the modifier.
     @inlinable
     public init() { }
 

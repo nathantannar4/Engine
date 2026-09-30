@@ -5,13 +5,19 @@
 import SwiftUI
 
 /// Applies the animation when enabled and the value changes
+///
+/// Toggling `isEnabled` is also treated as a change of the value.
 @frozen
 public struct AnimationModifier<Value: Equatable>: ViewModifier {
 
+    /// The animation to apply.
     public var animation: Animation?
+    /// The value to monitor for changes.
     public var value: Value
+    /// A Boolean value that indicates whether changes to `value` are animated.
     public var isEnabled: Bool
 
+    /// Creates a modifier that applies `animation` when `value` changes and `isEnabled` is `true`.
     @inlinable
     public init(
         animation: Animation?,
@@ -49,6 +55,10 @@ public struct AnimationModifier<Value: Equatable>: ViewModifier {
 
 extension View {
 
+    /// Applies the given animation to this view when the specified value changes
+    /// and `isEnabled` is `true`.
+    ///
+    /// See ``AnimationModifier``.
     @inlinable
     public func animation<Value: Equatable>(
         _ animation: Animation?,
@@ -65,13 +75,17 @@ extension View {
     }
 }
 
-/// Applies the animation to the transaction if it does not have an animation or is the default animation
+/// Applies the animation to the transaction when the value changes, if the transaction does not
+/// have an animation or has the default animation, and animations are not disabled
 @frozen
 public struct OptionalAnimationModifier<Value: Equatable>: VersionedViewModifier {
 
+    /// The animation to apply.
     public var animation: Animation?
+    /// The value to monitor for changes.
     public var value: Value
 
+    /// Creates a modifier that applies `animation` when `value` changes.
     @inlinable
     public init(
         animation: Animation?,

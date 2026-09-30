@@ -5,11 +5,13 @@
 import SwiftUI
 import Engine
 
+/// A type-erased `LabelStyle`.
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct AnyLabelStyle: LabelStyle {
 
     var style: any LabelStyle
 
+    /// Creates a type-erased style that wraps the given style.
     public init<S: LabelStyle>(_ style: S) {
         self.style = style
     }

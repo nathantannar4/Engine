@@ -4,6 +4,9 @@
 
 import Foundation
 
+/// Temporarily rebinds the memory of `x` to the type `U` and passes it to `body`.
+///
+/// - Warning: `U` must be layout compatible with `T`.
 @_transparent
 public func withMemoryRebound<T, U, ReturnType>(_ x: inout T, to _: U.Type, _ body: ((inout U) -> ReturnType)) -> ReturnType {
     withUnsafeMutablePointer(to: &x) { ptr in

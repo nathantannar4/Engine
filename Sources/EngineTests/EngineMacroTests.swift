@@ -312,6 +312,221 @@ final class MacroTests: XCTestCase {
         )
     }
 
+    func testStyledViewMacroDiagnostics() throws {
+        let macros: [String: Macro.Type] = [
+            "StyledView": StyledViewMacro.self,
+        ]
+        assertMacroExpansion(
+            """
+            @StyledView
+            enum NotAStruct: StyledView {
+            }
+            """,
+            expandedSource: """
+            enum NotAStruct: StyledView {
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "StyledViewMacro can only be applied to a struct", line: 1, column: 1),
+            ],
+            macros: macros
+        )
+        assertMacroExpansion(
+            """
+            @StyledView
+            struct MissingConformance: View {
+            }
+            """,
+            expandedSource: """
+            struct MissingConformance: View {
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "StyledViewMacro must be used on a type that conforms to `StyledView`", line: 1, column: 1),
+            ],
+            macros: macros
+        )
+        assertMacroExpansion(
+            """
+            @StyledView
+            struct GenericValue<Value: Hashable>: StyledView {
+                var value: Value
+            }
+            """,
+            expandedSource: """
+            struct GenericValue<Value: Hashable>: StyledView {
+                var value: Value
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "StyledViewMacro only supports generic parameters that conform to `View`", line: 2, column: 21),
+            ],
+            macros: macros
+        )
+        assertMacroExpansion(
+            """
+            @StyledView
+            struct DuplicateSubview<Content: View>: StyledView {
+                var header: Content
+                var footer: Content
+            }
+            """,
+            expandedSource: """
+            struct DuplicateSubview<Content: View>: StyledView {
+                var header: Content
+                var footer: Content
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "StyledViewMacro requires each generic `View` parameter to be used by only one property", line: 4, column: 9),
+            ],
+            macros: macros
+        )
+        assertMacroExpansion(
+            """
+            @StyledView
+            struct OptionalSubview<Content: View>: StyledView {
+                var content: Content?
+            }
+            """,
+            expandedSource: """
+            struct OptionalSubview<Content: View>: StyledView {
+                var content: Content?
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "StyledViewMacro requires a generic `View` parameter to be used directly as the type of a property", line: 3, column: 9),
+            ],
+            macros: macros
+        )
+    }
+
+    func testStyledViewMacroProperties() throws {
+        let sourceInput = """
+        @StyledView
+        private struct PropertiesView: StyledView {
+            var title: String // A trailing comment
+            var a, b: Int
+            var count: Int = 1
+            let identifier: String = "identifier"
+            var isEnabled: Bool { true }
+            static var shared: Int = 0
+            @Binding var selection: Int?
+            @State var state: Int = 0
+            @Environment(\\.isEnabled) var isEnvironmentEnabled
+            var action: @Sendable () -> Void
+        }
+        """
+        let sourceOutput = """
+        private struct PropertiesView: StyledView {
+            var title: String // A trailing comment
+            var a, b: Int
+            var count: Int = 1
+            let identifier: String = "identifier"
+            var isEnabled: Bool { true }
+            static var shared: Int = 0
+            @Binding var selection: Int?
+            @State var state: Int = 0
+            @Environment(\\.isEnabled) var isEnvironmentEnabled
+            var action: @Sendable () -> Void
+
+            fileprivate var _body: some View {
+                PropertiesViewBody(
+                    configuration: PropertiesViewConfiguration(
+                        title: title,
+                        a: a,
+                        b: b,
+                        count: count,
+                        selection: $selection,
+                        action: action
+                    )
+                )
+
+            }
+
+            fileprivate init(
+                title: String,
+                a: Int,
+                b: Int,
+                count: Int = 1,
+                selection: Binding<Int?>,
+                action: @escaping @Sendable () -> Void
+            ) {
+                self.title = title
+                self.a = a
+                self.b = b
+                self.count = count
+                self._selection = selection
+                self.action = action
+            }
+
+            fileprivate init(
+                _ configuration: PropertiesViewConfiguration
+            )   {
+                self.title = configuration.title
+                self.a = configuration.a
+                self.b = configuration.b
+                self.count = configuration.count
+                self._selection = configuration.$selection
+                self.action = configuration.action
+            }
+
+            fileprivate typealias Configuration = PropertiesViewConfiguration
+        }
+
+        private typealias StyledPropertiesView = PropertiesView
+
+        private struct PropertiesViewConfiguration {
+            fileprivate var title: String
+            fileprivate var a: Int
+            fileprivate var b: Int
+            fileprivate var count: Int
+            @Binding fileprivate var selection: Int?
+            fileprivate var action: @Sendable () -> Void
+        }
+
+        private protocol PropertiesViewStyle: ViewStyle where Configuration == PropertiesViewConfiguration {
+        }
+
+        private struct PropertiesViewDefaultStyle: PropertiesViewStyle {
+            fileprivate func makeBody(configuration: PropertiesViewConfiguration) -> some View {
+                _DefaultStyledView<StyledPropertiesView>(configuration)
+            }
+        }
+
+        private struct PropertiesViewBody: ViewStyledView {
+            var configuration: PropertiesViewConfiguration
+
+            var body: some View {
+                StyledPropertiesView.makeResolvedStyleBody(configuration: configuration)
+            }
+
+            static var defaultStyle: PropertiesViewDefaultStyle {
+                PropertiesViewDefaultStyle()
+            }
+        }
+
+        private struct PropertiesViewStyleModifier<Style: PropertiesViewStyle>: ViewModifier {
+            fileprivate var style: Style
+
+            fileprivate init(_ style: Style) {
+                self.style = style
+            }
+
+            fileprivate func body(content: Content) -> some View {
+                content.styledViewStyle(PropertiesViewBody.self, style: style)
+            }
+        }
+        """
+        assertMacroExpansion(
+            sourceInput,
+            expandedSource: sourceOutput,
+            macros: [
+                "StyledView": StyledViewMacro.self,
+            ]
+        )
+    }
+
     func testUnionMacro() {
         @Union
         enum PrimitiveUnion {
@@ -441,7 +656,7 @@ final class MacroTests: XCTestCase {
 
             case `default`
 
-            enum CaseKey {
+            enum CaseKey: Hashable, Sendable, CaseIterable {
                 case empty
                 case integer
                 case double
@@ -798,7 +1013,7 @@ final class MacroTests: XCTestCase {
                     }
                 }
                 set {
-                    guard let newValue, case .optionalPair(_, let v1) = self else {
+                    guard case .optionalPair(_, let v1) = self else {
                         return
                     }
                     self = .optionalPair(newValue, v1)
@@ -815,7 +1030,7 @@ final class MacroTests: XCTestCase {
                     }
                 }
                 set {
-                    guard let newValue, case .optionalPair(let v0, _) = self else {
+                    guard case .optionalPair(let v0, _) = self else {
                         return
                     }
                     self = .optionalPair(v0, newValue)
@@ -908,6 +1123,283 @@ final class MacroTests: XCTestCase {
                     self = .`default`
                 }
             }
+        }
+        """
+        assertMacroExpansion(
+            sourceInput,
+            expandedSource: sourceOutput,
+            macros: [
+                "Union": UnionMacro.self,
+            ]
+        )
+    }
+
+    func testUnionMacroEdgeCases() {
+        let sourceInput = """
+        @Union
+        private enum EdgeUnion {
+            case values(Int, Int)
+            case handler(() -> Void)
+            case model(any Model)
+            @available(*, deprecated)
+            case user(firstName: String)
+            #if DEBUG
+            case debug(Int)
+            #else
+            case debug(String)
+            #endif
+        }
+        """
+        let sourceOutput = """
+        private enum EdgeUnion {
+            case values(Int, Int)
+            case handler(() -> Void)
+            case model(any Model)
+            @available(*, deprecated)
+            case user(firstName: String)
+            #if DEBUG
+            case debug(Int)
+            #else
+            case debug(String)
+            #endif
+
+            fileprivate enum CaseKey: Hashable, Sendable, CaseIterable {
+                case values
+                case handler
+                case model
+                case user
+                #if DEBUG
+                case debug
+                #else
+                case debug
+                #endif
+            }
+
+            fileprivate var key: CaseKey {
+                switch self {
+                case .values:
+                    return .values
+                case .handler:
+                    return .handler
+                case .model:
+                    return .model
+                case .user:
+                    return .user
+                #if DEBUG
+                    case .debug:
+                        return .debug
+                #else
+                    case .debug:
+                        return .debug
+                #endif
+                }
+            }
+
+            fileprivate var isValues: Bool {
+                get {
+                    switch self {
+                    case .values:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            fileprivate var values0: Int? {
+                get {
+                    switch self {
+                    case .values(let v0, _):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .values(_, let v1) = self else {
+                        return
+                    }
+                    self = .values(newValue, v1)
+                }
+            }
+
+            fileprivate var values1: Int? {
+                get {
+                    switch self {
+                    case .values(_, let v1):
+                        return v1
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue, case .values(let v0, _) = self else {
+                        return
+                    }
+                    self = .values(v0, newValue)
+                }
+            }
+
+            fileprivate var values: (Int, Int)? {
+                get {
+                    switch self {
+                    case .values(let v0, let v1):
+                        return (v0, v1)
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .values(newValue.0, newValue.1)
+                }
+            }
+
+            fileprivate var isHandler: Bool {
+                get {
+                    switch self {
+                    case .handler:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            fileprivate var handler: (() -> Void)? {
+                get {
+                    switch self {
+                    case .handler(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .handler(newValue)
+                }
+            }
+
+            fileprivate var isModel: Bool {
+                get {
+                    switch self {
+                    case .model:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            fileprivate var model: (any Model)? {
+                get {
+                    switch self {
+                    case .model(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .model(newValue)
+                }
+            }
+
+            @available(*, deprecated)
+            fileprivate var isUser: Bool {
+                get {
+                    switch self {
+                    case .user:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            @available(*, deprecated)
+            fileprivate var userFirstName: String? {
+                get {
+                    switch self {
+                    case .user(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .user(firstName: newValue)
+                }
+            }
+
+            #if DEBUG
+            fileprivate var isDebug: Bool {
+                get {
+                    switch self {
+                    case .debug:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            fileprivate var debug: Int? {
+                get {
+                    switch self {
+                    case .debug(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .debug(newValue)
+                }
+            }
+            #else
+            fileprivate var isDebug: Bool {
+                get {
+                    switch self {
+                    case .debug:
+                        return true
+                    default:
+                        return false
+                    }
+                }
+            }
+
+            fileprivate var debug: String? {
+                get {
+                    switch self {
+                    case .debug(let v0):
+                        return v0
+                    default:
+                        return nil
+                    }
+                }
+                set {
+                    guard let newValue else {
+                        return
+                    }
+                    self = .debug(newValue)
+                }
+            }
+            #endif
         }
         """
         assertMacroExpansion(

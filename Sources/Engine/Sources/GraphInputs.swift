@@ -43,6 +43,7 @@ extension _GraphInputs {
         }
     }
 
+    /// Accesses the value of the custom input for the given ``ViewInputKey``.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type
     ) -> Input.Value {
@@ -50,6 +51,8 @@ extension _GraphInputs {
         set { customInputs[Input.self] = newValue }
     }
 
+    /// Accesses the value of the custom input for the given ``ViewInputKey``,
+    /// or `defaultValue` if the input has not been set.
     public subscript<Input: ViewInputKey>(
         _ : Input.Type,
         default defaultValue: @autoclosure () -> Input.Value?
@@ -58,109 +61,14 @@ extension _GraphInputs {
         set { customInputs[Input.self, default: defaultValue()] = newValue }
     }
 
+    /// Accesses the value of the custom input whose key type name matches `key`.
+    ///
+    /// > Warning: Setting a value only has an effect if an input with a matching key already exists
     public subscript<Value>(
         key: String,
         as _: Value.Type = Value.self
     ) -> Value? {
         get { customInputs[key, as: Value.self] }
         set { customInputs[key, as: Value.self] = newValue }
-    }
-}
-
-/// Detaches the `_ViewInputs` from the previous renderer host, so that context sensitive
-/// functionality is reset. SwiftUI's presentation modifiers seem to do something like this.
-///
-/// This fixes:
-/// - Resetting SwiftUI view styles
-/// - Resetting Engine view styles
-/// - Resetting Context (such as NavigationStack)
-@frozen
-public struct _ViewInputsBridgeModifier: ViewModifier {
-
-    @inlinable
-    public init() { }
-
-    public func body(content: Content) -> some View {
-        content
-            .modifier(UnaryViewModifier())
-            .modifier(Modifier())
-    }
-
-    private struct Modifier: GraphInputsModifier {
-        nonisolated static func makeInputs(
-            modifier: _GraphValue<Self>,
-            inputs: inout _GraphInputs
-        ) {
-            inputs.customInputs.detach()
-        }
-    }
-}
-
-extension PropertyList {
-    fileprivate mutating func detach() {
-
-        var ptr = elements
-        let branchKey: String = ".ImplicitRootType"
-        let containerKey = ".UIKitHostContainerFocusItemInput"
-        var hasPassedContainer = false
-        while let p = ptr {
-            let key = _typeName(p.keyType, qualified: true)
-            let isMatch = key.hasSuffix(branchKey)
-                || (key.hasSuffix(".FocusedItemInputKey") && hasPassedContainer)
-                || (key.hasSuffix(".ViewListOptionsInput") && hasPassedContainer)
-            if isMatch {
-                break
-            }
-            hasPassedContainer = hasPassedContainer || key.hasSuffix(containerKey)
-            if let next = p.after {
-                ptr = next
-            } else {
-                return
-            }
-        }
-
-        let tail = ptr!
-        var last = tail.after
-        if let last, last.length == 1 {
-            return
-        }
-        tail.after = nil
-
-        while let p = last?.after {
-            if let after = p.after {
-                let key = _typeName(after.keyType, qualified: true)
-                let isMatch = key.hasSuffix(branchKey)
-                    || key.hasSuffix(".AccessibilityRelationshipScope")
-                    || key.hasSuffix(".EventBindingBridgeFactoryInput")
-                    || key.hasSuffix(".InterfaceIdiomInput")
-                if isMatch {
-                    break
-                }
-            }
-            last = p
-        }
-
-        guard let last else { return }
-
-        ptr = elements
-        let offset = tail.length - (last.length + 1)
-        while offset > 0, let p = ptr {
-            if let skip = p.skip, skip.length < tail.length {
-                p.skip = last
-                p.skipCount = p.length - last.length - offset
-            }
-            p.length -= offset
-            if p.skip == nil {
-                p.skipCount = p.length
-            }
-            ptr = p.after
-        }
-
-        _ = last.object.retain() // Prevent dealloc
-        tail.after = last
-        if last.skip == nil {
-            tail.skip = last
-            tail.skipCount = 1
-        }
     }
 }

@@ -4,7 +4,10 @@
 
 import SwiftUI
 
-/// A property wrapper that defines its equatability via its `Value` type
+/// A property wrapper that is always considered equal, regardless of its wrapped value
+///
+/// When SwiftUI compares a view's stored properties to determine if its body needs
+/// to be updated, a change to a ``Constant`` property alone does not cause an update.
 ///
 /// > Tip: Use ``Constant`` to improve performance
 /// on views that store closures that don't need updates, such as
@@ -14,8 +17,10 @@ import SwiftUI
 @frozen
 public struct Constant<Value>: Equatable {
 
+    /// The wrapped value.
     public let wrappedValue: Value
 
+    /// Creates a constant from its wrapped value.
     @inlinable
     public init(
         wrappedValue: Value
@@ -23,6 +28,7 @@ public struct Constant<Value>: Equatable {
         self.wrappedValue = wrappedValue
     }
 
+    /// Returns `true`, constants are always equal.
     public static func == (lhs: Constant<Value>, rhs: Constant<Value>) -> Bool {
         return true
     }

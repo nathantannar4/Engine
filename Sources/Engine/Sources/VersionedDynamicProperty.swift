@@ -4,12 +4,12 @@
 
 import SwiftUI
 
-/// A dynamic property that is statically conditional on version availability
+/// A dynamic property that is statically conditional on version availability.
 ///
 /// Stored properties cannot be annotated with availability, which can make using
-/// a newer dynamic properties, such as `FocusState`, challenging. 
+/// newer dynamic properties, such as `FocusState`, challenging. 
 ///
-/// > Tip: Use ``VersionedProperty`` to aide with backwards compatibility.
+/// > Tip: Use ``VersionedValue`` to aid with backwards compatibility.
 ///
 /// For example, a `FocusState` wrapped as follows:
 ///
@@ -82,50 +82,82 @@ import SwiftUI
 ///
 public protocol VersionedDynamicProperty: DynamicProperty {
 
+    /// The type of property used on iOS 27, macOS 27, tvOS 27, watchOS 27 and visionOS 27 or later.
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     associatedtype V8Property: DynamicProperty = V7Property
 
+    /// The property used on iOS 27, macOS 27, tvOS 27, watchOS 27 and visionOS 27 or later.
+    ///
+    /// Defaults to ``v7Property``.
     @available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *)
     var v8Property: V8Property { get }
 
+    /// The type of property used on iOS 26, macOS 26, tvOS 26, watchOS 26 and visionOS 26 or later.
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     associatedtype V7Property: DynamicProperty = V6Property
 
+    /// The property used on iOS 26, macOS 26, tvOS 26, watchOS 26 and visionOS 26 or later.
+    ///
+    /// Defaults to ``v6Property``.
     @available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *)
     var v7Property: V7Property { get }
 
+    /// The type of property used on iOS 18, macOS 15, tvOS 18, watchOS 11 and visionOS 2 or later.
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     associatedtype V6Property: DynamicProperty = V5Property
 
+    /// The property used on iOS 18, macOS 15, tvOS 18, watchOS 11 and visionOS 2 or later.
+    ///
+    /// Defaults to ``v5Property``.
     @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
     var v6Property: V6Property { get }
 
+    /// The type of property used on iOS 17, macOS 14, tvOS 17, watchOS 10 and visionOS 1 or later.
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     associatedtype V5Property: DynamicProperty = V4Property
 
+    /// The property used on iOS 17, macOS 14, tvOS 17, watchOS 10 and visionOS 1 or later.
+    ///
+    /// Defaults to ``v4Property``.
     @available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *)
     var v5Property: V5Property { get }
 
+    /// The type of property used on iOS 16, macOS 13, tvOS 16 and watchOS 9 or later.
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     associatedtype V4Property: DynamicProperty = V3Property
 
+    /// The property used on iOS 16, macOS 13, tvOS 16 and watchOS 9 or later.
+    ///
+    /// Defaults to ``v3Property``.
     @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *)
     var v4Property: V4Property { get }
 
+    /// The type of property used on iOS 15, macOS 12, tvOS 15 and watchOS 8 or later.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     associatedtype V3Property: DynamicProperty = V2Property
 
+    /// The property used on iOS 15, macOS 12, tvOS 15 and watchOS 8 or later.
+    ///
+    /// Defaults to ``v2Property``.
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
     var v3Property: V3Property { get }
 
+    /// The type of property used on iOS 14, macOS 11, tvOS 14 and watchOS 7 or later.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     associatedtype V2Property: DynamicProperty = V1Property
 
+    /// The property used on iOS 14, macOS 11, tvOS 14 and watchOS 7 or later.
+    ///
+    /// Defaults to ``v1Property``.
     @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
     var v2Property: V2Property { get }
 
+    /// The type of property used on the minimum supported version.
     associatedtype V1Property: DynamicProperty = EmptyDynamicProperty
 
+    /// The property used on the minimum supported version.
+    ///
+    /// Defaults to an ``EmptyDynamicProperty``.
     var v1Property: V1Property { get }
 }
 
@@ -168,10 +200,11 @@ extension VersionedDynamicProperty where V1Property == EmptyDynamicProperty {
     public var v1Property: V1Property { EmptyDynamicProperty() }
 }
 
-/// An empty `DynamicProperty`
+/// An empty `DynamicProperty`.
 @frozen
 public struct EmptyDynamicProperty: DynamicProperty {
 
+    /// Creates an empty dynamic property.
     @inlinable
     public init() { }
 
@@ -183,22 +216,30 @@ public struct EmptyDynamicProperty: DynamicProperty {
     ) { }
 }
 
-/// A type for wrapping values based on version availability
+/// A type for wrapping values based on version availability.
 @propertyWrapper
 @frozen
 public enum VersionedValue<T> {
 
+    /// The value is unavailable on the current version.
     case unavailable
+    /// The value is available on the current version.
     case available(T)
 
+    /// Creates an available value.
     public init(wrappedValue: T) {
         self = .available(wrappedValue)
     }
 
+    /// Creates an unavailable value.
     public init() {
         self = .unavailable
     }
 
+    /// The underlying value.
+    ///
+    /// Accessing the value when it is unavailable is a fatal error. Setting the
+    /// value makes it available.
     public var wrappedValue: T {
         get {
             switch self {
@@ -243,7 +284,7 @@ extension VersionedDynamicProperty {
                 fieldOffset: fieldOffset,
                 inputs: &inputs
             )
-        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+        } else if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
             V5Property._makeProperty(
                 in: &buffer,
                 container: container,
@@ -283,7 +324,7 @@ extension VersionedDynamicProperty {
         /// Support ``VersionInput`` for development support
         let version = inputs[VersionInputKey.self]
         switch version {
-        case .v8:
+        case .v8_1, .v8:
             if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *) {
                 V8Property._makeProperty(
                     in: &buffer,
@@ -291,6 +332,7 @@ extension VersionedDynamicProperty {
                     fieldOffset: fieldOffset,
                     inputs: &inputs
                 )
+                return
             }
         case .v7:
             if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
@@ -313,7 +355,7 @@ extension VersionedDynamicProperty {
                 return
             }
         case .v5:
-            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, visionOS 1.0, *) {
+            if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
                 V5Property._makeProperty(
                     in: &buffer,
                     container: container,

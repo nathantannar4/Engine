@@ -4,15 +4,19 @@
 
 import SwiftUI
 
-/// A collection of views suitible for a label, ideal for when you want to limit
+/// A collection of views suitable for a label, ideal for when you want to limit
 /// the label to primitive ``Text``/``Image``.
 @frozen
 public struct LabelElement: Equatable, Sendable {
 
+    /// The icon of the label.
     public var image: Image?
+    /// The title of the label.
     public var title: Text?
+    /// The subtitle of the label.
     public var subtitle: Text?
 
+    /// Creates a label element with an optional icon, title and subtitle.
     @inlinable
     public init(
         image: Image? = nil,
@@ -33,10 +37,14 @@ public struct LabelElement: Equatable, Sendable {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 public struct LabelElementBuilder {
 
+    /// A partial result of a ``LabelElementBuilder``.
     @frozen
     public enum LabelElementComponent {
+        /// A label element, whose values are used for any missing components.
         case element(LabelElement)
+        /// An image, used as the icon.
         case image(Image)
+        /// A text, used as the title, or the subtitle when a title already exists.
         case text(Text)
     }
 
@@ -154,6 +162,8 @@ public struct LabelElementBuilder {
 @available(iOS 14.0, macOS 11.0, tvOS 14.0, watchOS 7.0, *)
 extension Label {
 
+    /// Creates a label with a title, optional subtitle and icon built from
+    /// the first `Text`, second `Text` and first `Image` of the closure.
     public init(
         @LabelElementBuilder label: () -> LabelElement
     ) where Title == TupleView<(Text?, Text?)>, Icon == Optional<Image> {

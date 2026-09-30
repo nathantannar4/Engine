@@ -4,11 +4,13 @@
 
 import SwiftUI
 
-/// A ``GeometryEffect`` that can scale the view by a size relative to an anchor
+/// A `GeometryEffect` that can scale the view by a size relative to an anchor.
 @frozen
 public struct ScaleEffect: GeometryEffect, Animatable {
 
+    /// The horizontal and vertical scale factors.
     public var scale: CGSize
+    /// The location within the view that remains fixed while scaling.
     public var anchor: UnitPoint
 
     public var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, AnimatablePair<CGFloat, CGFloat>> {
@@ -24,6 +26,7 @@ public struct ScaleEffect: GeometryEffect, Animatable {
         }
     }
 
+    /// Creates a scale effect that scales both dimensions uniformly.
     @inlinable
     public init(
         scale: CGFloat,
@@ -32,15 +35,17 @@ public struct ScaleEffect: GeometryEffect, Animatable {
         self.init(x: scale, y: scale, anchor: anchor)
     }
 
+    /// Creates a scale effect from horizontal and vertical scale factors.
     @inlinable
     public init(
-        x: CGFloat = 0,
-        y: CGFloat = 0,
+        x: CGFloat = 1,
+        y: CGFloat = 1,
         anchor: UnitPoint = .center
     ) {
         self.init(scale: CGSize(width: x, height: y), anchor: anchor)
     }
 
+    /// Creates a scale effect from a size of scale factors.
     @inlinable
     public init(
         scale: CGSize,

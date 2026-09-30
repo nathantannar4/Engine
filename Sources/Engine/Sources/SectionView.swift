@@ -4,12 +4,17 @@
 
 import SwiftUI
 
-/// A wrapper view that adds the ``IsSectionHeaderTrait`` trait
+/// A wrapper view that adds the ``IsSectionHeaderTrait`` trait.
+///
+/// Use within the header of a `Section` so that the header can be identified
+/// when the section is transformed by a ``VariadicViewAdapter``.
 @frozen
 public struct SectionHeader<Content: View>: View {
 
+    /// The wrapped content.
     public var content: Content
 
+    /// Creates a wrapper view with the given content.
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -23,12 +28,17 @@ public struct SectionHeader<Content: View>: View {
     }
 }
 
-/// A wrapper view that adds the ``IsSectionFooterTrait`` trait
+/// A wrapper view that adds the ``IsSectionFooterTrait`` trait.
+///
+/// Use within the footer of a `Section` so that the footer can be identified
+/// when the section is transformed by a ``VariadicViewAdapter``.
 @frozen
 public struct SectionFooter<Content: View>: View {
 
+    /// The wrapped content.
     public var content: Content
 
+    /// Creates a wrapper view with the given content.
     @inlinable
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()

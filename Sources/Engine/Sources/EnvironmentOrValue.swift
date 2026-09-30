@@ -19,21 +19,28 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
     @usableFromInline
     var storage: Storage
 
+    /// Creates a property that always returns the given constant value.
     @inlinable
     public init(_ value: Value) {
         self.storage = .value(value)
     }
 
+    /// Creates a property that reads the value from the environment at `keyPath`.
     @inlinable
     public init(_ keyPath: KeyPath<EnvironmentValues, Value>) {
         self.storage = .environment(.init(keyPath))
     }
 
+    /// Creates a property that returns `value` when it is non-nil, otherwise
+    /// reads the value from the environment at `keyPath`.
     @inlinable
     public init(_ value: Value?, _ keyPath: KeyPath<EnvironmentValues, Value>) {
         self.storage = value.map({ .value($0) }) ?? .environment(.init(keyPath))
     }
 
+    /// The constant value, or the current value from the environment.
+    ///
+    /// Setting the value replaces any environment lookup with a constant value.
     @inlinable
     public var wrappedValue: Value {
         get {
@@ -49,6 +56,7 @@ public struct EnvironmentOrValue<Value>: DynamicProperty {
         }
     }
 
+    /// Whether the property holds a constant value rather than reading from the environment.
     @inlinable
     public var isValue: Bool {
         switch storage {
