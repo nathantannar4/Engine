@@ -96,7 +96,11 @@ extension UIView {
                 completion(position == .end)
             }
         }
-        animator.startAnimation(afterDelay: animation.delay ?? 0)
+        if let delay = animation.delay, delay > 0 {
+            animator.startAnimation(afterDelay: delay)
+        } else {
+            animator.startAnimation()
+        }
     }
 }
 
@@ -155,6 +159,8 @@ private class AnimationTimingCurveProvider: NSObject, UITimingCurveProvider {
 
     var cubicTimingParameters: UICubicTimingParameters? {
         switch timingCurve {
+        case .default:
+            return UICubicTimingParameters(animationCurve: .easeInOut)
         case .bezier(let bezierCurve):
             let curve = bezierCurve.curve
             let p1x = curve.cx / 3
@@ -167,7 +173,7 @@ private class AnimationTimingCurveProvider: NSObject, UITimingCurveProvider {
                 controlPoint1: p1,
                 controlPoint2: p2
             )
-        case .default, .custom, .spring, .fluidSpring:
+        case .custom, .spring, .fluidSpring:
             return nil
         }
     }
