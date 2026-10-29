@@ -103,8 +103,20 @@ func assertSnapshot<Content: View>(
     let renderer = ImageRenderer(content: content)
     renderer.scale = scale
     renderer.proposedSize = ProposedViewSize(size)
-    guard let rendered = renderer.cgImage.flatMap(SnapshotBitmap.init) else {
-        XCTFail("Failed to render snapshot \(fileName)", file: filePath, line: line)
+
+    // The content always has an opaque background, so a fully transparent image means
+    // the render failed rather than the view drawing nothing. This happens for the first
+    // render in a process on slow CI simulators, so retry before failing.
+    var rendered: SnapshotBitmap?
+    for _ in 0..<3 {
+        rendered = renderer.cgImage.flatMap(SnapshotBitmap.init)
+        if let rendered, !rendered.isFullyTransparent {
+            break
+        }
+        rendered = nil
+    }
+    guard let rendered else {
+        XCTFail("Failed to render snapshot \(fileName): ImageRenderer returned no image or an empty image", file: filePath, line: line)
         return
     }
 
@@ -238,6 +250,10 @@ struct SnapshotBitmap {
             return nil
         }
         self.init(image)
+    }
+
+    var isFullyTransparent: Bool {
+        stride(from: 3, to: pixels.count, by: 4).allSatisfy { pixels[$0] == 0 }
     }
 
     func cgImage() -> CGImage? {

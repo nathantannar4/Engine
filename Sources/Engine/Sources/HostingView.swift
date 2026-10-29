@@ -92,6 +92,7 @@ open class HostingView<
         didSet {
             guard oldValue != disablesSafeArea else { return }
             #if os(iOS) || os(tvOS) || os(visionOS)
+            safeAreaInsetsDidChange()
             setNeedsLayout()
             #elseif os(macOS)
             needsLayout = true
@@ -135,6 +136,27 @@ open class HostingView<
         return true
     }()
 
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    /// When `true`, the layout margins are folded into the safe area insets, such that
+    /// each edge of ``safeAreaInsets`` is the larger of the safe area inset and the
+    /// `layoutMargins` for that edge. Defaults to `false`.
+    ///
+    /// Combine with `preservesSuperviewLayoutMargins` to inherit the margins of the superview.
+    ///
+    /// > Note: Enabling this sets `insetsLayoutMarginsFromSafeArea` to `false`, since the
+    /// layout margins would otherwise be derived from the safe area they are folded into.
+    public var insetsSafeAreaFromLayoutMargins: Bool = false {
+        didSet {
+            guard oldValue != insetsSafeAreaFromLayoutMargins else { return }
+            if insetsSafeAreaFromLayoutMargins {
+                insetsLayoutMarginsFromSafeArea = false
+            }
+            safeAreaInsetsDidChange()
+            setNeedsLayout()
+        }
+    }
+    #endif
+
     #if os(macOS)
     /// The safe area insets of the view, which are zero when ``disablesSafeArea`` is `true`.
     @available(macOS 11.0, *)
@@ -142,9 +164,21 @@ open class HostingView<
         disablesSafeArea ? NSEdgeInsets() : super.safeAreaInsets
     }
     #else
-    /// The safe area insets of the view, which are zero when ``disablesSafeArea`` is `true`.
+    /// The safe area insets of the view, which are zero when ``disablesSafeArea`` is `true`,
+    /// and include the layout margins when ``insetsSafeAreaFromLayoutMargins`` is `true`.
     open override var safeAreaInsets: UIEdgeInsets {
-        disablesSafeArea ? .zero : super.safeAreaInsets
+        guard !disablesSafeArea else { return .zero }
+        var safeAreaInsets = super.safeAreaInsets
+        if insetsSafeAreaFromLayoutMargins {
+            // `layoutMargins` (not `directionalLayoutMargins`) includes margins inherited
+            // via `preservesSuperviewLayoutMargins`
+            let margins = layoutMargins
+            safeAreaInsets.top = max(safeAreaInsets.top, margins.top)
+            safeAreaInsets.bottom = max(safeAreaInsets.bottom, margins.bottom)
+            safeAreaInsets.left = max(safeAreaInsets.left, margins.left)
+            safeAreaInsets.right = max(safeAreaInsets.right, margins.right)
+        }
+        return safeAreaInsets
     }
     #endif
 
@@ -233,6 +267,13 @@ open class HostingView<
         super.layoutSubviews()
         if invalidatesIntrinsicContentSizeOnIdealSizeChange {
             cachedIntrinsicContentSize = intrinsicContentSize
+        }
+    }
+
+    open override func layoutMarginsDidChange() {
+        super.layoutMarginsDidChange()
+        if insetsSafeAreaFromLayoutMargins {
+            safeAreaInsetsDidChange()
         }
     }
 
@@ -465,19 +506,23 @@ struct HostingView_Previews: PreviewProvider {
         Content: View
     >: UIViewRepresentable {
 
+        var insetsSafeAreaFromLayoutMargins: Bool
         var content: Content
 
         typealias UIViewType = HostingView<Content>
 
         init(
+            insetsSafeAreaFromLayoutMargins: Bool = false,
             @ViewBuilder content: () -> Content
         ) {
+            self.insetsSafeAreaFromLayoutMargins = insetsSafeAreaFromLayoutMargins
             self.content = content()
         }
 
         func makeUIView(context: Context) -> UIViewType {
             let uiView = HostingView(content: content)
             uiView.invalidatesIntrinsicContentSizeOnIdealSizeChange = true
+            uiView.insetsSafeAreaFromLayoutMargins = insetsSafeAreaFromLayoutMargins
             return uiView
         }
 
@@ -609,6 +654,24 @@ struct HostingView_Previews: PreviewProvider {
         ZStack {
             Preview()
         }
+
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        if #available(iOS 14.0, tvOS 14.0, *) {
+            ZStack {
+                HostingViewAdapter(insetsSafeAreaFromLayoutMargins: true) {
+                    ZStack {
+                        Color.blue
+                            .opacity(0.3)
+                            .ignoresSafeArea()
+
+                        Color.blue
+                            .opacity(0.3)
+                    }
+                }
+                .ignoresSafeArea()
+            }
+        }
+        #endif
 
         VStack {
             HostingViewAdapter {
