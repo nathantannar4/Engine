@@ -17,6 +17,7 @@ public struct StyleInputCondition<Style>: ViewInputsCondition {
     struct Visitor: ViewInputsVisitor {
         var type: String
         var hasStyle = false
+        var seenStyleKinds: Set<Substring> = []
 
         mutating func visit<Value>(
             _ value: Value,
@@ -24,15 +25,34 @@ public struct StyleInputCondition<Style>: ViewInputsCondition {
             stop: inout Bool
         ) {
             if key.contains("StyleInput") {
-                if let valueType = Mirror(reflecting: value).descendant("some", "type") as? Any.Type {
-                    hasStyle = _typeName(valueType, qualified: true).contains(type)
-                } else if let valueType = Mirror(reflecting: value).descendant("node", "value", "_type") as? Any.Type {
-                    hasStyle = _typeName(valueType, qualified: true).contains(type)
-                }
+                let mirror = Mirror(reflecting: value)
+                // SwiftUI's style type boxes name the field `base` (AnyButtonStyleType) or `type`, and the value
+                // arrives wrapped in an Optional
+                let valueType = mirror.descendant("some", "base")
+                    ?? mirror.descendant("some", "type")
+                    ?? mirror.descendant("some", "node", "value", "_type")
+                    ?? mirror.descendant("node", "value", "_type")
+                guard let valueType = valueType as? Any.Type else { return }
+                // Inputs are visited innermost first, and the innermost style of a kind wins. SwiftUI stores one
+                // button style under StyleInput<PrimitiveButtonStyleConfiguration>, ButtonStyleInput and
+                // EffectiveButtonStyleInput, so the kind comes from the key's style name.
+                guard seenStyleKinds.insert(Self.styleKind(of: key)).inserted else { return }
+                hasStyle = _typeName(valueType, qualified: true).contains(type)
             } else if key.contains("Engine.ViewStyleModifier") {
                 hasStyle = key.contains(type)
             }
             stop = hasStyle
+        }
+
+        static func styleKind(of key: String) -> Substring {
+            guard let range = key.range(of: "[A-Za-z]+Style(?=Configuration|Input)", options: .regularExpression) else {
+                return Substring(key)
+            }
+            var kind = key[range]
+            for prefix in ["Primitive", "Effective"] where kind.hasPrefix(prefix) {
+                kind = kind.dropFirst(prefix.count)
+            }
+            return kind
         }
     }
 }

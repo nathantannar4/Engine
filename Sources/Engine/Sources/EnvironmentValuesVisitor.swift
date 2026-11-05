@@ -177,8 +177,8 @@ private struct EnvironmentValuesGetterVisitor<Value>: EnvironmentKeyVisitor {
 
     mutating func visit<Key: EnvironmentKey>(type: Key.Type) {
         let value = environment[Key.self]
-        if Key.Value.self == Value.self {
-            output = value as? Value
+        if let value = value as? Value {
+            output = value
         } else if Value.self == Any.self || Value.self == Optional<Any>.self {
             output = (value as Any) as? Value
         } else if MemoryLayout<Key.Value>.size == MemoryLayout<Value>.size {

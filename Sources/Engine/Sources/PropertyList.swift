@@ -112,8 +112,13 @@ struct PropertyList {
 
             func size(offset: Int) -> Int {
                 let element = element(offset: offset)
-                let typeSize = swift_getSize(of: element.type)
-                return ((typeSize + Int(alignMask)) & ~Int(alignMask)) + MemoryLayout<Element>.stride
+                func layout<T>(_: T.Type) -> (size: Int, alignment: Int) {
+                    (MemoryLayout<T>.size, MemoryLayout<T>.alignment)
+                }
+                let value = _openExistential(element.type, do: layout)
+                func roundUp(_ x: Int, _ alignment: Int) -> Int { (x + alignment - 1) & ~(alignment - 1) }
+                let valueOffset = roundUp(offset + MemoryLayout<Element>.stride, value.alignment)
+                return roundUp(valueOffset + value.size, MemoryLayout<Element>.alignment) - offset
             }
 
             static func allocate<Input, Value>(input: Input.Type, value: Value) -> Storage {
@@ -468,8 +473,8 @@ struct PropertyList {
                     skip: lastValue.pointee.fields.skip,
                     length: lastValue.pointee.fields.length + 1,
                     skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
-                    skipFilter: lastValue.pointee.fields.skipFilter,
-                    keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                    skipFilter: ~0,
+                    keyFilter: ~0,
                     id: ID.generate(),
                     storage: .allocate(input: input, value: newValue),
                     disableUniquenessChecks: false
@@ -490,7 +495,7 @@ struct PropertyList {
                         skip: lastValue.pointee.fields.skip,
                         length: lastValue.pointee.fields.length + 1,
                         skipCount: lastValue.pointee.fields.skip != nil ? lastValue.pointee.fields.skipCount + 1 : 0,
-                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                        keyFilter: ~0,
                         id: ID.generate()
                     )
                 ),
@@ -509,7 +514,7 @@ struct PropertyList {
                         before: nil,
                         after: lastValue,
                         length: lastValue.pointee.fields.length + 1,
-                        keyFilter: lastValue.pointee.fields.keyFilter, // Unknown purpose
+                        keyFilter: ~0,
                         id: ID.generate()
                     )
                 ),

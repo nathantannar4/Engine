@@ -137,7 +137,10 @@ private struct ImageProvider {
             }
             self = provider
             if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *), let options = try? swift_getFieldValue("options", Any.self, base) {
-                if let symbolRenderingMode = try? swift_getFieldValue("renderingMode", SymbolRenderingModeStorage.self, options) {
+                // SwiftUI's `SymbolRenderingMode?` uses tags past Engine's four cases for nil and newer modes
+                if let tag = try? swift_getFieldValue("renderingMode", UInt8.self, options),
+                   let symbolRenderingMode = SymbolRenderingModeStorage(rawValue: tag)
+                {
                     self.symbolConfiguration.symbolRenderingMode = symbolRenderingMode
                 }
                 #if XCODE_26
@@ -444,7 +447,7 @@ struct SymbolConfiguration {
     #endif
 }
 
-enum SymbolRenderingModeStorage {
+enum SymbolRenderingModeStorage: UInt8 {
     case monochrome
     case multicolor
     case hierarchical
@@ -455,7 +458,8 @@ enum SymbolRenderingModeStorage {
 extension SymbolRenderingMode {
 
     var storage: SymbolRenderingModeStorage? {
-        try? swift_getFieldValue("storage", SymbolRenderingModeStorage.self, self)
+        guard let mode = try? swift_getFieldValue("storage", UInt8.self, self) else { return nil }
+        return SymbolRenderingModeStorage(rawValue: mode)
     }
 }
 

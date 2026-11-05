@@ -238,6 +238,12 @@ open class ViewControllerAdapter<
         }
 
         func asPlatformViewControllerRepresentableContext<T>(to _: T.Type) -> T {
+            // macOS 27 lays out the view controller context like the view context (values, then coordinator)
+            if MemoryLayout<V1>.size != MemoryLayout<T>.size, case .v8(let v8) = self,
+                MemoryLayout<V8>.size == MemoryLayout<T>.size
+            {
+                return unsafeBitCast(v8, to: T.self)
+            }
             let context: V1
             switch self {
             case .v8(let v8):
@@ -285,8 +291,17 @@ open class ViewControllerAdapter<
                 }
                 return
             }
-            if adapter.context == nil {
-                let coordinator = content.makeCoordinator()
+            // Rebuilt on every update so the inner representable sees the current transaction and environment
+            do {
+                let coordinator: _Content.Coordinator
+                if let existing = adapter.context {
+                    func existingCoordinator<T>(_ value: T) -> _Content.Coordinator {
+                        unsafeBitCast(value, to: Context<_Content.Coordinator>.self).coordinator
+                    }
+                    coordinator = _openExistential(existing, do: existingCoordinator)
+                } else {
+                    coordinator = content.makeCoordinator()
+                }
                 let context: Context<_Content.Coordinator>
                 if #available(iOS 27.0, macOS 27.0, tvOS 27.0, watchOS 27.0, visionOS 27.0, *),
                     let values = try? swift_getFieldValue("values", RepresentableContextValues.V8.self, bridgedContext)

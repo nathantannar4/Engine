@@ -726,8 +726,15 @@ extension Text {
         }
     }
 
-    private func resolveHasAttributes() -> Bool {
+    fileprivate func resolveHasAttributesModifier() -> Bool {
         if layout.modifiers.contains(where: { $0.hasAttributes }) {
+            return true
+        }
+        return false
+    }
+
+    private func resolveHasAttributes() -> Bool {
+        if resolveHasAttributesModifier() {
             return true
         }
         switch layout.storage {
@@ -1393,11 +1400,11 @@ private class TextStorage: ResolvedTextStorage {
     }
 
     func resolveIsEmpty() -> Bool {
-        return text.isEmpty
+        return false
     }
 
     func resolveHasAttributes() -> Bool {
-        return text.isAttributed
+        return text.resolveHasAttributesModifier()
     }
 
     @available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, *)
